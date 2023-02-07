@@ -26,6 +26,7 @@ palette = {
     "scaboteur": "firebrick",
 }
 
+
 name_conversion = {
     "honest": "naive",
     "smart": "sceptical",
@@ -77,8 +78,8 @@ def parse_args():
     args=parser.parse_args()
     if args.items_collected:
         metric="items_collected"
-    elif args.rewards:  
-        metric="rewards"   
+    elif args.rewards:
+        metric="rewards"
     else:
         print("Automatically selected metric: items_collected")
         metric="items_collected"
@@ -165,13 +166,18 @@ def myttest(
             # "24sceptical_3000th_1scaboteur_0rotation_nopenalisation.txt",
             # "25sceptical_3000th_0scaboteur_0rotation_penalisation.txt",
             # "24sceptical_3000th_1scaboteur_0rotation_penalisation.txt",
-            "25sceptical_025th_0scaboteur_0rotation_nopenalisation.txt",
-            "24sceptical_025th_1scaboteur_0rotation_nopenalisation.txt",
+            # "25sceptical_025th_0scaboteur_0rotation_nopenalisation.txt",
+            # "24sceptical_025th_1scaboteur_0rotation_nopenalisation.txt",
             # "25sceptical_025th_0scaboteur_0rotation_penalisation.txt",
             # "24sceptical_025th_1scaboteur_0rotation_penalisation.txt",
+            #####
+            # "24sceptical_3000th_1scaboteur_0rotation_nopenalisation.txt",
+            # "24sceptical_025th_1scaboteur_0rotation_nopenalisation.txt"
+            "24sceptical_3000th_1scaboteur_0rotation_penalisation.txt",
+            "24sceptical_025th_1scaboteur_0rotation_penalisation.txt"
             ]
-    data1=pd.read_csv(f"{data_folder}{compare}/{metric}/{filenames[0]}").apply(np.sum, axis=1)
-    data2=pd.read_csv(f"{data_folder}{compare}/{metric}/{filenames[1]}").apply(np.sum, axis=1)
+    data1=pd.read_csv(f"{data_folder}{compare+'/' if compare!='' else ''}{metric}/{filenames[0]}").apply(np.sum, axis=1)
+    data2=pd.read_csv(f"{data_folder}{compare+'/' if compare!='' else ''}{metric}/{filenames[1]}").apply(np.sum, axis=1)
     t_test=stats.ttest_ind(data1, data2, equal_var=False)
     print(f"t-test: {t_test.statistic},\n p-value: {t_test.pvalue}")
 
@@ -201,6 +207,7 @@ def myanovatest(
 #---------------------------------------PLOTTING-------------------------------------------------
 def myboxplots(
                 filenames=[],
+                # comparison_method="s",
                 data_folder="../data/",\
                 title="",\
                 compare="scaboteur_rotation",\
@@ -210,8 +217,13 @@ def myboxplots(
                 by=1
                 ):
     '''
-    :param filenames: list of filenames to compare, 
+    :param filenames: list of filenames to compare,
                     if empty all the files in the folder are fetched
+
+    TODO: if filenames is a list of lists, each sublist is a group of files to compare with different hue
+            should introduce a param to understand if must compare withing a group or between groups
+    :param comparison_method: "s" for single, "w" for within, "b" for between
+
     :param mode: "s" for standalone, "c" for cumulative, "r" for relative
     '''
     BASE_BOX_WIDTH=3
@@ -224,26 +236,13 @@ def myboxplots(
     fig, axs = plt.subplots(by, n_boxes, sharey=True)
     fig.set_size_inches(BASE_BOX_WIDTH*n_boxes,BASE_BOX_HEIGHT)
     # fig.supxlabel()
-    # axs.legend(filenames)#possibly it works only with subplots()
     sns.set_style("whitegrid")
     for idx,filename in enumerate(filenames):
         name_honest, n_honest,name_saboteur,n_saboteur,\
             skepticism, lie_angle,penalisation=get_file_config(filename)
         params=f"{n_honest} honests,\n{skepticism},\n {lie_angle},\n {penalisation}"
         axs[idx].set_xlabel(params)
-        # axs[col].set_title()
         filename=f"{data_folder}{compare}/{metric}/{filename}"
-
-        #TODO add honest and saboteur different graphs side by side
-        # honest_flat = pd.DataFrame(df_rel.iloc[:, :n_honest].to_numpy().flatten())
-        # bad_flat = pd.DataFrame(df_rel.iloc[:, -n_bad:].to_numpy().flatten())
-        # goods = pd.DataFrame(np.full(honest_flat.shape, honest_name))
-        # bads = pd.DataFrame(np.full(honest_flat.shape, bad_name))
-        # honest_flat = pd.concat([honest_flat, goods], axis=1)
-        # bad_flat = pd.concat([bad_flat, bads], axis=1)
-        # final_df = pd.concat([honest_flat, bad_flat])
-        # final_df.columns = [y_name, hue_name]
-
         match mode:
             case "r":
             #RELATIVE DATA
@@ -251,21 +250,21 @@ def myboxplots(
                 data=pd.read_csv(filename, header=None).to_numpy()
                 data=(100*data/np.sum(data,axis=1)[:,None]).flatten()
                 #TODO could use title functions inside plot calls
-                sns.boxplot(data=data,ax=axs[idx]).set(xticklabels=[],xticks=[]) 
+                sns.boxplot(data=data,ax=axs[idx]).set(xticklabels=[],xticks=[])
                 data_title=metric+ " (relative)"
                 axs[idx].yaxis.set_major_formatter(mtick.PercentFormatter())
             case "c":
             #CUMULATIVE DATA
                 data=pd.read_csv(filename, header=None)
                 datatot = data.apply(np.sum, axis=1)
-                sns.boxplot(data=datatot,ax=axs[idx]).set(xticklabels=[],xticks=[]) 
+                sns.boxplot(data=datatot,ax=axs[idx]).set(xticklabels=[],xticks=[])
                 # angle = 10 * (idx + 0)
                 # sns.boxplot(x=[angle for _ in batch_total], y=data, ax=axs[idx], linewidth=2)
                 data_title=metric+ " (cumulative)"
             case "s":
             #STANDALONE DATA
                 data=pd.read_csv(filename, header=None).values.flatten()
-                sns.boxplot(data=data.flatten(),ax=axs[idx]).set(xticklabels=[],xticks=[]) 
+                sns.boxplot(data=data.flatten(),ax=axs[idx]).set(xticklabels=[],xticks=[])
                 data_title=metric+ " (standalone)"
     sns.despine(fig, axs[idx], trim=False)#removes borders
     fig.supylabel(data_title.replace("_"," "))
@@ -273,6 +272,101 @@ def myboxplots(
     # title=title if title!="" else f"compare: {compare}\n{n_honest} {name_honest} vs {n_saboteur} {name_saboteur}".replace("_"," ")
     fig.suptitle(title,fontweight="bold")
     plt.ylim(bottom=0)
+    plt.show()
+
+
+
+def sidebyside_boxplots(
+                filenames=[],
+                # comparison_method="b",
+                data_folder="../data/old",\
+                title="",\
+                # metric="rewards",
+                metric="items_collected",
+                # mode="c",
+                by=1
+                ):
+    
+    BASE_BOX_WIDTH=3
+    BASE_BOX_HEIGHT=7
+    # if type(filenames[0])==list:
+    #24VS25 COMPARISON
+    # filenames=[[
+    #             "25sceptical_3000th_0scaboteur_0rotation_nopenalisation.txt",
+    #             "25sceptical_3000th_0scaboteur_0rotation_penalisation.txt",
+    #             "25sceptical_025th_0scaboteur_0rotation_nopenalisation.txt",
+    #             "25sceptical_025th_0scaboteur_0rotation_penalisation.txt"
+    #             ],[
+    #             "24sceptical_3000th_1scaboteur_0rotation_nopenalisation.txt",
+    #             "24sceptical_3000th_1scaboteur_0rotation_penalisation.txt",
+    #             "24sceptical_025th_1scaboteur_0rotation_nopenalisation.txt",
+    #             "24sceptical_025th_1scaboteur_0rotation_penalisation.txt"
+    #             ]]
+    # labels=["25","24"]
+    # ttestspv=np.round([0.9921241165035417,0.2257462531902903,0.9863819172024308,0.34887796226657275],4)
+    #PENALISATION VS NOT
+    # filenames=[[
+    #             "25sceptical_3000th_0scaboteur_0rotation_nopenalisation.txt",
+    #             "24sceptical_3000th_1scaboteur_0rotation_nopenalisation.txt",
+    #             "25sceptical_025th_0scaboteur_0rotation_nopenalisation.txt",
+    #             "24sceptical_025th_1scaboteur_0rotation_nopenalisation.txt"
+    #             ],[
+    #             "25sceptical_3000th_0scaboteur_0rotation_penalisation.txt",
+    #             "24sceptical_3000th_1scaboteur_0rotation_penalisation.txt",
+    #             "25sceptical_025th_0scaboteur_0rotation_penalisation.txt",
+    #             "24sceptical_025th_1scaboteur_0rotation_penalisation.txt"
+    #             ]]
+    # labels=["no penalisation","penalisation"]
+    # ttestspv=np.round([0.0,0.0,0.0,0.0],4)
+    #NAIVE VS SCEPTICAL
+    filenames=[[
+                "24sceptical_3000th_1scaboteur_0rotation_nopenalisation.txt",
+                "24sceptical_3000th_1scaboteur_0rotation_penalisation.txt"
+                ],[
+                "24sceptical_025th_1scaboteur_0rotation_nopenalisation.txt",
+                "24sceptical_025th_1scaboteur_0rotation_penalisation.txt"
+                ]]
+    labels=["naive","threshold 0.25"]
+    ttestspv=np.round([0.0,0.0],4)
+    #TODO auto generate comparison by sublists in filenames, and test of lenght
+    #       of labels, in loops
+    filenames1=filenames[0]
+    filenames2=filenames[1]
+    n_boxes=len(filenames1)// by
+    sns.set_style("whitegrid")
+    fig, axs = plt.subplots(by, n_boxes, sharey=True)
+    fig.set_size_inches(BASE_BOX_WIDTH*n_boxes,BASE_BOX_HEIGHT+1)
+    fig.suptitle(title)
+    for idx,(filename1,filename2) in enumerate(zip(filenames1,filenames2)):
+        list1=pd.read_csv(f"{data_folder}/{metric}/{filename1}", header=None).apply(np.sum, axis=1)
+        list2=pd.read_csv(f"{data_folder}/{metric}/{filename2}", header=None).apply(np.sum, axis=1)
+        #SHORTER VERSION, BUT HOW CAN I ADD LABELS WITHOUT EXPLICITLY PASSING FIELD NAME?
+        # list1 = pd.DataFrame(list1).assign(n_agents=labels[0])#do i need list1.to_numpy().flatten()?
+        # list2 = pd.DataFrame(list2).assign(n_agents=labels[1])#<- how to remove n_agents=?
+        # data=pd.concat([list1,list2])
+        #should melt be used? data_final=pd.melt(data_final, id_vars=, value_vars=)
+        list1_flat = pd.DataFrame(list1.to_numpy().flatten())
+        list2_flat = pd.DataFrame(list2.to_numpy().flatten())
+        list1= pd.DataFrame(np.full(list1_flat.shape, labels[0]))
+        list2= pd.DataFrame(np.full(list2_flat.shape, labels[1]))
+        list1_flat = pd.concat([list1_flat, list1], axis=1)
+        list2_flat = pd.concat([list2_flat, list2], axis=1)
+        data = pd.concat([list1_flat, list2_flat])
+        data.columns = ["items collected", "scepticism"]
+        if idx==0:
+            sns.boxplot(data=data,y=data.columns[0],x='scepticism',hue='scepticism',linewidth=1, dodge=False, ax=axs[idx]).set(
+                 xlabel=None,ylabel=None,xticklabels=[],xticks=[])
+            axs[idx].set_ylabel("totat items collected")
+        else:
+            sns.boxplot(data=data,y=data.columns[0],x='scepticism',linewidth=1, dodge=False, ax=axs[idx]).set(
+                xlabel=None, ylabel=None,xticklabels=[],xticks=[])
+        _, _ ,_,_,_, lie_angle,_=get_file_config(filename1)
+        params=f"{lie_angle},\nT-test (threshold=0.05)\np-value: {ttestspv[idx]}"
+        axs[idx].set_xlabel(params)
+    sns.despine(fig, axs[idx], trim=False)
+    fig.suptitle("TOTAL ITEMS COLLECTED, COMPARISON ON SCEPTICISM\n"
+                "EXPERIMENTS WITH SIMILAR PARAMETERS.\nCORRELATION TEST FOR THE PAIRS",fontweight="bold")
+    # plt.ylim(bottom=0)
     plt.show()
 
 
@@ -1350,6 +1444,7 @@ if __name__ == '__main__':
     #             data_folder=DATA_DIR,
     #             metric=metric,
     #             mode=mode)
-    # myttest()
+    # myttest(data_folder="../data/old/",compare="")
     # myanovatest()
+    sidebyside_boxplots()
     pass

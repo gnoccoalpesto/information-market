@@ -1,13 +1,12 @@
 import time
-
 import pandas as pd
-
-from controllers.main_controller import MainController, Configuration
-from controllers.view_controller import ViewController
 from multiprocessing import Pool
 from pathlib import Path
 from os.path import join
 from sys import argv
+
+from controllers.main_controller import MainController, Configuration
+from controllers.view_controller import ViewController
 
 
 def main():

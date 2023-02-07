@@ -11,7 +11,7 @@
     "y": 300,
     "radius": 50
   },
-  "simulation_steps": 15000,
+  "simulation_steps": 1000,
   "number_runs": 128,
   "visualization": {
     "activate": false,
@@ -79,8 +79,8 @@
   "data_collection": {
     "output_directory": "../data/stattest/",
     "filename": "24sceptical_025th_1scaboteur_0rotation_penalisation.csv",
-    "metrics": ["rewards", "items_collected"],
-    "precision_recording": false,
+    "metrics": ["rewards_evolution"],
+    "precision_recording": true,
     "precision_recording_interval": 100
   }
 }
