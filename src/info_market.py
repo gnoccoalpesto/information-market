@@ -83,6 +83,15 @@ def record_data(config:Configuration, controllers):
                     dataframes.append(df)
                 Path(join(output_directory, "rewards_evolution")).mkdir(parents=True, exist_ok=True)
                 pd.concat(dataframes).to_csv(join(output_directory, "rewards_evolution", filename))
+            case "items_evolution":
+                dataframes = []
+                for i, controller in enumerate(controllers):
+                    df = pd.DataFrame(controller.get_items_evolution_list(), columns=["tick", "items_list"])
+                    df["simulation_id"] = i
+                    df = df.set_index("simulation_id")
+                    dataframes.append(df)
+                Path(join(output_directory, "items_evolution")).mkdir(parents=True, exist_ok=True)
+                pd.concat(dataframes).to_csv(join(output_directory, "items_evolution", filename))
             case _:
                 print(f"[WARNING] Could not record metric: '{metric}'. Metric name is not valid.")
 

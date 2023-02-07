@@ -105,4 +105,9 @@ During a simulation with GUI (`activate` : true in the configuration file), you 
 You can also use your keyboard to control the course of the simulation:
 - `SPACE`: pause/resume simulation;
 - `N`: perform one step of the simulation (useful when paused);
-- TBC
+- `0`: cycles selection between robots with id in the range 0-9;
+- `1`: cycles selection between robots with id in the range 10-19;
+- `2`: cycles selection between robots with id in the range 20-MAX_ID_ROBOT;
+- `+`: selects the robot with +1 id with respect to the current selection;
+- `-`: selects the robot with -1 id with respect to the current selection;
+- `c`: selects back the robot in the +/- keys counter;

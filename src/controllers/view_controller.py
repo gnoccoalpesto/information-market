@@ -32,6 +32,8 @@ class ViewController:
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.paused = False
         self.can_render = False
+        #TODO dynamic counter len based on number of robots
+        self.selection_counters=[-1,-1,-1,-1]
         self.create_bindings()
 
         self.last_frame_time = time.time()
@@ -77,12 +79,25 @@ class ViewController:
                                              self.selected_robot.pos[1] - self.selected_robot._radius,
                                              self.selected_robot.pos[0] + self.selected_robot._radius,
                                              self.selected_robot.pos[1] + self.selected_robot._radius,
-                                             outline="red", width=3)
+                                             outline="magenta",
+                                             width=3)
 
     def create_bindings(self):
+        #simulation
         self.root.bind("<space>", self.switch_animating_state)
-        self.root.bind("<Button-1>", self.select_robot)
         self.root.bind("<n>", lambda event: self.controller.step())
+        #robot selection
+        self.root.bind("<Button-1>", self.select_robot)
+        self.root.bind("0", lambda event:self.shift_robot_counter(0))
+        self.root.bind("1", lambda event:self.shift_robot_counter(1))
+        self.root.bind("2", lambda event:self.shift_robot_counter(2))
+        self.root.bind("c", lambda event:self.shift_robot_counter("c"))
+        self.root.bind("+", lambda event:self.shift_robot_counter("+"))
+        # self.root.bind("Up", lambda event:self.shift_robot_counter("+"))
+        self.root.bind("-", lambda event:self.shift_robot_counter("-"))
+        # self.root.bind("Down", lambda event:self.shift_robot_counter("-"))
+        # self.root.bind("Left", lambda event:self.shift_robot_counter("-"))
+        #TODO add previus robot selection
 
     def on_closing(self):
         self.animation_ended = True
@@ -91,7 +106,38 @@ class ViewController:
         self.paused = not self.paused
 
     def select_robot(self, event):
+        #TODO can i understand if an event has no x,y (eg keypress)?
+        #    to integrate id part
         self.selected_robot = self.controller.get_robot_at(event.x, event.y)
+
+    def shift_robot_counter(self, counter):
+        """
+        if 0 is passed it shift the counter of robots with id 0-9
+        if 1 is passed it shift the counter of robots with id 10-19
+        if 2 is passed it shift the counter of robots with id 20-29
+        if + is passed it shift the counter of +1
+        if - is passed it shift the counter of -1
+        if c is passed it keeps the counter of the last selected robot
+        """
+        #TODO test if resetting the counters when another one is selected is better
+        match counter:
+            case 0:
+                counter = self.selection_counters[0] = (self.selection_counters[0] + 1) % 10
+            case 1:
+                counter=self.selection_counters[1] = (self.selection_counters[1] + 1) % 10 +10
+            case 2:
+                #TODO dynamic range
+                counter=self.selection_counters[2] = (self.selection_counters[2] + 1) % (25-20) +20
+            case "+":
+                counter=self.selection_counters[-1]=(self.selection_counters[-1] + 1) % 25
+            case "-":
+                counter=self.selection_counters[-1]=(self.selection_counters[-1] - 1) % 25
+            case "c":
+                counter=self.selection_counters[-1]
+        self.selected_robot = self.controller.get_robot_by_id(counter)
+
+    def select_robot_by_id(self, id):
+        self.selected_robot = self.controller.get_robot_by_id(id)
 
     def display_selected_info(self):
         self.debug_canvas.delete(self.debug_text)

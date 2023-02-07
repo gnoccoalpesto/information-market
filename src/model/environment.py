@@ -31,6 +31,19 @@ class Environment:
     def load_images(self):
         self.img = ImageTk.PhotoImage(file="../assets/strawberry.png")
 
+    def create_robots(self, agent_params, behavior_params):
+        robot_id = 0
+        for behavior_params in behavior_params:
+            for _ in range(behavior_params['population_size']):
+                robot = Agent(robot_id=robot_id,
+                              x=randint(agent_params['radius'], self.width - 1 - agent_params['radius']),
+                              y=randint(agent_params['radius'], self.height - 1 - agent_params['radius']),
+                              environment=self,
+                              behavior_params=behavior_params,
+                              **agent_params)
+                robot_id += 1
+                self.population.append(robot)
+
     def step(self):
         # compute neighbors
         self.timestep += 1
@@ -53,19 +66,6 @@ class Environment:
             robot.step()
 
         self.market.step()
-
-    def create_robots(self, agent_params, behavior_params):
-        robot_id = 0
-        for behavior_params in behavior_params:
-            for _ in range(behavior_params['population_size']):
-                robot = Agent(robot_id=robot_id,
-                              x=randint(agent_params['radius'], self.width - 1 - agent_params['radius']),
-                              y=randint(agent_params['radius'], self.height - 1 - agent_params['radius']),
-                              environment=self,
-                              behavior_params=behavior_params,
-                              **agent_params)
-                robot_id += 1
-                self.population.append(robot)
 
     def get_sensors(self, robot):
         orientation = robot.orientation
@@ -175,7 +175,14 @@ class Environment:
             if norm(bot.pos - np.array([x, y]).astype('float64')) < bot.radius():
                 selected = bot
                 break
+        return selected
 
+    def get_robot_by_id(self, id):
+        selected = None
+        for bot in self.population:
+            if bot.id == id:
+                selected = bot
+                break
         return selected
 
     @staticmethod

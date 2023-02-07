@@ -1,5 +1,4 @@
 import json
-
 from helpers import random_walk
 
 from model.environment import Environment
@@ -45,12 +44,16 @@ class MainController:
         self.tick = 0
         self.rewards_evolution = ""
         self.rewards_evolution_list = []
+        self.items_evolution = ""
+        self.items_evolution_list = []
 
     def step(self):
         if self.config.value_of("data_collection")['precision_recording'] and \
                 self.tick % self.config.value_of("data_collection")['precision_recording_interval'] == 0:
             self.rewards_evolution += f"{self.tick},{self.get_reward_stats()}"
             self.rewards_evolution_list.append([self.tick, self.get_rewards()])
+            self.items_evolution += f"{self.tick},{self.get_items_collected_stats()}"
+            self.items_evolution_list.append([self.tick, self.get_items_collected()])
         if self.tick < self.config.value_of("simulation_steps"):
             self.tick += 1
             self.environment.step()
@@ -104,8 +107,14 @@ class MainController:
     def get_robot_at(self, x, y):
         return self.environment.get_robot_at(x, y)
 
+    def get_robot_by_id(self, id):
+        return self.environment.get_robot_by_id(id)
+
     def get_rewards_evolution(self):
         return self.rewards_evolution
 
     def get_rewards_evolution_list(self):
         return self.rewards_evolution_list
+
+    def get_items_evolution_list(self):
+        return self.items_evolution_list
