@@ -80,7 +80,6 @@
     "output_directory": "../data/stattest/",
     "filename": "24sceptical_3000th_1scaboteur_0rotation_nopenalisation.csv",
     "metrics": ["rewards", "items_collected"],
-    "precision_recording": false,
-    "precision_recording_interval": 100
+    "precise_recording_interval": 100
   }
 }

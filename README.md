@@ -69,11 +69,11 @@ A simulation's parameters are defined in a json configuration file (such as `con
   - parameters: market-specific parameters
     - reward: reward for selling a strawberry at the nest
 - data_collection: parameters for data collection
-  - output_directory: output directory path
-  - filename: output data filename. File will be saved to <output_directory>/<metric>/filename for all metrics in metrics parameter.
-  - metrics: list of metrics to record (can be "reward", "items_collected", "drifts" or "rewards_evolution").
-  - precision_recording: whether to enable precision recording to save robot rewards at multiple points during the simulation. Need to add "rewards_evolution" in metrics list for the recording to be saved to a file.
-  - precision_recording_interval: resolution (in number of time steps) for the precision recording
+  - output_directory: output directory path.
+  - filename: output data filename. File will be saved to <output_directory>/<metric>/<filename> for all metrics in metrics parameter. If empty, an automatic title will be generated in this way:<br />
+   "{N_naives+N_scepticals}scepticals_{3000 if N_naive>0 and N_scepticals==0 else Thresh_scepticals}th_{N_saboteurs+N_scaboteurs}scaboteurs_{lie_angle}rotation_<br />{'no' if no_penalisation else ''}penalisation.csv".
+  - metrics: list of metrics to record.<br />Accepted metrics: "rewards", "items_collected", "drifts" "items_evolution" or "rewards_evolution").<br />When "rewards_evolution" or "items_evolutions" are included in the metrics, `Precise recording` mode is activated and the specified data will be saved at multiple time steps during the simulation.
+  - precise_recording_interval: resolution (in number of time steps) for the `Precise recording`.
 
 ## Behaviors
 

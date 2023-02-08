@@ -80,7 +80,6 @@
     "output_directory": "../data/test/",
     "filename": "TEST24sceptical_1scaboteur_r90_outlierpenalisation.csv",
     "metrics": ["items_evolution"],
-    "precision_recording": true,
-    "precision_recording_interval": 100
+    "precise_recording_interval": 100
   }
 }

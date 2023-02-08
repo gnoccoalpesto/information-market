@@ -11,8 +11,8 @@
     "y": 300,
     "radius": 50
   },
-  "simulation_steps": 1000,
-  "number_runs": 128,
+  "simulation_steps": 150,
+  "number_runs": 200,
   "visualization": {
     "activate": false,
     "fps": 60
@@ -77,10 +77,9 @@
     }
   },
   "data_collection": {
-    "output_directory": "../data/stattest/",
-    "filename": "24sceptical_025th_1scaboteur_0rotation_penalisation.csv",
-    "metrics": ["rewards_evolution"],
-    "precision_recording": true,
-    "precision_recording_interval": 100
+    "output_directory": "../data/gap/",
+    "filename": "prova.csv",
+    "metrics": ["items_evolution","rewards_evolution"],
+    "precise_recording_interval": 100
   }
 }

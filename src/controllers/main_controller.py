@@ -48,18 +48,19 @@ class MainController:
         self.items_evolution_list = []
 
     def step(self):
-        if self.config.value_of("data_collection")['precision_recording'] and \
-                self.tick % self.config.value_of("data_collection")['precision_recording_interval'] == 0:
-            self.rewards_evolution += f"{self.tick},{self.get_reward_stats()}"
-            self.rewards_evolution_list.append([self.tick, self.get_rewards()])
-            self.items_evolution += f"{self.tick},{self.get_items_collected_stats()}"
-            self.items_evolution_list.append([self.tick, self.get_items_collected()])
+        if self.tick % self.config.value_of("data_collection")['precise_recording_interval'] == 0:
+            if "rewards_evolution" in self.config.value_of("data_collection")["metrics"]:
+                self.rewards_evolution += f"{self.tick},{self.get_reward_stats()}"
+                self.rewards_evolution_list.append([self.tick, self.get_rewards()])
+            if "items_evolution" in self.config.value_of("data_collection")["metrics"]:
+                self.items_evolution += f"{self.tick},{self.get_items_collected_stats()}"
+                self.items_evolution_list.append([self.tick, self.get_items_collected()])
         if self.tick < self.config.value_of("simulation_steps"):
             self.tick += 1
             self.environment.step()
 
     def start_simulation(self):
-        for step_nb in range(self.config.value_of("simulation_steps")):
+        for _ in range(self.config.value_of("simulation_steps")):
             self.step()
 
     def get_sorted_reward_stats(self):
