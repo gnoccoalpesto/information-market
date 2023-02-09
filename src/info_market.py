@@ -36,9 +36,6 @@ def run_processes(config: Configuration):
 def record_data(config:Configuration, controllers):
     output_directory = config.value_of("data_collection")["output_directory"]
     filename = config.value_of("data_collection")["filename"]
-    '''
-    TODO suggested modification: use the config file to define the filename
-    '''
     if filename is None or filename == "":
         n_naive=config.value_of("behaviors")[0]['population_size']
         n_sceptical=config.value_of("behaviors")[1]['population_size']
@@ -74,6 +71,7 @@ def record_data(config:Configuration, controllers):
                 drifts_df = pd.DataFrame([controller.get_drifts() for controller in controllers])
                 Path(join(output_directory, "drifts")).mkdir(parents=True, exist_ok=True)
                 drifts_df.to_csv(join(output_directory, "drifts", filename), index=False, header=False)
+            #TODO append instead of rewriting
             case "rewards_evolution":
                 dataframes = []
                 for i, controller in enumerate(controllers):

@@ -203,6 +203,7 @@ def myanovatest(
     anova_test=stats.f_oneway(data1, data2)
     print(f"F-statistic: {anova_test.statistic},\np-value: {anova_test.pvalue}\n")
 
+
 #------------------------------------------------------------------------------------------------
 #---------------------------------------PLOTTING-------------------------------------------------
 def myboxplots(
@@ -275,7 +276,6 @@ def myboxplots(
     plt.show()
 
 
-
 def sidebyside_boxplots(
                 filenames=[],
                 # comparison_method="b",
@@ -286,7 +286,6 @@ def sidebyside_boxplots(
                 # mode="c",
                 by=1
                 ):
-    
     BASE_BOX_WIDTH=3
     BASE_BOX_HEIGHT=7
     # if type(filenames[0])==list:
@@ -367,6 +366,115 @@ def sidebyside_boxplots(
     fig.suptitle("TOTAL ITEMS COLLECTED, COMPARISON ON SCEPTICISM\n"
                 "EXPERIMENTS WITH SIMILAR PARAMETERS.\nCORRELATION TEST FOR THE PAIRS",fontweight="bold")
     # plt.ylim(bottom=0)
+    plt.show()
+
+
+def plot_evolution( filename=[],
+                    data_folder="../data/gap",
+                    metric="rewards_evolution",
+                    title="",
+                    compare=""
+                    ):
+    """
+    plot evolution of metric during simulation steps
+    params:
+        filename: list of filenames to plot
+        data_folder: folder where to find data
+        metric: metric to plot
+        title: title of plot
+        compare: comparison method, could be
+            - "a": plot all experiments with similar configuration.
+                    In this case a single filename is expected;
+            - "pN": plot 2 experiments with same seed, but different
+                    penalisation method. In this case 2 filenames are expected,
+                    as well as N the number of the experiment to compare (e.g p1);
+
+            NOT WORKING YET
+            - "b": different method for comparing all experiments with similar
+                    configuration. In this case a single filename is expected;
+    """
+    if "a" in compare:
+        filename_pen="24sceptical_025th_1scaboteur_0rotation_penalisation.csv"
+        pen_df=pd.read_csv(f"{data_folder}/{metric}/{filename_pen}", header=None)
+        labels=[_ for _ in pen_df.iloc[0]]
+        pen_df=pen_df.iloc[1:]
+        pen_df.columns=labels
+        selected_runs=pen_df[labels[0]].unique()
+        run_data=[]
+        for run in selected_runs:
+            run_pen_data=[]
+            run_pen_df=pen_df.loc[lambda df: df[labels[0]] == run]
+            steps=run_pen_df[labels[1]].unique()
+            for step in steps:
+                step_df=run_pen_df.loc[lambda df: df[labels[1]] == step].iloc[:,-1]
+                step_df=np.asarray([float(_) for _ in step_df.values[0][1:-1].split(", ")])
+                run_pen_data.append(np.sum(step_df))
+            run_data.append(run_pen_data)        
+        data_df=pd.DataFrame(data=np.array(run_data),
+                            columns=steps,
+                            index=selected_runs)
+        data_df=data_df.transpose()
+        data_df.index.name=labels[1]
+        data_df.columns.name=labels[0]
+        sns.lineplot(data=data_df)
+        #TODO vertical ticks on x axis
+
+    # elif "b" in compare: #WHAT IS THIS DOIN?
+    #     filename_pen="24sceptical_025th_1scaboteur_0rotation_nopenalisation.csv"
+    #     pen_df=pd.read_csv(f"{data_folder}/{metric}/{filename_pen}", header=None)
+    #     labels=[_ for _ in pen_df.iloc[0]]
+    #     pen_df=pen_df.iloc[1:]
+    #     pen_df.columns=labels
+    #     selected_runs=pen_df[labels[0]].unique()
+    #     run_data=[]
+    #     run_x=[]
+    #     run_labels=[]
+    #     for run in selected_runs:
+    #         run_pen_data=[]
+    #         run_pen_df=pen_df.loc[lambda df: df[labels[0]] == run]
+    #         steps=run_pen_df[labels[1]].unique()
+    #         for step in steps:
+    #             step_df=run_pen_df.loc[lambda df: df[labels[1]] == step].iloc[:,-1]
+    #             step_df=np.asarray([float(_) for _ in step_df.values[0][1:-1].split(", ")])
+    #             run_pen_data.append(np.sum(step_df))
+    #         run_data=np.concatenate([run_data,run_pen_data])#,run_nopen_data])
+    #         run_x=np.concatenate([run_x,np.asarray([int(_) for _ in steps])])
+    #         run_labels=run_labels+['pen' for _ in run_pen_data]#+['nopen' for _ in run_nopen_data]
+    #     sns.lineplot(x=run_x,y=run_data,hue=run_labels)
+    
+    elif "p" in compare:
+        filename_pen="24sceptical_025th_1scaboteur_0rotation_penalisation.csv"
+        filename_nopen="24sceptical_025th_1scaboteur_0rotation_nopenalisation.csv"
+        pen_df=pd.read_csv(f"{data_folder}/{metric}/{filename_pen}", header=None)
+        nopen_df=pd.read_csv(f"{data_folder}/{metric}/{filename_nopen}", header=None)
+        labels=[_ for _ in pen_df.iloc[0]]
+        pen_df=pen_df.iloc[1:]
+        nopen_df=nopen_df.iloc[1:]
+        pen_df.columns=labels
+        nopen_df.columns=labels
+        # pen_df.set_index(labels[0],labels[1],inplace=True)#cannot set multi index to call it
+        #                                                 #directly with loc, without lambda
+        selected_runs=re.search(r"p(\d+)",compare).group(1)
+        run_data=[]
+        for run in selected_runs:
+            run_pen_data=[]
+            run_pen_df=pen_df.loc[lambda df: df[labels[0]] == run]
+            run_nopen_data=[]
+            run_nopen_df=nopen_df.loc[lambda df: df[labels[0]] == run]
+            steps=run_pen_df[labels[1]].unique()
+            for step in steps:
+                step_df=run_pen_df.loc[lambda df: df[labels[1]] == step].iloc[:,-1]
+                step_df=np.asarray([float(_) for _ in step_df.values[0][1:-1].split(", ")])
+                run_pen_data.append(np.sum(step_df))
+                step_df=run_nopen_df.loc[lambda df: df[labels[1]] == step].iloc[:,-1]
+                step_df=np.asarray([float(_) for _ in step_df.values[0][1:-1].split(", ")])
+                run_nopen_data.append(np.sum(step_df))
+        #COMPARE PEN/NOPEN
+            run_data=np.concatenate([run_pen_data,run_nopen_data])
+            run_x=np.asarray([int(_) for _ in steps])
+            run_x=np.concatenate([run_x,run_x])
+            run_labels=['pen' for _ in run_pen_data]+['nopen' for _ in run_nopen_data]
+        sns.lineplot(x=run_x,y=run_data,hue=run_labels)
     plt.show()
 
 
@@ -1446,5 +1554,6 @@ if __name__ == '__main__':
     #             mode=mode)
     # myttest(data_folder="../data/old/",compare="")
     # myanovatest()
-    sidebyside_boxplots()
+    # sidebyside_boxplots()
+    plot_evolution(compare="b")
     pass

@@ -11,8 +11,8 @@
     "y": 300,
     "radius": 50
   },
-  "simulation_steps": 150,
-  "number_runs": 200,
+  "simulation_steps": 15000,
+  "number_runs": 250,
   "visualization": {
     "activate": false,
     "fps": 60
@@ -78,7 +78,7 @@
   },
   "data_collection": {
     "output_directory": "../data/gap/",
-    "filename": "prova.csv",
+    "filename": "",
     "metrics": ["items_evolution","rewards_evolution"],
     "precise_recording_interval": 100
   }
