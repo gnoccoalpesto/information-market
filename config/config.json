@@ -11,8 +11,9 @@
     "y": 300,
     "radius": 50
   },
-  "simulation_steps": 15000,
-  "number_runs": 128,
+  "simulation_steps": 15,
+  "number_runs": 100,
+  "simulation_seed":"",
   "visualization": {
     "activate": false,
     "fps": 60
@@ -78,8 +79,8 @@
   },
   "data_collection": {
     "output_directory": "../data/test/",
-    "filename": "TEST24sceptical_1scaboteur_r90_outlierpenalisation.csv",
-    "metrics": ["items_evolution"],
+    "filename": "test1pen.csv",
+    "metrics": ["items_evolution","rewards_evolution"],
     "precise_recording_interval": 100
   }
 }

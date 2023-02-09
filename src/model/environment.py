@@ -4,15 +4,37 @@ from model.agent import Agent
 from model.market import market_factory
 from model.navigation import Location
 from helpers.utils import norm, distance_between
-from random import randint, random
+from random import randint, random, seed as random_seed
 import numpy as np
 
 from model.payment import PaymentDB
 
 
+def my_random_seed(seed,n):
+    """
+    applies the random.seed using input, when seed is not None
+    """
+    if seed!="" and seed!="random" and seed is not None:
+        random_seed(seed+n)
+
+
 class Environment:
 
-    def __init__(self, width, height, agent_params, behavior_params, food, nest, payment_system_params, market_params):
+    def __init__(self,
+                 width,
+                 height, 
+                 agent_params, 
+                 behavior_params, 
+                 food, 
+                 nest, 
+                 payment_system_params, 
+                 market_params,
+                 simulation_seed=None
+                 ):
+        self.SIMULATION_SEED = simulation_seed
+        #BUG random seed is not set to none
+        # self.SIMULATION_SEED = simulation_seed \
+        #     if simulation_seed!="" or simulation_seed!='random' else None
         self.population = list()
         self.width = width
         self.height = height
@@ -35,9 +57,14 @@ class Environment:
         robot_id = 0
         for behavior_params in behavior_params:
             for _ in range(behavior_params['population_size']):
+                my_random_seed(self.SIMULATION_SEED,robot_id)
+                robot_x=randint(agent_params['radius'], self.width - 1 - agent_params['radius'])
+                my_random_seed(self.SIMULATION_SEED,(robot_id+1)*robot_id)
+                robot_y=randint(agent_params['radius'], self.height - 1 - agent_params['radius'])
+                
                 robot = Agent(robot_id=robot_id,
-                              x=randint(agent_params['radius'], self.width - 1 - agent_params['radius']),
-                              y=randint(agent_params['radius'], self.height - 1 - agent_params['radius']),
+                              x=robot_x,
+                              y=robot_y,
                               environment=self,
                               behavior_params=behavior_params,
                               **agent_params)
@@ -87,7 +114,7 @@ class Environment:
                    }
         return sensors
 
-    def check_border_collision(self, robot, new_x, new_y):
+    def check_border_collision(self, robot:Agent, new_x, new_y):
         collide_x = False
         collide_y = False
         if new_x + robot._radius >= self.width or new_x - robot._radius < 0:
@@ -98,16 +125,16 @@ class Environment:
 
         return collide_x, collide_y
 
-    def senses(self, robot, location):
+    def senses(self, robot:Agent, location:Location):
         dist_vector = robot.pos - np.array([self.locations[location][0], self.locations[location][1]])
         dist_from_center = np.sqrt(dist_vector.dot(dist_vector))
         return dist_from_center < self.locations[location][2]
 
-    def is_on_top_of_spawn(self, robot, location):
+    def is_on_top_of_spawn(self, robot:Agent, location:Location):
         dist_vector = robot.pos - self.foraging_spawns[location].get(robot.id)
         return np.sqrt(dist_vector.dot(dist_vector)) < robot._radius
 
-    def get_location(self, location, agent):
+    def get_location(self, location:Location, agent:Agent):
         if agent.id in self.foraging_spawns[location]:
             return self.foraging_spawns[location][agent.id]
         else:
@@ -192,7 +219,7 @@ class Environment:
             d[location] = dict()
         return d
 
-    def check_locations(self, robot):
+    def check_locations(self, robot:Agent):
         if robot.carries_food():
             if self.senses(robot, Location.NEST):
                 # Spawn deposit location if needed
@@ -210,13 +237,16 @@ class Environment:
                 if self.is_on_top_of_spawn(robot, Location.FOOD):
                     self.pickup_food(robot)
 
-    def add_spawn(self, location, robot):
-        rand_angle, rand_rad = random() * 360, np.sqrt(random()) * self.locations[location][2]
+    def add_spawn(self, location:Location, robot:Agent):
+        my_random_seed(self.SIMULATION_SEED,robot.id*(1+robot.id)**2)
+        rand_angle = random() * 360
+        my_random_seed(self.SIMULATION_SEED,robot.id*(1+robot.id)**3)
+        rand_rad = np.sqrt(random()) * self.locations[location][2]
         pos_in_circle = rand_rad * np.array([cos(radians(rand_angle)), sin(radians(rand_angle))])
         self.foraging_spawns[location][robot.id] = np.array([self.locations[location][0],
                                                              self.locations[location][1]]) + pos_in_circle
 
-    def deposit_food(self, robot):
+    def deposit_food(self, robot:Agent):
         robot.drop_food()
         self.foraging_spawns[Location.NEST].pop(robot.id)
 

@@ -40,6 +40,10 @@ A simulation's parameters are defined in a json configuration file (such as `con
 - nest: nest area's position and radius
 - simulation_steps: simulation duration (number or time steps)
 - number_runs: number of parallel simulation runs (only applicable when visualization is turned off)
+- simulation_seed: the base seed for the simulation. Accepted values are:
+  - an integer, or a string (seeder activated)
+  - empty string ("") or keyword "random" (seeder deactivated)<br />
+For more informations, refer to the [Randomization](#randomization) section.
 - visualization: parameters related to the visualization
   - activate: whether to activate the simulation GUI
   - fps: maximum framerate of the simulation
@@ -71,8 +75,9 @@ A simulation's parameters are defined in a json configuration file (such as `con
 - data_collection: parameters for data collection
   - output_directory: output directory path.
   - filename: output data filename. File will be saved to <output_directory>/<metric>/<filename> for all metrics in metrics parameter. If empty, an automatic title will be generated in this way:<br />
-   "{N_naives+N_scepticals}scepticals_{3000 if N_naive>0 and N_scepticals==0 else Thresh_scepticals}th_{N_saboteurs+N_scaboteurs}scaboteurs_{lie_angle}rotation_<br />{'no' if no_penalisation else ''}penalisation.csv".
-  - metrics: list of metrics to record.<br />Accepted metrics: "rewards", "items_collected", "drifts" "items_evolution" or "rewards_evolution").<br />When "rewards_evolution" or "items_evolutions" are included in the metrics, `Precise recording` mode is activated and the specified data will be saved at multiple time steps during the simulation.
+   "{N_naives+N_scepticals}scepticals_{3000 if N_naive>0 and N_scepticals==0 else Thresh_scepticals}th_{N_saboteurs+N_scaboteurs}scaboteurs_{lie_angle}rotation_<br />{'no' if no_penalisation else ''}penalisation_{SEED if SEED!="" or "random" else "random"}Seed.csv".
+  - metrics: list of metrics to record.<br />
+  Accepted metrics: "rewards", "items_collected", "drifts" "items_evolution" or "rewards_evolution").<br />When "rewards_evolution" or "items_evolutions" are included in the metrics, `Precise recording` mode is activated and the specified data will be saved at multiple time steps during the simulation.
   - precise_recording_interval: resolution (in number of time steps) for the `Precise recording`.
 
 ## Behaviors
@@ -97,6 +102,11 @@ Payment systems implement the logic responsible for controlling the price of inf
 
 - `DelayedPaymentPaymentSystem`: information is exchanged for a token that is redeemed for a fixed share of the reward the buying robot receives when it completes a round trip.
 - `OutlierPenalisationPaymentSystem`: similar to the DelayedPaymentPayment system, but the share of the reward is proportional to how similar the information sold is to other information that was sold to the buying robot.
+
+## Randomization
+
+Seeding the random number generator is useful when repeating experiments is needed.<br />
+If empty string ("") or "random" is passed in the configuration, the simulation utilizes a different seed for each time a random function is called.<br /> Otherwise, the passed seed is used as base, increased by the number of the run; moreover, each agent uses a exponential series to generate different numbers in each of its methods. 
 
 ## Visual Simulation and Hotkeys
 

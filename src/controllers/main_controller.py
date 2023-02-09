@@ -39,7 +39,8 @@ class MainController:
                                        food=self.config.value_of("food"),
                                        nest=self.config.value_of("nest"),
                                        payment_system_params=config.value_of("payment_system"),
-                                       market_params=config.value_of("market")
+                                       market_params=config.value_of("market"),
+                                       simulation_seed=config.value_of("simulation_seed"),
                                        )
         self.tick = 0
         self.rewards_evolution = ""
