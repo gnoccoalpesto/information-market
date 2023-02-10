@@ -4,9 +4,20 @@ from multiprocessing import Pool
 from pathlib import Path
 from os.path import join, exists
 from sys import argv
-
 from controllers.main_controller import MainController, Configuration
 from controllers.view_controller import ViewController
+
+
+#TODO
+#import argparse
+# def parse_args():
+#     parser = argparse.ArgumentParser()
+#     parser.add_argument('-s', '--standalone',action='store_true',
+#                     help='considers metric for single robot')
+#     args=parser.parse_args()
+#     if args.standalone:
+#         mode="s"
+#     return mode
 
 
 def main():
@@ -39,11 +50,12 @@ def run_processes(config: Configuration):
 
 
 def run(config:Configuration, i):
-    print(f"launched process {i+1}")
+    print(f"launched process {i+1}",end="")
     simulation_seed = config.value_of("simulation_seed")
     if simulation_seed!='' and simulation_seed!='random':
         config.set("simulation_seed", simulation_seed+i)
-        print(f"setting simulation seed to {simulation_seed+i}")
+        print(f", setting run seed to {simulation_seed+i}")
+    else: print("")#newline
     controller = MainController(config)
     controller.start_simulation()
     return controller
@@ -65,7 +77,6 @@ def record_data(config:Configuration, controllers):
         text_th_honest=str(th_honest).replace(".","").replace(",","")#eg 0.5 -> 05
         lie_angle = config.value_of("behaviors")[3]['parameters']['rotation_angle'] if n_scaboteur >0 \
             else config.value_of("behaviors")[2]['parameters']['rotation_angle']
-        lie_angle  
         penalization="no" if config.value_of("payment_system")["class"]=="DelayedPaymentPaymentSystem" else ""
         seed=config.value_of("simulation_seed")
         text_seed=f"{seed if seed!='' else 'random'}"
@@ -76,6 +87,7 @@ def record_data(config:Configuration, controllers):
             f"{penalization}penalisation_"+\
             f"{text_seed}Seed.csv"
     for metric in config.value_of("data_collection")["metrics"]:
+    #TODO reintroduce append option
     #TODO rework this removing match and introducing a dictionary of functions
     #        and using same structure for all
         match metric:

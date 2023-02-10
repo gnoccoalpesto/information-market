@@ -371,7 +371,7 @@ def sidebyside_boxplots(
 
 def plot_evolution( filename=[],
                     data_folder="../data/gap",
-                    metric="rewards_evolution",
+                    metric="items_evolution",
                     title="",
                     compare=""
                     ):
@@ -385,16 +385,24 @@ def plot_evolution( filename=[],
         compare: comparison method, could be
             - "a": plot all experiments with similar configuration.
                     In this case a single filename is expected;
-            - "pN": plot 2 experiments with same seed, but different
+            - "g": plot in aggregated form experiments with similar
+                    configuration. In this case a filename and a list of
+                    statistics are expected. Accepted statistics are:
+                    - "m": mean of all experiments (ie: gm);
+                    - "s": standard deviation of all experiments;
+                    - "lM": lower bound of M% confidence interval (eg: gl95);
+                    - "uM": upper bound of M% confidence interval;
+                    - "e" standard error of the mean;
+                    - "pM": percentile interval of M% confidence interval;
+                    - "cM": confidence interval of M% confidence interval;
+            - "dN": plot 2 experiments with same seed, but different
                     penalisation method. In this case 2 filenames are expected,
                     as well as N the number of the experiment to compare (e.g p1);
-
-            NOT WORKING YET
-            - "b": different method for comparing all experiments with similar
-                    configuration. In this case a single filename is expected;
     """
+    #TODO rework to make it compact and more general
     if "a" in compare:
         filename_pen="24sceptical_025th_1scaboteur_0rotation_penalisation.csv"
+        # filename_pen="24sceptical_025th_1scaboteur_0rotation_nopenalisation.csv"
         pen_df=pd.read_csv(f"{data_folder}/{metric}/{filename_pen}", header=None)
         labels=[_ for _ in pen_df.iloc[0]]
         pen_df=pen_df.iloc[1:]
@@ -416,33 +424,43 @@ def plot_evolution( filename=[],
         data_df=data_df.transpose()
         data_df.index.name=labels[1]
         data_df.columns.name=labels[0]
-        sns.lineplot(data=data_df)
+        sns.lineplot(data=data_df,legend=None,errorbar=("ci",90)).set_xticks(steps[::5])
+        plt.xticks(rotation=45)
         #TODO vertical ticks on x axis
 
-    # elif "b" in compare: #WHAT IS THIS DOIN?
-    #     filename_pen="24sceptical_025th_1scaboteur_0rotation_nopenalisation.csv"
-    #     pen_df=pd.read_csv(f"{data_folder}/{metric}/{filename_pen}", header=None)
-    #     labels=[_ for _ in pen_df.iloc[0]]
-    #     pen_df=pen_df.iloc[1:]
-    #     pen_df.columns=labels
-    #     selected_runs=pen_df[labels[0]].unique()
-    #     run_data=[]
-    #     run_x=[]
-    #     run_labels=[]
-    #     for run in selected_runs:
-    #         run_pen_data=[]
-    #         run_pen_df=pen_df.loc[lambda df: df[labels[0]] == run]
-    #         steps=run_pen_df[labels[1]].unique()
-    #         for step in steps:
-    #             step_df=run_pen_df.loc[lambda df: df[labels[1]] == step].iloc[:,-1]
-    #             step_df=np.asarray([float(_) for _ in step_df.values[0][1:-1].split(", ")])
-    #             run_pen_data.append(np.sum(step_df))
-    #         run_data=np.concatenate([run_data,run_pen_data])#,run_nopen_data])
-    #         run_x=np.concatenate([run_x,np.asarray([int(_) for _ in steps])])
-    #         run_labels=run_labels+['pen' for _ in run_pen_data]#+['nopen' for _ in run_nopen_data]
-    #     sns.lineplot(x=run_x,y=run_data,hue=run_labels)
-    
-    elif "p" in compare:
+    elif "g" in compare: 
+        filename_pen="24sceptical_025th_1scaboteur_0rotation_penalisation.csv"
+        # filename_pen="24sceptical_025th_1scaboteur_0rotation_nopenalisation.csv"
+        pen_df=pd.read_csv(f"{data_folder}/{metric}/{filename_pen}", header=None)
+        labels=[_ for _ in pen_df.iloc[0]]
+        pen_df=pen_df.iloc[1:]
+        pen_df.columns=labels
+        selected_runs=pen_df[labels[0]].unique()
+        run_data=[]
+        run_x=[]
+        run_labels=[]
+        for run in selected_runs:
+            run_pen_data=[]
+            run_pen_df=pen_df.loc[lambda df: df[labels[0]] == run]
+            steps=run_pen_df[labels[1]].unique()
+            steps=steps[len(steps)//2:]
+            for step in steps:
+                step_df=run_pen_df.loc[lambda df: df[labels[1]] == step].iloc[:,-1]
+                step_df=np.asarray([float(_) for _ in step_df.values[0][1:-1].split(", ")])
+                run_pen_data.append(np.sum(step_df))
+            run_data=np.concatenate([run_data,run_pen_data])
+            run_x=np.concatenate([run_x,np.asarray([int(_) for _ in steps])])
+            run_labels=run_labels+['pen' for _ in run_pen_data]
+        sns.lineplot(x=run_x,y=run_data,hue=run_labels,errorbar=("ci",90),estimator="median",legend=None)#random bootstrap
+        sns.lineplot(x=run_x,y=run_data,hue=run_labels,errorbar=("sd"),legend=None,palette="flare")#default:+-1 sd
+        # sns.lineplot(x=run_x,y=run_data,hue=run_labels,errorbar=("se"))#==sd/sqrt(SAMPLE_SIZE)
+        sns.lineplot(x=run_x,y=run_data,hue=run_labels,errorbar=("pi",50),legend=None,palette="Set2")#interquartile range
+        sns.lineplot(x=run_x,y=run_data,hue=run_labels,errorbar=(lambda x: (x.min(),x.max())),legend=None)#== pi 100
+        plt.legend(loc='upper left',labels=["median,ci 90","min-max","pi 50","sd"])
+        plt.title("aggregated data,\n24 scepticals, 0.25 threshold,0 rotation,\npenalisation")
+        plt.ylim(-50,500)
+
+    elif "d" in compare:
         filename_pen="24sceptical_025th_1scaboteur_0rotation_penalisation.csv"
         filename_nopen="24sceptical_025th_1scaboteur_0rotation_nopenalisation.csv"
         pen_df=pd.read_csv(f"{data_folder}/{metric}/{filename_pen}", header=None)
@@ -1555,5 +1573,5 @@ if __name__ == '__main__':
     # myttest(data_folder="../data/old/",compare="")
     # myanovatest()
     # sidebyside_boxplots()
-    plot_evolution(compare="b")
+    plot_evolution(compare="g")
     pass

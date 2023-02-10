@@ -12,7 +12,8 @@
     "radius": 50
   },
   "simulation_steps": 15000,
-  "number_runs": 250,
+  "number_runs": 350,
+  "simulation_seed": 100223,
   "visualization": {
     "activate": false,
     "fps": 60
