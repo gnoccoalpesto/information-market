@@ -2,11 +2,22 @@ import time
 import pandas as pd
 from multiprocessing import Pool
 from pathlib import Path
-from os.path import join
+from os.path import join, exists
 from sys import argv
-
 from controllers.main_controller import MainController, Configuration
 from controllers.view_controller import ViewController
+
+
+#TODO
+#import argparse
+# def parse_args():
+#     parser = argparse.ArgumentParser()
+#     parser.add_argument('-s', '--standalone',action='store_true',
+#                     help='considers metric for single robot')
+#     args=parser.parse_args()
+#     if args.standalone:
+#         mode="s"
+#     return mode
 
 
 def main():
@@ -25,12 +36,29 @@ def main():
 
 def run_processes(config: Configuration):
     nb_runs = config.value_of("number_runs")
+    simulation_seed = config.value_of("simulation_seed")
+    print(f"running {nb_runs} runs with starting simulation seed {simulation_seed if simulation_seed!='' else 'random'}")
+    #TODO efficient way to create filename, check if file exists in the folders of interest, and pass
+    #     the incrementing seed to the main controller
+    #ISSUES: 1) what if result ofr some metric exists, but not for others?
+    #        2) is it efficient to split existence/creation+to_csv, with double check? (it's not)
     start = time.time()
     with Pool() as pool:
         controllers = pool.starmap(run, [(config, i) for i in range(nb_runs)])
         record_data(config, controllers)
-
     print(f'Finished {nb_runs} runs in {time.time()-start: .02f} seconds.')
+
+
+def run(config:Configuration, i):
+    print(f"launched process {i+1}",end="")
+    simulation_seed = config.value_of("simulation_seed")
+    if simulation_seed!='' and simulation_seed!='random':
+        config.set("simulation_seed", simulation_seed+i)
+        print(f", setting run seed to {simulation_seed+i}")
+    else: print("")#newline
+    controller = MainController(config)
+    controller.start_simulation()
+    return controller
 
 
 def record_data(config:Configuration, controllers):
@@ -49,28 +77,37 @@ def record_data(config:Configuration, controllers):
         text_th_honest=str(th_honest).replace(".","").replace(",","")#eg 0.5 -> 05
         lie_angle = config.value_of("behaviors")[3]['parameters']['rotation_angle'] if n_scaboteur >0 \
             else config.value_of("behaviors")[2]['parameters']['rotation_angle']
-        lie_angle  
         penalization="no" if config.value_of("payment_system")["class"]=="DelayedPaymentPaymentSystem" else ""
+        seed=config.value_of("simulation_seed")
+        text_seed=f"{seed if seed!='' else 'random'}"
         #TODO rework name convention to include more characteristics
         filename = \
             f"{n_honest}sceptical_{text_th_honest}th_"+\
             f"{n_dishonest}scaboteur_{lie_angle}rotation_"+\
-            f"{penalization}penalisation.csv"
-    
+            f"{penalization}penalisation_"+\
+            f"{text_seed}Seed.csv"
     for metric in config.value_of("data_collection")["metrics"]:
+    #TODO reintroduce append option
+    #TODO rework this removing match and introducing a dictionary of functions
+    #        and using same structure for all
         match metric:
             case "rewards":
                 rewards_df = pd.DataFrame([controller.get_rewards() for controller in controllers])
                 Path(join(output_directory, "rewards")).mkdir(parents=True, exist_ok=True)
-                rewards_df.to_csv(join(output_directory, "rewards", filename), index=False, header=False)
+                #TODO fix append then use this
+                # if seed!='' and seed!='random':
+                current_filename=check_filename_existence(output_directory,metric,filename)
+                rewards_df.to_csv(join(output_directory, "rewards", current_filename), index=False, header=False)
             case "items_collected":
                 items_collected_df = pd.DataFrame([controller.get_items_collected() for controller in controllers])
                 Path(join(output_directory, "items_collected")).mkdir(parents=True, exist_ok=True)
-                items_collected_df.to_csv(join(output_directory, "items_collected", filename), index=False, header=False)
+                current_filename=check_filename_existence(output_directory,metric,filename)
+                items_collected_df.to_csv(join(output_directory, "items_collected", current_filename), index=False, header=False)
             case "drifts":
                 drifts_df = pd.DataFrame([controller.get_drifts() for controller in controllers])
                 Path(join(output_directory, "drifts")).mkdir(parents=True, exist_ok=True)
-                drifts_df.to_csv(join(output_directory, "drifts", filename), index=False, header=False)
+                current_filename=check_filename_existence(output_directory,metric,filename)
+                drifts_df.to_csv(join(output_directory, "drifts", current_filename), index=False, header=False)
             #TODO append instead of rewriting
             case "rewards_evolution":
                 dataframes = []
@@ -80,7 +117,8 @@ def record_data(config:Configuration, controllers):
                     df = df.set_index("simulation_id")
                     dataframes.append(df)
                 Path(join(output_directory, "rewards_evolution")).mkdir(parents=True, exist_ok=True)
-                pd.concat(dataframes).to_csv(join(output_directory, "rewards_evolution", filename))
+                current_filename=check_filename_existence(output_directory,metric,filename)
+                pd.concat(dataframes).to_csv(join(output_directory, "rewards_evolution", current_filename))
             case "items_evolution":
                 dataframes = []
                 for i, controller in enumerate(controllers):
@@ -89,16 +127,19 @@ def record_data(config:Configuration, controllers):
                     df = df.set_index("simulation_id")
                     dataframes.append(df)
                 Path(join(output_directory, "items_evolution")).mkdir(parents=True, exist_ok=True)
-                pd.concat(dataframes).to_csv(join(output_directory, "items_evolution", filename))
+                current_filename=check_filename_existence(output_directory,metric,filename)
+                pd.concat(dataframes).to_csv(join(output_directory, "items_evolution", current_filename))
             case _:
                 print(f"[WARNING] Could not record metric: '{metric}'. Metric name is not valid.")
 
 
-def run(config, i):
-    print(f"launched process {i+1}")
-    controller = MainController(config)
-    controller.start_simulation()
-    return controller
+def check_filename_existence(output_directory,metric,filename):
+    new_filename = filename
+    if exists(join(output_directory, metric, filename)):
+        exist_count = len([f for f in Path(join(output_directory, metric))\
+            .iterdir() if f.name.startswith(new_filename.replace(".csv", ""))])
+        new_filename = new_filename.replace(".csv", f"_{exist_count}.csv")
+    return new_filename
 
 
 if __name__ == '__main__':
