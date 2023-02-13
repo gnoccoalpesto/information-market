@@ -433,7 +433,7 @@ def plot_evolution( filename=[],
 
     elif "g" in compare: 
         # filename_pen="DENOISED_24sceptical_025th_1scaboteur_0rotation_penalisation_100223Seed.csv"
-        filename_pen="RICH_24sceptical_025th_1scaboteur_0rotation_penalisation_100223Seed.csv"
+        filename_pen="24sceptical_025th_1scaboteur_0rotation_nopenalisation_22111991Seed.csv"
         pen_df=pd.read_csv(f"{data_folder}/{metric}/{filename_pen}", header=None)
         labels=[_ for _ in pen_df.iloc[0]]
         pen_df=pen_df.iloc[1:]

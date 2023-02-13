@@ -12,10 +12,10 @@
     "radius": 50
   },
   "simulation_steps": 15000,
-  "number_runs": 350,
-  "simulation_seed": 100223,
+  "number_runs": 200,
+  "simulation_seed": 655463,
   "visualization": {
-    "activate": false,
+    "activate": true,
     "fps": 60
   },
   "random_walk": {
