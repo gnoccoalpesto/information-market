@@ -48,7 +48,8 @@ class Agent:
                  radius,
                  noise_sampling_mu, 
                  noise_sampling_sigma, 
-                 noise_sd, fuel_cost,
+                 noise_sd, 
+                 fuel_cost,
                  communication_radius, 
                  communication_cooldown,
                  communication_stop_time

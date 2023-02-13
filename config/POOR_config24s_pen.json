@@ -11,9 +11,9 @@
     "y": 300,
     "radius": 50
   },
-  "simulation_steps": 150,
-  "number_runs": 1,
-  "simulation_seed":"",
+  "simulation_steps": 15000,
+  "number_runs": 128,
+  "simulation_seed": 100223,
   "visualization": {
     "activate": false,
     "fps": 60
@@ -45,9 +45,9 @@
       "population_size": 24,
       "parameters": {
         "threshold": 0.25
+
       }
     },
-
     {
       "class": "SaboteurBehavior",
       "population_size": 0,
@@ -66,7 +66,7 @@
   ],
   "payment_system": {
     "class": "OutlierPenalisationPaymentSystem",
-    "initial_reward": 1,
+    "initial_reward": 0.33,
     "parameters": {
       "information_share": 0.5
     }
@@ -78,8 +78,8 @@
     }
   },
   "data_collection": {
-    "output_directory": "../data/test/",
-    "filename": "test1pen.csv",
+    "output_directory": "../data/gap/",
+    "filename": "POOR_24sceptical_025th_1scaboteur_0rotation_penalisation_100223Seed.csv",
     "metrics": ["items_evolution","rewards_evolution"],
     "precise_recording_interval": 100
   }

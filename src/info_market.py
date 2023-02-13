@@ -46,7 +46,7 @@ def run_processes(config: Configuration):
     with Pool() as pool:
         controllers = pool.starmap(run, [(config, i) for i in range(nb_runs)])
         record_data(config, controllers)
-    print(f'Finished {nb_runs} runs in {time.time()-start: .02f} seconds.')
+    print(f'######\tFinished {nb_runs} runs in {time.time()-start: .02f} seconds.\n')
 
 
 def run(config:Configuration, i):
@@ -64,7 +64,10 @@ def run(config:Configuration, i):
 def record_data(config:Configuration, controllers):
     output_directory = config.value_of("data_collection")["output_directory"]
     filename = config.value_of("data_collection")["filename"]
-    if filename is None or filename == "":
+    #TODO INCREMENTAL NAME GENERATION: if "+" in param name->add before
+    if filename is None or filename == "" or "+" in filename:
+        # if "+" in filename:
+        #     prefix=REMOVE + FROM NAME
         n_naive=config.value_of("behaviors")[0]['population_size']
         n_sceptical=config.value_of("behaviors")[1]['population_size']
         n_honest=n_naive+n_sceptical

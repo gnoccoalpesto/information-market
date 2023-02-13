@@ -399,6 +399,9 @@ def plot_evolution( filename=[],
                     penalisation method. In this case 2 filenames are expected,
                     as well as N the number of the experiment to compare (e.g p1);
     """
+    fig=plt.figure(0)
+    fig.set_size_inches(6,5)
+
     #TODO rework to make it compact and more general
     if "a" in compare:
         filename_pen="24sceptical_025th_1scaboteur_0rotation_penalisation.csv"
@@ -429,13 +432,13 @@ def plot_evolution( filename=[],
         #TODO vertical ticks on x axis
 
     elif "g" in compare: 
-        filename_pen="24sceptical_025th_1scaboteur_0rotation_penalisation.csv"
-        # filename_pen="24sceptical_025th_1scaboteur_0rotation_nopenalisation.csv"
+        # filename_pen="DENOISED_24sceptical_025th_1scaboteur_0rotation_penalisation_100223Seed.csv"
+        filename_pen="RICH_24sceptical_025th_1scaboteur_0rotation_penalisation_100223Seed.csv"
         pen_df=pd.read_csv(f"{data_folder}/{metric}/{filename_pen}", header=None)
         labels=[_ for _ in pen_df.iloc[0]]
         pen_df=pen_df.iloc[1:]
         pen_df.columns=labels
-        selected_runs=pen_df[labels[0]].unique()
+        selected_runs=pen_df[labels[0]].unique()[:128]
         run_data=[]
         run_x=[]
         run_labels=[]
@@ -443,7 +446,7 @@ def plot_evolution( filename=[],
             run_pen_data=[]
             run_pen_df=pen_df.loc[lambda df: df[labels[0]] == run]
             steps=run_pen_df[labels[1]].unique()
-            steps=steps[len(steps)//2:]
+            # steps=steps[10:len(steps)//2-10]
             for step in steps:
                 step_df=run_pen_df.loc[lambda df: df[labels[1]] == step].iloc[:,-1]
                 step_df=np.asarray([float(_) for _ in step_df.values[0][1:-1].split(", ")])
@@ -451,14 +454,16 @@ def plot_evolution( filename=[],
             run_data=np.concatenate([run_data,run_pen_data])
             run_x=np.concatenate([run_x,np.asarray([int(_) for _ in steps])])
             run_labels=run_labels+['pen' for _ in run_pen_data]
+        # run_data/=np.max(run_data)#normalise
+
         sns.lineplot(x=run_x,y=run_data,hue=run_labels,errorbar=("ci",90),estimator="median",legend=None)#random bootstrap
         sns.lineplot(x=run_x,y=run_data,hue=run_labels,errorbar=("sd"),legend=None,palette="flare")#default:+-1 sd
         # sns.lineplot(x=run_x,y=run_data,hue=run_labels,errorbar=("se"))#==sd/sqrt(SAMPLE_SIZE)
         sns.lineplot(x=run_x,y=run_data,hue=run_labels,errorbar=("pi",50),legend=None,palette="Set2")#interquartile range
         sns.lineplot(x=run_x,y=run_data,hue=run_labels,errorbar=(lambda x: (x.min(),x.max())),legend=None)#== pi 100
         plt.legend(loc='upper left',labels=["median,ci 90","min-max","pi 50","sd"])
-        plt.title("aggregated data,\n24 scepticals, 0.25 threshold,0 rotation,\npenalisation")
-        plt.ylim(-50,500)
+        plt.title(f"aggregated data ({len(selected_runs)}),\n24 scepticals, 0.25 threshold,0 rotation,\npenalisation, RICH")
+        plt.ylim(-10,380)
 
     elif "d" in compare:
         filename_pen="24sceptical_025th_1scaboteur_0rotation_penalisation.csv"

@@ -48,6 +48,7 @@ class MainController:
         self.items_evolution = ""
         self.items_evolution_list = []
 
+
     def step(self):
         if self.tick % self.config.value_of("data_collection")['precise_recording_interval'] == 0:
             if "rewards_evolution" in self.config.value_of("data_collection")["metrics"]:
@@ -56,13 +57,17 @@ class MainController:
             if "items_evolution" in self.config.value_of("data_collection")["metrics"]:
                 self.items_evolution += f"{self.tick},{self.get_items_collected_stats()}"
                 self.items_evolution_list.append([self.tick, self.get_items_collected()])
+        #TODO is this needed since we use a limited cycle?
         if self.tick < self.config.value_of("simulation_steps"):
             self.tick += 1
             self.environment.step()
+            
 
     def start_simulation(self):
         for _ in range(self.config.value_of("simulation_steps")):
             self.step()
+        self.final_phase()
+
 
     def get_sorted_reward_stats(self):
         sorted_bots = sorted([bot for bot in self.environment.population], key=lambda bot: abs(bot.noise_mu))
@@ -73,6 +78,7 @@ class MainController:
         res += "\n"
         return res
 
+
     def get_reward_stats(self):
         res = ""
         for bot in self.environment.population:
@@ -81,14 +87,18 @@ class MainController:
         res += "\n"
         return res
 
+
     def get_rewards(self):
         return [bot.reward() for bot in self.environment.population]
+
 
     def get_items_collected(self):
         return [bot.items_collected for bot in self.environment.population]
 
+
     def get_drifts(self):
         return [bot.noise_mu for bot in self.environment.population]
+
 
     def get_items_collected_stats(self):
         res = ""
@@ -98,6 +108,7 @@ class MainController:
         res += "\n"
         return res
 
+
     def get_drift_stats(self):
         res = ""
         for bot in self.environment.population:
@@ -106,17 +117,26 @@ class MainController:
         res += "\n"
         return res
 
+
     def get_robot_at(self, x, y):
         return self.environment.get_robot_at(x, y)
+
 
     def get_robot_by_id(self, id):
         return self.environment.get_robot_by_id(id)
 
+
     def get_rewards_evolution(self):
         return self.rewards_evolution
+
 
     def get_rewards_evolution_list(self):
         return self.rewards_evolution_list
 
+
     def get_items_evolution_list(self):
         return self.items_evolution_list
+
+
+    def final_phase(self):
+        # print(self.environment.payment_database.get_database())

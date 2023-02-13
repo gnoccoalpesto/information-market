@@ -11,9 +11,9 @@
     "y": 300,
     "radius": 50
   },
-  "simulation_steps": 150,
-  "number_runs": 1,
-  "simulation_seed":"",
+  "simulation_steps": 15000,
+  "number_runs": 128,
+  "simulation_seed": 100223,
   "visualization": {
     "activate": false,
     "fps": 60
@@ -28,9 +28,9 @@
     "communication_radius": 50,
     "communication_stop_time": 0,
     "communication_cooldown": 0,
-    "noise_sampling_mu": 0.05,
-    "noise_sampling_sigma": 0.05,
-    "noise_sd": 0.05,
+    "noise_sampling_mu": 0.5,
+    "noise_sampling_sigma": 0.5,
+    "noise_sd": 0.5,
     "fuel_cost": 0
   },
   "behaviors": [
@@ -45,9 +45,9 @@
       "population_size": 24,
       "parameters": {
         "threshold": 0.25
+
       }
     },
-
     {
       "class": "SaboteurBehavior",
       "population_size": 0,
@@ -65,7 +65,7 @@
     }
   ],
   "payment_system": {
-    "class": "OutlierPenalisationPaymentSystem",
+    "class": "DelayedPaymentPaymentSystem",
     "initial_reward": 1,
     "parameters": {
       "information_share": 0.5
@@ -78,8 +78,8 @@
     }
   },
   "data_collection": {
-    "output_directory": "../data/test/",
-    "filename": "test1pen.csv",
+    "output_directory": "../data/gap/",
+    "filename": "",
     "metrics": ["items_evolution","rewards_evolution"],
     "precise_recording_interval": 100
   }
