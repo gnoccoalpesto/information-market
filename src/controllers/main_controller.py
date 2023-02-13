@@ -140,3 +140,4 @@ class MainController:
 
     def final_phase(self):
         # print(self.environment.payment_database.get_database())
+        pass
