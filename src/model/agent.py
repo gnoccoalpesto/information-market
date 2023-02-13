@@ -155,7 +155,7 @@ class Agent:
 
     def move(self):
         wanted_movement = rotate(self.dr, self.orientation)
-        my_random_seed(self.SIMULATION_SEED,self.id*(1+self.id)**9)
+        # my_random_seed(self.SIMULATION_SEED,self.id*(1+self.id)**9)
         noise_angle = gauss(self.noise_mu, self.noise_sd)
         noisy_movement = rotate(wanted_movement, noise_angle)
         self.orientation = get_orientation_from_vector(noisy_movement)
@@ -175,13 +175,13 @@ class Agent:
     def update_levi_counter(self):
         self.levi_counter -= 1
         if self.levi_counter <= 0:
-            my_random_seed(self.SIMULATION_SEED,self.id*(1+self.id)**7)
+            # my_random_seed(self.SIMULATION_SEED,self.id*(1+self.id)**7)
             self.levi_counter = choices(range(1, rw.get_max_levi_steps() + 1), rw.get_levi_weights())[0]
 
     def get_levi_turn_angle(self):
         angle = 0
         if self.levi_counter <= 1:
-            my_random_seed(self.SIMULATION_SEED,self.id*(1+self.id)**8)
+            # my_random_seed(self.SIMULATION_SEED,self.id*(1+self.id)**8)
             angle = choices(np.arange(0, 360), rw.get_crw_weights())[0]
         self.update_levi_counter()
         return angle
