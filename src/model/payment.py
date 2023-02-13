@@ -86,6 +86,7 @@ class OutlierPenalisationPaymentSystem(PaymentSystem):
 
         self.reset_transactions()
 
+
     def calculate_shares_mapping(self, reward_share_to_distribute):
         if len(self.transactions) == 0:
             return {}
@@ -115,6 +116,7 @@ class OutlierPenalisationPaymentSystem(PaymentSystem):
                     reward_share_to_distribute + self.pot_amount) / total_shares
         return final_mapping
 
+
     def reset_transactions(self):
         self.transactions.clear()
         self.pot_amount = 0
@@ -131,14 +133,19 @@ class PaymentDB:
     def __init__(self, population_ids, payment_system_params):
         self.nb_transactions = 0
         self.database = {}
+        # self.log_db=set()
+        # self.log_db=""
+        self.log_db=[]
         # self.info_share = info_share
         for robot_id in population_ids:
             self.database[robot_id] = {"reward": payment_system_params["initial_reward"],
                                        "payment_system": eval(payment_system_params['class'])(
                                            **payment_system_params['parameters'])}
 
+
     def pay_reward(self, robot_id, reward=1):
         self.database[robot_id]["reward"] += reward
+
 
     def transfer(self, from_id, to_id, amount):
         if amount < 0:
@@ -146,16 +153,21 @@ class PaymentDB:
         self.apply_cost(from_id, amount)
         self.apply_gains(to_id, amount)
 
+
     def record_transaction(self, transaction: Transaction):
         self.nb_transactions += 1
         self.database[transaction.buyer_id]["payment_system"].new_transaction(transaction, PaymentAPI(self))
+        self.log_transaction(transaction)
+
 
     def pay_creditors(self, debitor_id, total_reward=1):
         self.database[debitor_id]["payment_system"].new_reward(total_reward, PaymentAPI(self),
                                                                debitor_id)
 
+
     def get_reward(self, robot_id):
         return self.database[robot_id]["reward"]
+
 
     def apply_cost(self, robot_id, cost):
         if cost < 0:
@@ -165,7 +177,19 @@ class PaymentDB:
         else:
             self.database[robot_id]["reward"] -= cost
 
+
     def apply_gains(self, robot_id, gains):
         if gains < 0:
             raise ValueError("Gains must be positive")
         self.database[robot_id]["reward"] += gains
+
+
+    def log_transaction(self,transaction:Transaction):
+        # self.log_db.add(transaction)
+        # self.log_db+=f"buyer:{transaction.buyer_id}, seller:{transaction.seller_id}, at:{transaction.timestep}"\
+        #                "#####################\n"
+        self.log_db.append([transaction.timestep,transaction.buyer_id,transaction.seller_id])
+
+
+    # def get_database(self):
+    #     return self.database, self.log_db

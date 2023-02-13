@@ -134,6 +134,19 @@ def record_data(config:Configuration, controllers):
                 pd.concat(dataframes).to_csv(join(output_directory, "items_evolution", current_filename))
             case _:
                 print(f"[WARNING] Could not record metric: '{metric}'. Metric name is not valid.")
+        
+        #new transaction log dataframe
+        transaction_logs = []
+        for i, controller in enumerate(controllers):
+            df = pd.DataFrame(controller.get_transaction_log(), columns=["tick", "buyer", "seller"])
+            df["simulation_id"] = i
+            df = df.set_index("simulation_id")
+            transaction_logs.append(df)
+        Path(join(output_directory, "transaction_logs")).mkdir(parents=True, exist_ok=True)
+        current_filename=check_filename_existence(output_directory,metric,filename)
+        pd.concat(transaction_logs).to_csv(join(output_directory, "transaction_logs", current_filename))
+            
+
 
 
 def check_filename_existence(output_directory,metric,filename):

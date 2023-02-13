@@ -66,7 +66,6 @@ class MainController:
     def start_simulation(self):
         for _ in range(self.config.value_of("simulation_steps")):
             self.step()
-        self.final_phase()
 
 
     def get_sorted_reward_stats(self):
@@ -138,6 +137,5 @@ class MainController:
         return self.items_evolution_list
 
 
-    def final_phase(self):
-        # print(self.environment.payment_database.get_database())
-        pass
+    def get_transaction_log(self):
+        return self.environment.payment_database.log_db

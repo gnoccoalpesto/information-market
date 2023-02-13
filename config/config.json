@@ -11,8 +11,8 @@
     "y": 300,
     "radius": 50
   },
-  "simulation_steps": 150,
-  "number_runs": 1,
+  "simulation_steps": 500,
+  "number_runs": 5,
   "simulation_seed":"",
   "visualization": {
     "activate": false,
