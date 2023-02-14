@@ -10,12 +10,12 @@ import numpy as np
 from model.payment import PaymentDB
 
 
-def my_random_seed(seed,n):
+def my_random_seed(seed,n=None):
     """
     applies the random.seed using input, when seed is not None
     """
     if seed!="" and seed!="random" and seed is not None:
-        random_seed(seed+n)
+        random_seed(seed+n if n is not None else seed)
 
 
 class Environment:
@@ -32,6 +32,7 @@ class Environment:
                  simulation_seed=None
                  ):
         self.SIMULATION_SEED = simulation_seed
+        my_random_seed(simulation_seed)
         #BUG random seed is not set to none
         # self.SIMULATION_SEED = simulation_seed \
         #     if simulation_seed!="" or simulation_seed!='random' else None
@@ -57,11 +58,13 @@ class Environment:
         robot_id = 0
         for behavior_params in behavior_params:
             for _ in range(behavior_params['population_size']):
-                my_random_seed(self.SIMULATION_SEED,robot_id)
+                # my_random_seed(self.SIMULATION_SEED,robot_id)
                 robot_x=randint(agent_params['radius'], self.width - 1 - agent_params['radius'])
-                my_random_seed(self.SIMULATION_SEED,(robot_id+1)*robot_id)
+                # my_random_seed(self.SIMULATION_SEED,(robot_id+1)*robot_id)
                 robot_y=randint(agent_params['radius'], self.height - 1 - agent_params['radius'])
                 
+                agent_seed=randint(0,10000)
+
                 robot = Agent(robot_id=robot_id,
                               x=robot_x,
                               y=robot_y,
@@ -238,9 +241,9 @@ class Environment:
                     self.pickup_food(robot)
 
     def add_spawn(self, location:Location, robot:Agent):
-        my_random_seed(self.SIMULATION_SEED,robot.id*(1+robot.id)**2)
+        # my_random_seed(self.SIMULATION_SEED,robot.id*(1+robot.id)**2)
         rand_angle = random() * 360
-        my_random_seed(self.SIMULATION_SEED,robot.id*(1+robot.id)**3)
+        # my_random_seed(self.SIMULATION_SEED,robot.id*(1+robot.id)**3)
         rand_rad = np.sqrt(random()) * self.locations[location][2]
         pos_in_circle = rand_rad * np.array([cos(radians(rand_angle)), sin(radians(rand_angle))])
         self.foraging_spawns[location][robot.id] = np.array([self.locations[location][0],
