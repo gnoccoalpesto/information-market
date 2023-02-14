@@ -370,7 +370,7 @@ def sidebyside_boxplots(
 
 
 def plot_evolution( filename=[],
-                    data_folder="../data/gap",
+                    data_folder="../data/gap/new",
                     metric="items_evolution",
                     title="",
                     compare=""
@@ -398,6 +398,7 @@ def plot_evolution( filename=[],
             - "dN": plot 2 experiments with same seed, but different
                     penalisation method. In this case 2 filenames are expected,
                     as well as N the number of the experiment to compare (e.g p1);
+            - "w":  compare diffetent starting wealths
     """
     fig=plt.figure(0)
     fig.set_size_inches(6,5)
@@ -433,7 +434,7 @@ def plot_evolution( filename=[],
 
     elif "g" in compare: 
         # filename_pen="DENOISED_24sceptical_025th_1scaboteur_0rotation_penalisation_100223Seed.csv"
-        filename_pen="STACKING_24sceptical_025th_1scaboteur_0rotation_penalisation_100223Seed.csv"
+        filename_pen="24s_nopen_100223_POOR.csv"
         pen_df=pd.read_csv(f"{data_folder}/{metric}/{filename_pen}", header=None)
         labels=[_ for _ in pen_df.iloc[0]]
         pen_df=pen_df.iloc[1:]
@@ -462,8 +463,39 @@ def plot_evolution( filename=[],
         sns.lineplot(x=run_x,y=run_data,hue=run_labels,errorbar=("pi",50),legend=None,palette="Set2")#interquartile range
         sns.lineplot(x=run_x,y=run_data,hue=run_labels,errorbar=(lambda x: (x.min(),x.max())),legend=None)#== pi 100
         plt.legend(loc='upper left',labels=["median,ci 90","min-max","pi 50","sd"])
-        plt.title(f"aggregated data ({len(selected_runs)}),\n24 scepticals, 0.25 threshold,0 rotation,\npenalisation, REDUCED STACK")
-        plt.ylim(-10,380)
+        plt.title(f"aggregated data ({len(selected_runs)}),\n24 scepticals, 0.25 threshold,0 rotation,\nno penalisation, POOR")
+        plt.ylim(-10,500)
+
+    elif "w" in compare: 
+        filenames=["24s_pen_100223_POOR.csv","24s_pen_100223.csv","24s_pen_100223_RICH.csv"]
+        palettes=["flare","Set2","cubehelix"]
+        legends=['poorer','base','richer']
+        for filename_pen, palette, legend in zip(filenames,palettes,legends):
+            pen_df=pd.read_csv(f"{data_folder}/{metric}/{filename_pen}", header=None)
+            labels=[_ for _ in pen_df.iloc[0]]
+            pen_df=pen_df.iloc[1:]
+            pen_df.columns=labels
+            selected_runs=pen_df[labels[0]].unique()[:128]
+            run_data=[]
+            run_x=[]
+            run_labels=[]
+            for run in selected_runs:
+                run_pen_data=[]
+                run_pen_df=pen_df.loc[lambda df: df[labels[0]] == run]
+                steps=run_pen_df[labels[1]].unique()
+                # steps=steps[10:len(steps)//2-10]
+                for step in steps:
+                    step_df=run_pen_df.loc[lambda df: df[labels[1]] == step].iloc[:,-1]
+                    step_df=np.asarray([float(_) for _ in step_df.values[0][1:-1].split(", ")])
+                    run_pen_data.append(np.sum(step_df))
+                run_data=np.concatenate([run_data,run_pen_data])
+                run_x=np.concatenate([run_x,np.asarray([int(_) for _ in steps])])
+                run_labels=run_labels+[legend for _ in run_pen_data]
+
+            sns.lineplot(x=run_x,y=run_data,hue=run_labels,legend='auto',palette=palette)#interquartile range
+        plt.legend(loc='upper left')
+        plt.title(f"aggregated data ({len(selected_runs)} experiments),\nROBOTS: 24 scepticals, 0.25 threshold, 0 lie angle,\npenalisation, DIFFERENT STARTING WEALTH")
+        plt.ylim(-10,500)
 
     elif "d" in compare:
         filename_pen="24sceptical_025th_1scaboteur_0rotation_penalisation.csv"
@@ -1578,5 +1610,5 @@ if __name__ == '__main__':
     # myttest(data_folder="../data/old/",compare="")
     # myanovatest()
     # sidebyside_boxplots()
-    plot_evolution(compare="g")
+    plot_evolution(compare="w")
     pass

@@ -78,8 +78,8 @@
     }
   },
   "data_collection": {
-    "output_directory": "../data/gap/",
-    "filename": "",
+    "output_directory": "../data/gap/new/",
+    "filename": "24s_nopen_100223_DENOISED.csv",
     "metrics": ["items_evolution","rewards_evolution"],
     "precise_recording_interval": 100
   }
