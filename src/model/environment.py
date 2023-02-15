@@ -31,11 +31,7 @@ class Environment:
                  market_params,
                  simulation_seed=None
                  ):
-        self.SIMULATION_SEED = simulation_seed
         my_random_seed(simulation_seed)
-        #BUG random seed is not set to none
-        # self.SIMULATION_SEED = simulation_seed \
-        #     if simulation_seed!="" or simulation_seed!='random' else None
         self.population = list()
         self.width = width
         self.height = height
@@ -51,20 +47,17 @@ class Environment:
         self.img = None
         self.timestep = 0
 
+
     def load_images(self):
         self.img = ImageTk.PhotoImage(file="../assets/strawberry.png")
+
 
     def create_robots(self, agent_params, behavior_params):
         robot_id = 0
         for behavior_params in behavior_params:
             for _ in range(behavior_params['population_size']):
-                # my_random_seed(self.SIMULATION_SEED,robot_id)
                 robot_x=randint(agent_params['radius'], self.width - 1 - agent_params['radius'])
-                # my_random_seed(self.SIMULATION_SEED,(robot_id+1)*robot_id)
                 robot_y=randint(agent_params['radius'], self.height - 1 - agent_params['radius'])
-                
-                agent_seed=randint(0,10000)
-
                 robot = Agent(robot_id=robot_id,
                               x=robot_x,
                               y=robot_y,
@@ -73,6 +66,7 @@ class Environment:
                               **agent_params)
                 robot_id += 1
                 self.population.append(robot)
+
 
     def step(self):
         # compute neighbors
@@ -97,6 +91,7 @@ class Environment:
 
         self.market.step()
 
+
     def get_sensors(self, robot):
         orientation = robot.orientation
         speed = robot.speed()
@@ -117,6 +112,7 @@ class Environment:
                    }
         return sensors
 
+
     def check_border_collision(self, robot:Agent, new_x, new_y):
         collide_x = False
         collide_y = False
@@ -128,14 +124,17 @@ class Environment:
 
         return collide_x, collide_y
 
+
     def senses(self, robot:Agent, location:Location):
         dist_vector = robot.pos - np.array([self.locations[location][0], self.locations[location][1]])
         dist_from_center = np.sqrt(dist_vector.dot(dist_vector))
         return dist_from_center < self.locations[location][2]
 
+
     def is_on_top_of_spawn(self, robot:Agent, location:Location):
         dist_vector = robot.pos - self.foraging_spawns[location].get(robot.id)
         return np.sqrt(dist_vector.dot(dist_vector)) < robot._radius
+
 
     def get_location(self, location:Location, agent:Agent):
         if agent.id in self.foraging_spawns[location]:
@@ -143,12 +142,14 @@ class Environment:
         else:
             return np.array([self.locations[location][0], self.locations[location][1]])
 
+
     def draw(self, canvas):
         self.draw_zones(canvas)
         self.draw_strawberries(canvas)
         for robot in self.population:
             robot.draw(canvas)
         # self.draw_best_bot(canvas)
+
 
     def draw_market_stats(self, stats_canvas):
         margin = 15
@@ -164,6 +165,7 @@ class Environment:
         stats_canvas.create_rectangle(margin + supply_pos_x - supply_bar_width/2, 48, margin + supply_pos_x + supply_bar_width/2, 52 + height, fill="gray45", outline="")
         stats_canvas.create_text(margin + supply_pos_x - 5, 50 + height + 5, fill="gray45", text=f"{round(self.market.get_supply())}", anchor="nw", font="Arial 10")
 
+
     def draw_zones(self, canvas):
         food_circle = canvas.create_oval(self.food[0] - self.food[2],
                                          self.food[1] - self.food[2],
@@ -178,12 +180,14 @@ class Environment:
                                          fill="orange",
                                          outline="")
 
+
     def get_best_bot_id(self):
         best_bot_id = 0
         for bot in self.population:
             if 1 - abs(bot.noise_mu) > 1 - abs(self.population[best_bot_id].noise_mu):
                 best_bot_id = bot.id
         return best_bot_id
+
 
     def draw_strawberries(self, canvas):
         for bot_id, pos in self.foraging_spawns[Location.FOOD].items():
@@ -192,12 +196,14 @@ class Environment:
         # for bot_id, pos in self.foraging_spawns[Location.NEST].items():
         #     canvas.create_image(pos[0] - 8, pos[1] - 8, image=self.img, anchor='nw')
 
+
     def draw_best_bot(self, canvas):
         circle = canvas.create_oval(self.population[self.best_bot_id].pos[0] - 4,
                                     self.population[self.best_bot_id].pos[1] - 4,
                                     self.population[self.best_bot_id].pos[0] + 4,
                                     self.population[self.best_bot_id].pos[1] + 4,
                                     fill="red")
+
 
     def get_robot_at(self, x, y):
         selected = None
@@ -207,6 +213,7 @@ class Environment:
                 break
         return selected
 
+
     def get_robot_by_id(self, id):
         selected = None
         for bot in self.population:
@@ -215,12 +222,14 @@ class Environment:
                 break
         return selected
 
+
     @staticmethod
     def create_spawn_dicts():
         d = dict()
         for location in Location:
             d[location] = dict()
         return d
+
 
     def check_locations(self, robot:Agent):
         if robot.carries_food():
@@ -240,14 +249,14 @@ class Environment:
                 if self.is_on_top_of_spawn(robot, Location.FOOD):
                     self.pickup_food(robot)
 
+
     def add_spawn(self, location:Location, robot:Agent):
-        # my_random_seed(self.SIMULATION_SEED,robot.id*(1+robot.id)**2)
         rand_angle = random() * 360
-        # my_random_seed(self.SIMULATION_SEED,robot.id*(1+robot.id)**3)
         rand_rad = np.sqrt(random()) * self.locations[location][2]
         pos_in_circle = rand_rad * np.array([cos(radians(rand_angle)), sin(radians(rand_angle))])
         self.foraging_spawns[location][robot.id] = np.array([self.locations[location][0],
                                                              self.locations[location][1]]) + pos_in_circle
+
 
     def deposit_food(self, robot:Agent):
         robot.drop_food()
@@ -257,6 +266,7 @@ class Environment:
 
         self.payment_database.pay_reward(robot.id, reward=reward)
         self.payment_database.pay_creditors(robot.id, total_reward=reward)
+
 
     def pickup_food(self, robot):
         robot.pickup_food()

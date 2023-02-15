@@ -15,14 +15,6 @@ from helpers.utils import get_orientation_from_vector, rotate, InsufficientFunds
     NoLocationSensedException
 
 
-def my_random_seed(seed,n=None):
-    """
-    applies the random.seed using input, when seed is not None
-    """
-    if seed!="" and seed!="random" and seed is not None:
-        random_seed(seed+n if n is not None else seed)
-
-
 class AgentAPI:
     def __init__(self, agent):
         self.speed = agent.speed
@@ -37,6 +29,7 @@ class AgentAPI:
 
 class Agent:
     colors = {State.EXPLORING: "gray35", State.SEEKING_FOOD: "orange", State.SEEKING_NEST: "green"}
+
 
     def __init__(self,
                  robot_id,
@@ -55,7 +48,6 @@ class Agent:
                  communication_stop_time
                  ):
 
-        # self.SIMULATION_SEED = environment.SIMULATION_SEED
         self.id = robot_id
         self.pos = np.array([x, y]).astype('float64')
 
@@ -70,11 +62,8 @@ class Agent:
         self._time_since_last_comm = self._comm_stop_time + self._communication_cooldown + 1
         self.comm_state = CommunicationState.OPEN
 
-        # my_random_seed(self.SIMULATION_SEED,self.id*(1+self.id)**4)
         self.orientation = random() * 360  # 360 degree angle
-        # my_random_seed(self.SIMULATION_SEED,self.id*(1+self.id)**5)
         self.noise_mu = gauss(noise_sampling_mu, noise_sampling_sigma)
-        # my_random_seed(self.SIMULATION_SEED,self.id*(1+self.id)**6)
         if random() >= 0.5:
             self.noise_mu = -self.noise_mu
         self.noise_sd = noise_sd
@@ -89,6 +78,7 @@ class Agent:
         self.sensors = {}
         self.behavior = behavior_factory(behavior_params)
         self.api = AgentAPI(self)
+
 
     def __str__(self):
         return f"ID: {self.id}\n" \
@@ -107,17 +97,22 @@ class Agent:
                f"dr: {np.round(self.dr, 2)}\n" \
                f"{self.behavior.debug_text()}"
 
+
     def __repr__(self):
         return f"bot {self.id}"
+
 
     def __hash__(self):
         return self.id
 
+
     def __eq__(self, other):
         return self.id == other.id
 
+
     def __ne__(self, other):
         return not (self == other)
+
 
     def communicate(self, neighbors):
         self.previous_nav = copy.deepcopy(self.behavior.navigation_table)
@@ -126,6 +121,7 @@ class Agent:
             self.behavior.buy_info(session)
         self.new_nav = self.behavior.navigation_table
         self.behavior.navigation_table = self.previous_nav
+
 
     def step(self):
         self.behavior.navigation_table = self.new_nav
@@ -140,12 +136,15 @@ class Agent:
         self.update_communication_state()
         self.update_trace()
 
+
     def get_info_from_behavior(self, location):
         return self.behavior.sell_info(location)
+
 
     def update_trace(self):
         self.trace.appendleft(self.pos[1])
         self.trace.appendleft(self.pos[0])
+
 
     def get_relative_position_to_location(self, location: Location):
         if self.environment.get_sensors(self)[location]:
@@ -153,12 +152,14 @@ class Agent:
         else:
             raise NoLocationSensedException()
 
+
     def move(self):
         wanted_movement = rotate(self.dr, self.orientation)
         noise_angle = gauss(self.noise_mu, self.noise_sd)
         noisy_movement = rotate(wanted_movement, noise_angle)
         self.orientation = get_orientation_from_vector(noisy_movement)
         self.pos = self.clamp_to_map(self.pos + noisy_movement)
+
 
     def clamp_to_map(self, new_position):
         if new_position[0] < self._radius:
@@ -171,10 +172,12 @@ class Agent:
             new_position[1] = self.environment.height - self._radius
         return new_position
 
+
     def update_levi_counter(self):
         self.levi_counter -= 1
         if self.levi_counter <= 0:
             self.levi_counter = choices(range(1, rw.get_max_levi_steps() + 1), rw.get_levi_weights())[0]
+
 
     def get_levi_turn_angle(self):
         angle = 0
@@ -182,6 +185,7 @@ class Agent:
             angle = choices(np.arange(0, 360), rw.get_crw_weights())[0]
         self.update_levi_counter()
         return angle
+
 
     def draw(self, canvas):
         circle = canvas.create_oval(self.pos[0] - self._radius,
@@ -196,8 +200,10 @@ class Agent:
         self.draw_orientation(canvas)
         # self.draw_trace(canvas)
 
+
     def draw_trace(self, canvas):
         tail = canvas.create_line(*self.trace)
+
 
     def draw_comm_radius(self, canvas):
         circle = canvas.create_oval(self.pos[0] - self.communication_radius,
@@ -205,6 +211,7 @@ class Agent:
                                     self.pos[0] + self.communication_radius,
                                     self.pos[1] + self.communication_radius,
                                     outline="gray")
+
 
     def draw_goal_vector(self, canvas):
         arrow = canvas.create_line(self.pos[0],
@@ -228,6 +235,7 @@ class Agent:
                                    arrow=LAST,
                                    fill="darkorange")
 
+
     def draw_orientation(self, canvas):
         line = canvas.create_line(self.pos[0],
                                   self.pos[1],
@@ -235,30 +243,39 @@ class Agent:
                                   self.pos[1] + self._radius * sin(radians(self.orientation)),
                                   fill="white")
 
+
     def speed(self):
         return self._speed
+
 
     def radius(self):
         return self._radius
 
+
     def get_id(self):
         return self.id
+
 
     def reward(self):
         return self.environment.payment_database.get_reward(self.id)
 
+
     def get_sensors(self):
         return self.sensors
 
+
     def carries_food(self):
         return self._carries_food
+
 
     def drop_food(self):
         self._carries_food = False
         self.items_collected += 1
 
+
     def pickup_food(self):
         self._carries_food = True
+
 
     def set_desired_movement(self, dr):
         norm_dr = norm(dr)
@@ -266,9 +283,11 @@ class Agent:
             dr = self._speed * dr / norm_dr
         self.dr = dr
 
+
     def record_transaction(self, transaction):
         transaction.timestep = self.environment.timestep
         self.environment.payment_database.record_transaction(transaction)
+
 
     def update_communication_state(self):
         self._time_since_last_comm += 1
@@ -278,6 +297,7 @@ class Agent:
             self.comm_state = CommunicationState.ON_COOLDOWN
         else:
             self.comm_state = CommunicationState.PROCESSING
+
 
     def communication_happened(self):
         self._time_since_last_comm = 0

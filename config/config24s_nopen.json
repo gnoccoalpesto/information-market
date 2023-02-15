@@ -12,8 +12,8 @@
     "radius": 50
   },
   "simulation_steps": 15000,
-  "number_runs": 200,
-  "simulation_seed": 22111991,
+  "number_runs": 128,
+  "simulation_seed": 100223,
   "visualization": {
     "activate": false,
     "fps": 60
@@ -78,8 +78,8 @@
     }
   },
   "data_collection": {
-    "output_directory": "../data/gap/",
-    "filename": "",
+    "output_directory": "../data/new/",
+    "filename": "nopen",
     "metrics": ["items_evolution","rewards_evolution"],
     "precise_recording_interval": 100
   }

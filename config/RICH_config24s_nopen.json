@@ -78,8 +78,8 @@
     }
   },
   "data_collection": {
-    "output_directory": "../data/gap/",
-    "filename": "RICH_24sceptical_025th_1scaboteur_0rotation_nopenalisation_100223Seed.csv",
+    "output_directory": "../data/new/",
+    "filename": "nopen_R.csv",
     "metrics": ["items_evolution","rewards_evolution"],
     "precise_recording_interval": 100
   }
