@@ -78,8 +78,8 @@
     }
   },
   "data_collection": {
-    "output_directory": "../data/gap/new/",
-    "filename": "24s_pen_100223.csv",
+    "output_directory": "../data/new/",
+    "filename": "pen",
     "metrics": ["items_evolution","rewards_evolution"],
     "precise_recording_interval": 100
   }

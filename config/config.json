@@ -11,9 +11,9 @@
     "y": 300,
     "radius": 50
   },
-  "simulation_steps": 500,
-  "number_runs": 5,
-  "simulation_seed":"",
+  "simulation_steps": 15000,
+  "number_runs": 1,
+  "simulation_seed":100223,
   "visualization": {
     "activate": false,
     "fps": 60
@@ -79,7 +79,7 @@
   },
   "data_collection": {
     "output_directory": "../data/test/",
-    "filename": "test1pen.csv",
+    "filename": "testSEED.csv",
     "metrics": ["items_evolution","rewards_evolution"],
     "precise_recording_interval": 100
   }

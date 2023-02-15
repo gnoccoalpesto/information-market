@@ -370,7 +370,7 @@ def sidebyside_boxplots(
 
 
 def plot_evolution( filename=[],
-                    data_folder="../data/gap/new",
+                    data_folder="../data/new",
                     metric="items_evolution",
                     title="",
                     compare=""
@@ -562,6 +562,108 @@ def plot_evolution( filename=[],
             run_x=np.concatenate([run_x,run_x])
             run_labels=['pen' for _ in run_pen_data]+['nopen' for _ in run_nopen_data]
         sns.lineplot(x=run_x,y=run_data,hue=run_labels)
+    plt.show()
+
+
+def evolution_boxplot(
+                filenames=[],
+                data_folder="../data/new",\
+                title="",\
+                metric="items_evolution",
+                by=1
+                ):
+    filename_pen="pen.csv"
+    pen_df=pd.read_csv(f"{data_folder}/{metric}/{filename_pen}", header=None)
+    labels=[_ for _ in pen_df.iloc[0]]
+    pen_df=pen_df.iloc[1:]
+    pen_df.columns=labels
+    selected_runs=pen_df[labels[0]].unique()[:128]
+    run_data=[]
+    run_x=[]
+    run_labels=[]
+    for run in selected_runs:
+        run_pen_data=[]
+        run_pen_df=pen_df.loc[lambda df: df[labels[0]] == run]
+        steps=run_pen_df[labels[1]].unique()
+        steps=steps[2*len(steps)//4:]
+        # steps=steps[:1*len(steps)//4]
+        for step in steps:
+            step_df=run_pen_df.loc[lambda df: df[labels[1]] == step].iloc[:,-1]
+            step_df=np.asarray([float(_) for _ in step_df.values[0][1:-1].split(", ")])
+            run_pen_data.append(np.sum(step_df))
+        run_data=np.concatenate([run_data,run_pen_data])
+        run_x=np.concatenate([run_x,np.asarray([int(_) for _ in steps])])
+        run_labels=run_labels+['nopen' for _ in run_pen_data]
+
+    filename_nopen="nopen.csv"
+    nopen_df=pd.read_csv(f"{data_folder}/{metric}/{filename_nopen}", header=None)
+    labels=[_ for _ in nopen_df.iloc[0]]
+    nopen_df=nopen_df.iloc[1:]
+    nopen_df.columns=labels
+    selected_runs=nopen_df[labels[0]].unique()[:128]
+    nopen_run_data=[]
+    nopen_run_x=[]
+    nopen_run_labels=[]
+    for run in selected_runs:
+        run_nopen_data=[]
+        run_nopen_df=nopen_df.loc[lambda df: df[labels[0]] == run]
+        steps=run_nopen_df[labels[1]].unique()
+        steps=steps[2*len(steps)//4:]
+        # steps=steps[:1*len(steps)//4]
+        for step in steps:
+            step_df=run_nopen_df.loc[lambda df: df[labels[1]] == step].iloc[:,-1]
+            step_df=np.asarray([float(_) for _ in step_df.values[0][1:-1].split(", ")])
+            run_nopen_data.append(np.sum(step_df))
+        nopen_run_data=np.concatenate([nopen_run_data,run_nopen_data])
+        nopen_run_x=np.concatenate([nopen_run_x,np.asarray([int(_) for _ in steps])])
+        nopen_run_labels=nopen_run_labels+['nopen' for _ in run_nopen_data]
+    run_nopen_data-=np.min(run_nopen_data)
+    run_data=run_data/np.max(run_data)
+    nopen_run_data=nopen_run_data/np.max(nopen_run_data)
+    plt.figure("pen, second half")
+    sns.boxplot(run_data)
+    plt.figure("no pen, second half")
+    sns.boxplot(nopen_run_data)
+    t_test=stats.ttest_ind(run_data, nopen_run_data, equal_var=False,)
+    print(f"t-test: {t_test.statistic},\n p-value: {t_test.pvalue} << 0.05 \n CAN REJECT SIMILARITY HYPOTHESIS")
+
+    # BASE_BOX_WIDTH=3
+    # BASE_BOX_HEIGHT=7
+    # filenames=[["nopen.csv"],["pen.csv"]]
+    # labels=["naive","threshold 0.25"]
+    # ttestspv=np.round([0.0,0.0],4)
+    # filenames1=filenames[0]
+    # filenames2=filenames[1]
+    # n_boxes=len(filenames1)// by
+    # sns.set_style("whitegrid")
+    # fig, axs = plt.subplots(by, n_boxes, sharey=True)
+    # fig.set_size_inches(BASE_BOX_WIDTH*n_boxes,BASE_BOX_HEIGHT+1)
+    # fig.suptitle(title)
+    # for idx,(filename1,filename2) in enumerate(zip(filenames1,filenames2)):
+    #     list1=pd.read_csv(f"{data_folder}/{metric}/{filename1}", header=None).apply(np.sum, axis=1)
+    #     list2=pd.read_csv(f"{data_folder}/{metric}/{filename2}", header=None).apply(np.sum, axis=1)
+    #     list1_flat = pd.DataFrame(list1.to_numpy().flatten())
+    #     list2_flat = pd.DataFrame(list2.to_numpy().flatten())
+    #     list1= pd.DataFrame(np.full(list1_flat.shape, labels[0]))
+    #     list2= pd.DataFrame(np.full(list2_flat.shape, labels[1]))
+    #     list1_flat = pd.concat([list1_flat, list1], axis=1)
+    #     list2_flat = pd.concat([list2_flat, list2], axis=1)
+    #     data = pd.concat([list1_flat, list2_flat])
+    #     data.columns = ["items collected", "scepticism"]
+    #     if idx==0:
+    #         sns.boxplot(data=data,y=data.columns[0],x='scepticism',hue='scepticism',linewidth=1, dodge=False, ax=axs).set(
+    #              xlabel=None,ylabel=None,xticklabels=[],xticks=[])
+    #         axs[idx].set_ylabel("totat items collected")
+    #     else:
+    #         sns.boxplot(data=data,y=data.columns[0],x='scepticism',linewidth=1, dodge=False, ax=axs).set(
+    #             xlabel=None, ylabel=None,xticklabels=[],xticks=[])
+    #     _, _ ,_,_,_, lie_angle,_=get_file_config(filename1)
+    #     params=f"{lie_angle},\nT-test (threshold=0.05)\np-value: {ttestspv[idx]}"
+    #     axs[idx].set_xlabel(params)
+    # sns.despine(fig, axs[idx], trim=False)
+    # fig.suptitle("TOTAL ITEMS COLLECTED, COMPARISON ON SCEPTICISM\n"
+    #             "EXPERIMENTS WITH SIMILAR PARAMETERS.\nCORRELATION TEST FOR THE PAIRS",fontweight="bold")
+    # plt.ylim(bottom=0)
     plt.show()
 
 
@@ -1642,5 +1744,6 @@ if __name__ == '__main__':
     # myttest(data_folder="../data/old/",compare="")
     # myanovatest()
     # sidebyside_boxplots()
-    plot_evolution(compare="n")
+    # plot_evolution(compare="g")
+    evolution_boxplot()
     pass
