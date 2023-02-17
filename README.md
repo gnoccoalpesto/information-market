@@ -106,7 +106,7 @@ Payment systems implement the logic responsible for controlling the price of inf
 ## Randomization
 
 Seeding the random number generator is useful when repeating experiments is needed.<br />
-If empty string ("") or "random" is passed in the configuration, the simulation utilizes a different seed for each time a random function is called.<br /> Otherwise, the passed seed is used as base, increased by the number of the run; moreover, each agent uses a exponential series to generate different numbers in each of its methods. 
+If empty string ("") or "random" is passed in the configuration, the simulation utilizes a different seed for each time a random function is called.<br /> Otherwise, the passed seed is used as base, increased by the number of the run.
 
 ## Visual Simulation and Hotkeys
 

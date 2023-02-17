@@ -173,11 +173,12 @@ def myttest(
             #####
             # "24sceptical_3000th_1scaboteur_0rotation_nopenalisation.txt",
             # "24sceptical_025th_1scaboteur_0rotation_nopenalisation.txt"
-            "24sceptical_3000th_1scaboteur_0rotation_penalisation.txt",
-            "24sceptical_025th_1scaboteur_0rotation_penalisation.txt"
+            "24sceptical_025th_1scaboteur_0rotation_nopenalisation.txt",
+            "24sceptical_025th_1scaboteur_0rotation_nopenalisation.txt"
             ]
     data1=pd.read_csv(f"{data_folder}{compare+'/' if compare!='' else ''}{metric}/{filenames[0]}").apply(np.sum, axis=1)
     data2=pd.read_csv(f"{data_folder}{compare+'/' if compare!='' else ''}{metric}/{filenames[1]}").apply(np.sum, axis=1)
+    print(type(pd.read_csv(f"{data_folder}{compare+'/' if compare!='' else ''}{metric}/{filenames[1]}")))
     t_test=stats.ttest_ind(data1, data2, equal_var=False)
     print(f"t-test: {t_test.statistic},\n p-value: {t_test.pvalue}")
 
@@ -209,12 +210,12 @@ def myanovatest(
 def myboxplots(
                 filenames=[],
                 # comparison_method="s",
-                data_folder="../data/",\
+                data_folder="../data/all",\
                 title="",\
-                compare="scaboteur_rotation",\
+                compare="",\
                 # metric="rewards",
                 metric="items_collected",
-                mode="c",
+                mode="r",
                 by=1
                 ):
     '''
@@ -229,6 +230,9 @@ def myboxplots(
     '''
     BASE_BOX_WIDTH=3
     BASE_BOX_HEIGHT=7
+    filenames = [
+                "24sceptical_3000th_1scaboteur_0rotation_nopenalisation.txt"
+    ]
     if filenames==[]:
         filenames=os.listdir(f"{data_folder}{compare}/{metric}/")
         #TODO is the following better?
@@ -242,13 +246,14 @@ def myboxplots(
         name_honest, n_honest,name_saboteur,n_saboteur,\
             skepticism, lie_angle,penalisation=get_file_config(filename)
         params=f"{n_honest} honests,\n{skepticism},\n {lie_angle},\n {penalisation}"
-        axs[idx].set_xlabel(params)
+        # axs[idx].set_xlabel(params)
         filename=f"{data_folder}{compare}/{metric}/{filename}"
         match mode:
             case "r":
             #RELATIVE DATA
                 #TODO correct?
                 data=pd.read_csv(filename, header=None).to_numpy()
+                print(type(data))
                 data=(100*data/np.sum(data,axis=1)[:,None]).flatten()
                 #TODO could use title functions inside plot calls
                 sns.boxplot(data=data,ax=axs[idx]).set(xticklabels=[],xticks=[])
@@ -370,7 +375,7 @@ def sidebyside_boxplots(
 
 
 def plot_evolution( filename=[],
-                    data_folder="../data/new",
+                    data_folder="../data/new/",
                     metric="items_evolution",
                     title="",
                     compare=""
@@ -406,32 +411,31 @@ def plot_evolution( filename=[],
 
     #TODO rework to make it compact and more general
     if "a" in compare:
-        filename_pen="24sceptical_025th_1scaboteur_0rotation_penalisation.csv"
-        # filename_pen="24sceptical_025th_1scaboteur_0rotation_nopenalisation.csv"
-        pen_df=pd.read_csv(f"{data_folder}/{metric}/{filename_pen}", header=None)
-        labels=[_ for _ in pen_df.iloc[0]]
-        pen_df=pen_df.iloc[1:]
-        pen_df.columns=labels
+        filename_pen="nopen_P.csv"
+        pen_df=pd.read_csv(f"{data_folder}/{metric}/{filename_pen}",converters={"items_list": pd.eval})
+        labels=pen_df.columns.to_list()
         selected_runs=pen_df[labels[0]].unique()
         run_data=[]
         for run in selected_runs:
             run_pen_data=[]
-            run_pen_df=pen_df.loc[lambda df: df[labels[0]] == run]
-            steps=run_pen_df[labels[1]].unique()
-            for step in steps:
-                step_df=run_pen_df.loc[lambda df: df[labels[1]] == step].iloc[:,-1]
-                step_df=np.asarray([float(_) for _ in step_df.values[0][1:-1].split(", ")])
-                run_pen_data.append(np.sum(step_df))
-            run_data.append(run_pen_data)        
-        data_df=pd.DataFrame(data=np.array(run_data),
-                            columns=steps,
-                            index=selected_runs)
-        data_df=data_df.transpose()
-        data_df.index.name=labels[1]
-        data_df.columns.name=labels[0]
-        sns.lineplot(data=data_df,legend=None,errorbar=("ci",90)).set_xticks(steps[::5])
+            run_pen_df=pen_df.loc[lambda df: df[labels[0]] == run].iloc[:,-1].to_numpy()
+            for step in range(len(run_pen_df)):
+                step_df=np.sum(run_pen_df[step])
+                run_pen_data.append(step_df)
+            run_data.extend(run_pen_data)#could also just extend run_data
+        
+        pen_df=pd.concat([pen_df,pd.DataFrame(run_data, columns=['items_sum'])],axis=1)
+        runs_np=pen_df[labels[0]]#.to_numpy()
+        ticks_np=pen_df[labels[1]]#.to_numpy()
+        sums_np=pen_df['items_sum']#.to_numpy()
+        run_labels=['run'+str(run) for run in runs_np]
+        sns.lineplot(x=ticks_np,y=sums_np,hue=run_labels,legend=None).set_xticks(pen_df[labels[1]].unique()[::5])
+        # sns.lineplot(data=pen_df, x=labels[1], y='items_sum', hue=labels[0],\
+        #     legend=None).set_xticks(pen_df[labels[1]].unique()[::5])
+        # sns.lineplot(data=pen_df, x=labels[1], y='items_sum', hue=labels[0], errorbar=("ci",90),\
+        #     legend=None).set_xticks(pen_df[labels[1]].unique()[::5])
+        #statistics linplot
         plt.xticks(rotation=45)
-        #TODO vertical ticks on x axis
 
     elif "g" in compare: 
         # filename_pen="DENOISED_24sceptical_025th_1scaboteur_0rotation_penalisation_100223Seed.csv"
@@ -1736,14 +1740,10 @@ if __name__ == '__main__':
     # scaboteur_rotation(3)
 
     # metric,mode=parse_args()
-    # myboxplots(
-    #             filenames=filenames,
-    #             data_folder=DATA_DIR,
-    #             metric=metric,
-    #             mode=mode)
-    # myttest(data_folder="../data/old/",compare="")
+    # myboxplots()
+    # myttest(data_folder="../data/all/",compare="")
     # myanovatest()
     # sidebyside_boxplots()
-    # plot_evolution(compare="g")
-    evolution_boxplot()
+    plot_evolution(compare="a")
+    # evolution_boxplot()
     pass

@@ -78,12 +78,9 @@ class Environment:
                 if distance_between(self.population[id1], self.population[id2]) < self.population[id1].communication_radius:
                     neighbors_table[id1].append(self.population[id2])
                     neighbors_table[id2].append(self.population[id1])
-
-        # Iterate over robots
         # 1. Negotiation/communication
         for robot in self.population:
             robot.communicate(neighbors_table[robot.id])
-
         # 2. Move
         for robot in self.population:
             self.check_locations(robot)
@@ -192,9 +189,6 @@ class Environment:
     def draw_strawberries(self, canvas):
         for bot_id, pos in self.foraging_spawns[Location.FOOD].items():
             canvas.create_image(pos[0] - 8, pos[1] - 8, image=self.img, anchor='nw')
-
-        # for bot_id, pos in self.foraging_spawns[Location.NEST].items():
-        #     canvas.create_image(pos[0] - 8, pos[1] - 8, image=self.img, anchor='nw')
 
 
     def draw_best_bot(self, canvas):

@@ -50,7 +50,7 @@ def run_processes(config: Configuration):
 
 
 def run(config:Configuration, i):
-    print(f"launched process {i+1}",end="")
+    # print(f"launched process {i+1}",end="")
     simulation_seed = config.value_of("simulation_seed")
     if simulation_seed!='' and simulation_seed!='random':
         config.set("simulation_seed", simulation_seed+i)
@@ -125,6 +125,7 @@ def record_data(config:Configuration, controllers):
             case "items_evolution":
                 dataframes = []
                 for i, controller in enumerate(controllers):
+                    print(type(controller.get_items_evolution_list()[0][1][0]))
                     df = pd.DataFrame(controller.get_items_evolution_list(), columns=["tick", "items_list"])
                     df["simulation_id"] = i
                     df = df.set_index("simulation_id")
@@ -134,7 +135,6 @@ def record_data(config:Configuration, controllers):
                 pd.concat(dataframes).to_csv(join(output_directory, "items_evolution", current_filename))
             case _:
                 print(f"[WARNING] Could not record metric: '{metric}'. Metric name is not valid.")
-        
         #new transaction log dataframe
         transaction_logs = []
         for i, controller in enumerate(controllers):
