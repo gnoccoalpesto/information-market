@@ -11,9 +11,9 @@
     "y": 300,
     "radius": 50
   },
-  "simulation_steps": 500,
-  "number_runs": 5,
-  "simulation_seed":100223,
+  "simulation_steps": 15000,
+  "simulation_seed": 5684436,
+  "number_runs": 128,
   "visualization": {
     "activate": false,
     "fps": 60
@@ -42,7 +42,7 @@
     },
     {
       "class": "ScepticalBehavior",
-      "population_size": 5,
+      "population_size": 24,
       "parameters": {
         "threshold": 0.25
       }
@@ -59,7 +59,7 @@
       "class": "ScaboteurBehavior",
       "population_size": 1,
       "parameters": {
-        "rotation_angle": 0,
+        "rotation_angle": 70,
         "threshold": 0.25
       }
     }
@@ -78,9 +78,9 @@
     }
   },
   "data_collection": {
-    "output_directory": "../data/test/",
-    "filename": "testEVO.csv",
-    "metrics": ["items_evolution","items_collected"],
+    "output_directory": "../data/penalisation_seed/",
+    "filename": "24s_p_7500tr_70r.csv",
+    "metrics": ["items_evolution"],
     "precise_recording_interval": 100
   }
 }

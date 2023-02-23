@@ -134,7 +134,6 @@ def record_data(config:Configuration, controllers):
                 pd.concat(dataframes).to_csv(join(output_directory, "items_evolution", current_filename))
             case _:
                 print(f"[WARNING] Could not record metric: '{metric}'. Metric name is not valid.")
-        
         #new transaction log dataframe
         transaction_logs = []
         for i, controller in enumerate(controllers):

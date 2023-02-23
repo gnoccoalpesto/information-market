@@ -119,6 +119,7 @@ def get_file_config(filename:str):
     return name_honest, n_honest,name_saboteur,n_saboteur,\
                 skepticism, lie_angle,penalisation
 
+
 #------------------------------------------------------------------------------------------------
 #---------------------------------------STATISTICAL TESTS----------------------------------------
 def myttest(
@@ -173,11 +174,12 @@ def myttest(
             #####
             # "24sceptical_3000th_1scaboteur_0rotation_nopenalisation.txt",
             # "24sceptical_025th_1scaboteur_0rotation_nopenalisation.txt"
-            "24sceptical_3000th_1scaboteur_0rotation_penalisation.txt",
-            "24sceptical_025th_1scaboteur_0rotation_penalisation.txt"
+            "24sceptical_025th_1scaboteur_0rotation_nopenalisation.txt",
+            "24sceptical_025th_1scaboteur_0rotation_nopenalisation.txt"
             ]
     data1=pd.read_csv(f"{data_folder}{compare+'/' if compare!='' else ''}{metric}/{filenames[0]}").apply(np.sum, axis=1)
     data2=pd.read_csv(f"{data_folder}{compare+'/' if compare!='' else ''}{metric}/{filenames[1]}").apply(np.sum, axis=1)
+    print(type(pd.read_csv(f"{data_folder}{compare+'/' if compare!='' else ''}{metric}/{filenames[1]}")))
     t_test=stats.ttest_ind(data1, data2, equal_var=False)
     print(f"t-test: {t_test.statistic},\n p-value: {t_test.pvalue}")
 
@@ -209,12 +211,12 @@ def myanovatest(
 def myboxplots(
                 filenames=[],
                 # comparison_method="s",
-                data_folder="../data/",\
+                data_folder="../data/all",\
                 title="",\
-                compare="scaboteur_rotation",\
+                compare="",\
                 # metric="rewards",
                 metric="items_collected",
-                mode="c",
+                mode="r",
                 by=1
                 ):
     '''
@@ -229,6 +231,9 @@ def myboxplots(
     '''
     BASE_BOX_WIDTH=3
     BASE_BOX_HEIGHT=7
+    filenames = [
+                "24sceptical_3000th_1scaboteur_0rotation_nopenalisation.txt"
+    ]
     if filenames==[]:
         filenames=os.listdir(f"{data_folder}{compare}/{metric}/")
         #TODO is the following better?
@@ -242,13 +247,14 @@ def myboxplots(
         name_honest, n_honest,name_saboteur,n_saboteur,\
             skepticism, lie_angle,penalisation=get_file_config(filename)
         params=f"{n_honest} honests,\n{skepticism},\n {lie_angle},\n {penalisation}"
-        axs[idx].set_xlabel(params)
+        # axs[idx].set_xlabel(params)
         filename=f"{data_folder}{compare}/{metric}/{filename}"
         match mode:
             case "r":
             #RELATIVE DATA
                 #TODO correct?
                 data=pd.read_csv(filename, header=None).to_numpy()
+                print(type(data))
                 data=(100*data/np.sum(data,axis=1)[:,None]).flatten()
                 #TODO could use title functions inside plot calls
                 sns.boxplot(data=data,ax=axs[idx]).set(xticklabels=[],xticks=[])
@@ -276,48 +282,223 @@ def myboxplots(
     plt.show()
 
 
+def boxplots_pen_lie(
+                filenames=[],
+                data_folder="../data/penalisation_investigation/",\
+                metric="items_collected",
+                by=1
+                ):
+    '''
+    this function uses as input not headed, numeric rows, csv files
+    '''
+    BASE_BOX_WIDTH=3
+    BASE_BOX_HEIGHT=7
+    filenames=[
+                [
+                "24s_np_7500tr_0r.csv",
+                "24s_np_7500tr_10r.csv",
+                "24s_np_7500tr_20r.csv",
+                "24s_np_7500tr_30r.csv",
+                "24s_np_7500tr_40r.csv",
+                "24s_np_7500tr_50r.csv",
+                "24s_np_7500tr_60r.csv",
+                "24s_np_7500tr_70r.csv",
+                "24s_np_7500tr_80r.csv",
+                "24s_np_7500tr_90r.csv",
+                ],[
+                "24s_p_7500tr_0r.csv",
+                "24s_p_7500tr_10r.csv",
+                "24s_p_7500tr_20r.csv",
+                "24s_p_7500tr_30r.csv",
+                "24s_p_7500tr_40r.csv",
+                "24s_p_7500tr_50r.csv",
+                "24s_p_7500tr_60r.csv",
+                "24s_p_7500tr_70r.csv",
+                "24s_p_7500tr_80r.csv",
+                "24s_p_7500tr_90r.csv",
+                ]
+                # [
+                # "22s_np_7500tr_0r.csv",
+                # "22s_np_7500tr_10r.csv",
+                # "22s_np_7500tr_20r.csv",
+                # "22s_np_7500tr_30r.csv",
+                # "22s_np_7500tr_40r.csv",
+                # "22s_np_7500tr_50r.csv",
+                # "22s_np_7500tr_60r.csv",
+                # "22s_np_7500tr_70r.csv",
+                # "22s_np_7500tr_80r.csv",
+                # "22s_np_7500tr_90r.csv",
+                # ],[
+                # "22s_p_7500tr_0r.csv",
+                # "22s_p_7500tr_10r.csv",
+                # "22s_p_7500tr_20r.csv",
+                # "22s_p_7500tr_30r.csv",
+                # "22s_p_7500tr_40r.csv",
+                # "22s_p_7500tr_50r.csv",
+                # "22s_p_7500tr_60r.csv",
+                # "22s_p_7500tr_70r.csv",
+                # "22s_p_7500tr_80r.csv",
+                # "22s_p_7500tr_90r.csv",
+                # ]
+            ]
+    labels=["no penalisation","penalisation"]
+    columns_labels=["items collected", "lie angle"]
+    SUPTITLE="COMPARING PENALISATION (WITH AND WITHOUT)\nAT DIFFERENT LIE ANGLES\n"\
+            "FOR 22 SCEPTICALS AND 3 SCABOTEUR\nFOR STABLE PART OF THE EXPERIMENT"
+    n_boxes=len(filenames[0])// by
+    fig, axs = plt.subplots(by, n_boxes, sharey=True)
+    fig.set_size_inches(BASE_BOX_WIDTH*n_boxes,BASE_BOX_HEIGHT+1)
+    for idx,(f_nopen,f_pen) in enumerate(zip(filenames[0],filenames[1])):
+        list_nopen=pd.read_csv(f"{data_folder}{metric}/{f_nopen}", header=None).apply(np.sum, axis=1)#Series
+        list_pen=pd.read_csv(f"{data_folder}{metric}/{f_pen}", header=None).apply(np.sum, axis=1)
+        list_nopen_flat = pd.DataFrame(list_nopen.to_numpy().flatten()) #Dataframe(ndarray)
+        list_pen_flat = pd.DataFrame(list_pen.to_numpy().flatten())
+        ttest_pv=stats.ttest_ind(list_nopen_flat,list_pen_flat)[1][0]
+        list_nopen= pd.DataFrame(np.full(list_nopen_flat.shape, labels[0]))
+        list_pen= pd.DataFrame(np.full(list_pen_flat.shape, labels[1]))
+        list_nopen_flat = pd.concat([list_nopen_flat, list_nopen], axis=1)
+        list_pen_flat = pd.concat([list_pen_flat, list_pen], axis=1)
+        data = pd.concat([list_nopen_flat, list_pen_flat])
+        data.columns = columns_labels
+        if idx==0:
+            sns.boxplot(data=data,y=data.columns[0],x=columns_labels[1],hue=columns_labels[1],linewidth=1, dodge=False, ax=axs[idx]).set(
+                 xlabel=None,ylabel=None,xticklabels=[],xticks=[])
+            axs[idx].set_ylabel("totat items collected")
+        else:
+            sns.boxplot(data=data,y=data.columns[0],x=columns_labels[1],linewidth=1, dodge=False, ax=axs[idx]).set(
+                xlabel=None, ylabel=None,xticklabels=[],xticks=[])
+        lie_angle=idx*10
+        ttest_th=0.05
+        params=f"{lie_angle},\nT-test (thr={ttest_th})\np-value: \n{np.round(ttest_pv,5)}"
+        axs[idx].set_xlabel(params)
+    plt.ylim(bottom=0)
+    sns.despine(fig, axs[idx], trim=False)
+    fig.suptitle(SUPTITLE,fontweight="bold")
+    plt.show()
+
+
+def boxplot_evo_pen_lie(
+                filenames=[],
+                data_folder="../data/penalisation_seed/",\
+                metric="items_evolution",
+                by=1
+                ):
+    '''
+    this function uses as input not headed, numeric rows, csv files
+    '''
+    BASE_BOX_WIDTH=3
+    BASE_BOX_HEIGHT=7
+    filenames=[
+                [
+                "24s_np_7500tr_0r.csv",
+                "24s_np_7500tr_10r.csv",
+                "24s_np_7500tr_20r.csv",
+                "24s_np_7500tr_30r.csv",
+                "24s_np_7500tr_40r.csv",
+                "24s_np_7500tr_50r.csv",
+                "24s_np_7500tr_60r.csv",
+                "24s_np_7500tr_70r.csv",
+                "24s_np_7500tr_80r.csv",
+                "24s_np_7500tr_90r.csv",
+                ],[
+                "24s_p_7500tr_0r.csv",
+                "24s_p_7500tr_10r.csv",
+                "24s_p_7500tr_20r.csv",
+                "24s_p_7500tr_30r.csv",
+                "24s_p_7500tr_40r.csv",
+                "24s_p_7500tr_50r.csv",
+                "24s_p_7500tr_60r.csv",
+                "24s_p_7500tr_70r.csv",
+                "24s_p_7500tr_80r.csv",
+                "24s_p_7500tr_90r.csv",
+                ]
+                # [
+                # "22s_np_7500tr_0r.csv",
+                # "22s_np_7500tr_10r.csv",
+                # "22s_np_7500tr_20r.csv",
+                # "22s_np_7500tr_30r.csv",
+                # "22s_np_7500tr_40r.csv",
+                # "22s_np_7500tr_50r.csv",
+                # "22s_np_7500tr_60r.csv",
+                # "22s_np_7500tr_70r.csv",
+                # "22s_np_7500tr_80r.csv",
+                # "22s_np_7500tr_90r.csv",
+                # ],[
+                # "22s_p_7500tr_0r.csv",
+                # "22s_p_7500tr_10r.csv",
+                # "22s_p_7500tr_20r.csv",
+                # "22s_p_7500tr_30r.csv",
+                # "22s_p_7500tr_40r.csv",
+                # "22s_p_7500tr_50r.csv",
+                # "22s_p_7500tr_60r.csv",
+                # "22s_p_7500tr_70r.csv",
+                # "22s_p_7500tr_80r.csv",
+                # "22s_p_7500tr_90r.csv",
+                # ]
+            ]
+    labels=["no penalisation","penalisation"]
+    columns_labels=["items collected", "lie angle"]
+    n_boxes=len(filenames[0])// by
+    fig, axs = plt.subplots(by, n_boxes, sharey=True)
+    fig.set_size_inches(BASE_BOX_WIDTH*n_boxes,BASE_BOX_HEIGHT+1)
+    for idx,(f_nopen,f_pen) in enumerate(zip(filenames[0],filenames[1])):
+        filename_nopen=f"{data_folder}{metric}/{f_nopen}"
+        filename_pen=f"{data_folder}{metric}/{f_pen}"
+        #TODO OPTIMIZE THIS IS SO SLOW
+        nopen_df = pd.read_csv(filename_nopen,converters={'items_list': pd.eval})
+        per_df = pd.read_csv(filename_pen,converters={'items_list': pd.eval})
+        labels=nopen_df.columns.to_list()
+        selected_runs=nopen_df[labels[0]].unique()
+        nopen_data=[]
+        pen_data=[]
+        for run in selected_runs:
+            nopen_run_row=nopen_df.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
+            pen_run_row=per_df.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
+            nopen_last=nopen_run_row.iloc[-1]
+            pen_last=pen_run_row.iloc[-1]
+            nopen_end_transitory=nopen_run_row.iloc[2*len(nopen_run_row)//3]
+            pen_end_transitory=pen_run_row.iloc[2*len(pen_run_row)//3]
+            delta_nopen=nopen_last-nopen_end_transitory
+            delta_pen=pen_last-pen_end_transitory
+            nopen_data.append([delta_nopen.sum()])
+            pen_data.append([delta_pen.sum()])
+        list_nopen_flat = pd.DataFrame(nopen_data)
+        list_pen_flat = pd.DataFrame(pen_data)
+        ttest_pv=stats.ttest_ind(list_nopen_flat,list_pen_flat)[1][0]
+        list_nopen= pd.DataFrame(np.full(list_nopen_flat.shape, labels[0]))
+        list_pen= pd.DataFrame(np.full(list_pen_flat.shape, labels[1]))
+        list_nopen_flat = pd.concat([list_nopen_flat, list_nopen], axis=1)
+        list_pen_flat = pd.concat([list_pen_flat, list_pen], axis=1)
+        data = pd.concat([list_nopen_flat, list_pen_flat])
+        data.columns = columns_labels
+        #TODO FIX LEGEND
+        if idx==0:
+            sns.boxplot(data=data,y=data.columns[0],x=columns_labels[1],hue=columns_labels[1],linewidth=1, dodge=False, ax=axs[idx]).set(
+                 xlabel=None,ylabel=None,xticklabels=[],xticks=[])
+            axs[idx].set_ylabel("totat items collected")
+        else:
+            sns.boxplot(data=data,y=data.columns[0],x=columns_labels[1],linewidth=1, dodge=False, ax=axs[idx]).set(
+                xlabel=None, ylabel=None,xticklabels=[],xticks=[])
+        lie_angle=idx*10
+        ttest_th=0.05
+        params=f"{lie_angle},\nT-test (thr={ttest_th})\np-value: \n{np.round(ttest_pv,5)}"
+        axs[idx].set_xlabel(params)
+    sns.despine(fig, axs[idx], trim=False)
+    fig.suptitle("COMPARING PENALISATION (WITH AND WITHOUT)\nAT DIFFERENT LIE ANGLES\n"\
+    "FOR 24 SCEPTICALS AND 1 SCABOTEUR\nFOR LAST 5000 STEPS OF THE EXPERIMENT, SEEDED",fontweight="bold")
+    plt.ylim(bottom=0)
+    plt.show()
+
+
 def sidebyside_boxplots(
                 filenames=[],
-                # comparison_method="b",
                 data_folder="../data/old",\
                 title="",\
-                # metric="rewards",
                 metric="items_collected",
-                # mode="c",
                 by=1
                 ):
     BASE_BOX_WIDTH=3
     BASE_BOX_HEIGHT=7
-    # if type(filenames[0])==list:
-    #24VS25 COMPARISON
-    # filenames=[[
-    #             "25sceptical_3000th_0scaboteur_0rotation_nopenalisation.txt",
-    #             "25sceptical_3000th_0scaboteur_0rotation_penalisation.txt",
-    #             "25sceptical_025th_0scaboteur_0rotation_nopenalisation.txt",
-    #             "25sceptical_025th_0scaboteur_0rotation_penalisation.txt"
-    #             ],[
-    #             "24sceptical_3000th_1scaboteur_0rotation_nopenalisation.txt",
-    #             "24sceptical_3000th_1scaboteur_0rotation_penalisation.txt",
-    #             "24sceptical_025th_1scaboteur_0rotation_nopenalisation.txt",
-    #             "24sceptical_025th_1scaboteur_0rotation_penalisation.txt"
-    #             ]]
-    # labels=["25","24"]
-    # ttestspv=np.round([0.9921241165035417,0.2257462531902903,0.9863819172024308,0.34887796226657275],4)
-    #PENALISATION VS NOT
-    # filenames=[[
-    #             "25sceptical_3000th_0scaboteur_0rotation_nopenalisation.txt",
-    #             "24sceptical_3000th_1scaboteur_0rotation_nopenalisation.txt",
-    #             "25sceptical_025th_0scaboteur_0rotation_nopenalisation.txt",
-    #             "24sceptical_025th_1scaboteur_0rotation_nopenalisation.txt"
-    #             ],[
-    #             "25sceptical_3000th_0scaboteur_0rotation_penalisation.txt",
-    #             "24sceptical_3000th_1scaboteur_0rotation_penalisation.txt",
-    #             "25sceptical_025th_0scaboteur_0rotation_penalisation.txt",
-    #             "24sceptical_025th_1scaboteur_0rotation_penalisation.txt"
-    #             ]]
-    # labels=["no penalisation","penalisation"]
-    # ttestspv=np.round([0.0,0.0,0.0,0.0],4)
-    #NAIVE VS SCEPTICAL
     filenames=[[
                 "24sceptical_3000th_1scaboteur_0rotation_nopenalisation.txt",
                 "24sceptical_3000th_1scaboteur_0rotation_penalisation.txt"
@@ -365,14 +546,12 @@ def sidebyside_boxplots(
     sns.despine(fig, axs[idx], trim=False)
     fig.suptitle("TOTAL ITEMS COLLECTED, COMPARISON ON SCEPTICISM\n"
                 "EXPERIMENTS WITH SIMILAR PARAMETERS.\nCORRELATION TEST FOR THE PAIRS",fontweight="bold")
-    # plt.ylim(bottom=0)
     plt.show()
 
 
 def plot_evolution( filename=[],
-                    data_folder="../data/new",
+                    data_folder="../data/new/",
                     metric="items_evolution",
-                    title="",
                     compare=""
                     ):
     """
@@ -403,169 +582,55 @@ def plot_evolution( filename=[],
     """
     fig=plt.figure(0)
     fig.set_size_inches(6,5)
-
-    #TODO rework to make it compact and more general
-    if "a" in compare:
-        filename_pen="24sceptical_025th_1scaboteur_0rotation_penalisation.csv"
-        # filename_pen="24sceptical_025th_1scaboteur_0rotation_nopenalisation.csv"
-        pen_df=pd.read_csv(f"{data_folder}/{metric}/{filename_pen}", header=None)
-        labels=[_ for _ in pen_df.iloc[0]]
-        pen_df=pen_df.iloc[1:]
-        pen_df.columns=labels
+    filenames=["pen_P.csv"]
+    # filenames=["pen_P.csv", "pen.csv", "pen_R.csv"]
+    # palettes=["flare","Set2","cubehelix"]
+    legends=['poor']
+    # legends=['poor','base','rich']
+    # legends=['noisier','base','denoised']
+    for filename_pen, legend in zip(filenames,legends):
+        pen_df=pd.read_csv(f"{data_folder}/{metric}/{filename_pen}",converters={"items_list": pd.eval})
+        labels=pen_df.columns.to_list()
+        # selected_runs=re.search(r"p(\d+)",compare).group(1) if this results empty
         selected_runs=pen_df[labels[0]].unique()
         run_data=[]
         for run in selected_runs:
             run_pen_data=[]
-            run_pen_df=pen_df.loc[lambda df: df[labels[0]] == run]
-            steps=run_pen_df[labels[1]].unique()
-            for step in steps:
-                step_df=run_pen_df.loc[lambda df: df[labels[1]] == step].iloc[:,-1]
-                step_df=np.asarray([float(_) for _ in step_df.values[0][1:-1].split(", ")])
-                run_pen_data.append(np.sum(step_df))
-            run_data.append(run_pen_data)        
-        data_df=pd.DataFrame(data=np.array(run_data),
-                            columns=steps,
-                            index=selected_runs)
-        data_df=data_df.transpose()
-        data_df.index.name=labels[1]
-        data_df.columns.name=labels[0]
-        sns.lineplot(data=data_df,legend=None,errorbar=("ci",90)).set_xticks(steps[::5])
-        plt.xticks(rotation=45)
-        #TODO vertical ticks on x axis
-
-    elif "g" in compare: 
-        # filename_pen="DENOISED_24sceptical_025th_1scaboteur_0rotation_penalisation_100223Seed.csv"
-        filename_pen="24s_nopen_100223_POOR.csv"
-        pen_df=pd.read_csv(f"{data_folder}/{metric}/{filename_pen}", header=None)
-        labels=[_ for _ in pen_df.iloc[0]]
-        pen_df=pen_df.iloc[1:]
-        pen_df.columns=labels
-        selected_runs=pen_df[labels[0]].unique()[:128]
-        run_data=[]
-        run_x=[]
-        run_labels=[]
-        for run in selected_runs:
-            run_pen_data=[]
-            run_pen_df=pen_df.loc[lambda df: df[labels[0]] == run]
-            steps=run_pen_df[labels[1]].unique()
-            # steps=steps[10:len(steps)//2-10]
-            for step in steps:
-                step_df=run_pen_df.loc[lambda df: df[labels[1]] == step].iloc[:,-1]
-                step_df=np.asarray([float(_) for _ in step_df.values[0][1:-1].split(", ")])
-                run_pen_data.append(np.sum(step_df))
-            run_data=np.concatenate([run_data,run_pen_data])
-            run_x=np.concatenate([run_x,np.asarray([int(_) for _ in steps])])
-            run_labels=run_labels+['pen' for _ in run_pen_data]
-        # run_data/=np.max(run_data)#normalise
-
-        sns.lineplot(x=run_x,y=run_data,hue=run_labels,errorbar=("ci",90),estimator="median",legend=None)#random bootstrap
-        sns.lineplot(x=run_x,y=run_data,hue=run_labels,errorbar=("sd"),legend=None,palette="flare")#default:+-1 sd
-        # sns.lineplot(x=run_x,y=run_data,hue=run_labels,errorbar=("se"))#==sd/sqrt(SAMPLE_SIZE)
-        sns.lineplot(x=run_x,y=run_data,hue=run_labels,errorbar=("pi",50),legend=None,palette="Set2")#interquartile range
-        sns.lineplot(x=run_x,y=run_data,hue=run_labels,errorbar=(lambda x: (x.min(),x.max())),legend=None)#== pi 100
-        plt.legend(loc='upper left',labels=["median,ci 90","min-max","pi 50","sd"])
-        plt.title(f"aggregated data ({len(selected_runs)}),\n24 scepticals, 0.25 threshold,0 rotation,\nno penalisation, POOR")
-        plt.ylim(-10,500)
-
-    elif "w" in compare: 
-        filenames=["24s_pen_100223_POOR.csv","24s_pen_100223.csv","24s_pen_100223_RICH.csv"]
-        palettes=["flare","Set2","cubehelix"]
-        legends=['poorer','base','richer']
-        for filename_pen, palette, legend in zip(filenames,palettes,legends):
-            pen_df=pd.read_csv(f"{data_folder}/{metric}/{filename_pen}", header=None)
-            labels=[_ for _ in pen_df.iloc[0]]
-            pen_df=pen_df.iloc[1:]
-            pen_df.columns=labels
-            selected_runs=pen_df[labels[0]].unique()[:128]
-            run_data=[]
-            run_x=[]
-            run_labels=[]
-            for run in selected_runs:
-                run_pen_data=[]
-                run_pen_df=pen_df.loc[lambda df: df[labels[0]] == run]
-                steps=run_pen_df[labels[1]].unique()
-                # steps=steps[10:len(steps)//2-10]
-                for step in steps:
-                    step_df=run_pen_df.loc[lambda df: df[labels[1]] == step].iloc[:,-1]
-                    step_df=np.asarray([float(_) for _ in step_df.values[0][1:-1].split(", ")])
-                    run_pen_data.append(np.sum(step_df))
-                run_data=np.concatenate([run_data,run_pen_data])
-                run_x=np.concatenate([run_x,np.asarray([int(_) for _ in steps])])
-                run_labels=run_labels+[legend for _ in run_pen_data]
-
-            sns.lineplot(x=run_x,y=run_data,hue=run_labels,legend='auto',palette=palette)#interquartile range
-        plt.legend(loc='upper left')
-        plt.title(f"aggregated data ({len(selected_runs)} experiments),\nROBOTS: 24 scepticals, 0.25 threshold, 0 lie angle,\npenalisation, DIFFERENT STARTING WEALTH")
-        plt.ylim(-10,500)
-
-    elif "n" in compare: 
-        filenames=["24s_nopen_100223_NOISED.csv","24s_nopen_100223.csv","24s_nopen_100223_DENOISED.csv"]
-        palettes=["flare","Set2","cubehelix"]
-        legends=['noisier','base','denoised']
-        for filename_pen, palette, legend in zip(filenames,palettes,legends):
-            pen_df=pd.read_csv(f"{data_folder}/{metric}/{filename_pen}", header=None)
-            labels=[_ for _ in pen_df.iloc[0]]
-            pen_df=pen_df.iloc[1:]
-            pen_df.columns=labels
-            selected_runs=pen_df[labels[0]].unique()[:128]
-            run_data=[]
-            run_x=[]
-            run_labels=[]
-            for run in selected_runs:
-                run_pen_data=[]
-                run_pen_df=pen_df.loc[lambda df: df[labels[0]] == run]
-                steps=run_pen_df[labels[1]].unique()
-                # steps=steps[10:len(steps)//2-10]
-                for step in steps:
-                    step_df=run_pen_df.loc[lambda df: df[labels[1]] == step].iloc[:,-1]
-                    step_df=np.asarray([float(_) for _ in step_df.values[0][1:-1].split(", ")])
-                    run_pen_data.append(np.sum(step_df))
-                run_data=np.concatenate([run_data,run_pen_data])
-                run_x=np.concatenate([run_x,np.asarray([int(_) for _ in steps])])
-                run_labels=run_labels+[legend for _ in run_pen_data]
-
-            sns.lineplot(x=run_x,y=run_data,hue=run_labels,legend='auto',palette=palette)#interquartile range
-        plt.legend(loc='upper left')
-        plt.title(f"aggregated data ({len(selected_runs)} experiments),\nROBOTS: 24 scepticals, 0.25 threshold, 0 lie angle,\nno penalisation, DIFFERENT NOISE LEVEL")
-        plt.ylim(-10,500)
-
-    elif "d" in compare:
-        filename_pen="24sceptical_025th_1scaboteur_0rotation_penalisation.csv"
-        filename_nopen="24sceptical_025th_1scaboteur_0rotation_nopenalisation.csv"
-        pen_df=pd.read_csv(f"{data_folder}/{metric}/{filename_pen}", header=None)
-        nopen_df=pd.read_csv(f"{data_folder}/{metric}/{filename_nopen}", header=None)
-        labels=[_ for _ in pen_df.iloc[0]]
-        pen_df=pen_df.iloc[1:]
-        nopen_df=nopen_df.iloc[1:]
-        pen_df.columns=labels
-        nopen_df.columns=labels
-        # pen_df.set_index(labels[0],labels[1],inplace=True)#cannot set multi index to call it
-        #                                                 #directly with loc, without lambda
-        selected_runs=re.search(r"p(\d+)",compare).group(1)
-        run_data=[]
-        for run in selected_runs:
-            run_pen_data=[]
-            run_pen_df=pen_df.loc[lambda df: df[labels[0]] == run]
-            run_nopen_data=[]
-            run_nopen_df=nopen_df.loc[lambda df: df[labels[0]] == run]
-            steps=run_pen_df[labels[1]].unique()
-            for step in steps:
-                step_df=run_pen_df.loc[lambda df: df[labels[1]] == step].iloc[:,-1]
-                step_df=np.asarray([float(_) for _ in step_df.values[0][1:-1].split(", ")])
-                run_pen_data.append(np.sum(step_df))
-                step_df=run_nopen_df.loc[lambda df: df[labels[1]] == step].iloc[:,-1]
-                step_df=np.asarray([float(_) for _ in step_df.values[0][1:-1].split(", ")])
-                run_nopen_data.append(np.sum(step_df))
-        #COMPARE PEN/NOPEN
-            run_data=np.concatenate([run_pen_data,run_nopen_data])
-            run_x=np.asarray([int(_) for _ in steps])
-            run_x=np.concatenate([run_x,run_x])
-            run_labels=['pen' for _ in run_pen_data]+['nopen' for _ in run_nopen_data]
-        sns.lineplot(x=run_x,y=run_data,hue=run_labels)
+            run_pen_df=pen_df.loc[lambda df: df[labels[0]] == run].iloc[:,-1].to_numpy()
+            for step in range(len(run_pen_df)):
+                step_df=np.sum(run_pen_df[step])
+                run_pen_data.append(step_df)
+            run_data.extend(run_pen_data)
+        pen_df=pd.concat([pen_df,pd.DataFrame(run_data, columns=['items_sum'])],axis=1)
+        if "a" in compare:
+            sns.lineplot(data=pen_df, x=labels[1], y='items_sum', hue=labels[0],\
+                legend=None).set_xticks(pen_df[labels[1]].unique()[::5])
+            # plt.ylim(-10,500)
+            plt.legend(loc='upper left')
+        elif "g" in compare:
+            # sns.lineplot(data=pen_df, x=labels[1], y='items_sum', errorbar=("ci",90),estimator="median",\
+            #     legend=None).set_xticks(pen_df[labels[1]].unique()[::5])#random bootstrap
+            # sns.lineplot(data=pen_df, x=labels[1], y='items_sum', errorbar=("sd"),\
+            #     legend=None).set_xticks(pen_df[labels[1]].unique()[::5])#default:+-1 sd
+            sns.lineplot(data=pen_df, x=labels[1], y='items_sum', errorbar=("pi",50),\
+                legend='auto').set_xticks(pen_df[labels[1]].unique()[::5])#interquartile range
+            sns.lineplot(data=pen_df, x=labels[1], y='items_sum', errorbar=(lambda x: (x.min(),x.max())),\
+                legend='auto',label=legends).set_xticks(pen_df[labels[1]].unique()[::5])#== pi 100
+            plt.legend(loc='upper left',labels=["mean","pi 50","min-max"])
+            plt.title(f"aggregated data ({len(selected_runs)}),\n"\
+                "24 scepticals, 0.25 threshold,0 rotation,\nno penalisation, POOR")
+            # plt.ylim(-10,500)
+        elif "s" in compare:
+            sns.lineplot(x=pen_df[labels[1]],y=pen_df['items_sum'],label=legend)
+            plt.legend(loc='upper left')
+    plt.xticks(rotation=45)
+    plt.xlabel("steps")
+    plt.ylabel("total items collected")
+    plt.show()
     plt.show()
 
 
-def evolution_boxplot(
+def evolution_boxplot0(
                 filenames=[],
                 data_folder="../data/new",\
                 title="",\
@@ -620,52 +685,14 @@ def evolution_boxplot(
     run_nopen_data-=np.min(run_nopen_data)
     run_data=run_data/np.max(run_data)
     nopen_run_data=nopen_run_data/np.max(nopen_run_data)
-    plt.figure("pen, second half")
-    sns.boxplot(run_data)
-    plt.figure("no pen, second half")
-    sns.boxplot(nopen_run_data)
+    img,axs=plt.subplots(1,2)
+    sns.boxplot(run_data,ax=axs[0])
+    sns.boxplot(nopen_run_data,ax=axs[1])
     t_test=stats.ttest_ind(run_data, nopen_run_data, equal_var=False,)
     print(f"t-test: {t_test.statistic},\n p-value: {t_test.pvalue} << 0.05 \n CAN REJECT SIMILARITY HYPOTHESIS")
 
-    # BASE_BOX_WIDTH=3
-    # BASE_BOX_HEIGHT=7
-    # filenames=[["nopen.csv"],["pen.csv"]]
-    # labels=["naive","threshold 0.25"]
-    # ttestspv=np.round([0.0,0.0],4)
-    # filenames1=filenames[0]
-    # filenames2=filenames[1]
-    # n_boxes=len(filenames1)// by
-    # sns.set_style("whitegrid")
-    # fig, axs = plt.subplots(by, n_boxes, sharey=True)
-    # fig.set_size_inches(BASE_BOX_WIDTH*n_boxes,BASE_BOX_HEIGHT+1)
-    # fig.suptitle(title)
-    # for idx,(filename1,filename2) in enumerate(zip(filenames1,filenames2)):
-    #     list1=pd.read_csv(f"{data_folder}/{metric}/{filename1}", header=None).apply(np.sum, axis=1)
-    #     list2=pd.read_csv(f"{data_folder}/{metric}/{filename2}", header=None).apply(np.sum, axis=1)
-    #     list1_flat = pd.DataFrame(list1.to_numpy().flatten())
-    #     list2_flat = pd.DataFrame(list2.to_numpy().flatten())
-    #     list1= pd.DataFrame(np.full(list1_flat.shape, labels[0]))
-    #     list2= pd.DataFrame(np.full(list2_flat.shape, labels[1]))
-    #     list1_flat = pd.concat([list1_flat, list1], axis=1)
-    #     list2_flat = pd.concat([list2_flat, list2], axis=1)
-    #     data = pd.concat([list1_flat, list2_flat])
-    #     data.columns = ["items collected", "scepticism"]
-    #     if idx==0:
-    #         sns.boxplot(data=data,y=data.columns[0],x='scepticism',hue='scepticism',linewidth=1, dodge=False, ax=axs).set(
-    #              xlabel=None,ylabel=None,xticklabels=[],xticks=[])
-    #         axs[idx].set_ylabel("totat items collected")
-    #     else:
-    #         sns.boxplot(data=data,y=data.columns[0],x='scepticism',linewidth=1, dodge=False, ax=axs).set(
-    #             xlabel=None, ylabel=None,xticklabels=[],xticks=[])
-    #     _, _ ,_,_,_, lie_angle,_=get_file_config(filename1)
-    #     params=f"{lie_angle},\nT-test (threshold=0.05)\np-value: {ttestspv[idx]}"
-    #     axs[idx].set_xlabel(params)
-    # sns.despine(fig, axs[idx], trim=False)
-    # fig.suptitle("TOTAL ITEMS COLLECTED, COMPARISON ON SCEPTICISM\n"
-    #             "EXPERIMENTS WITH SIMILAR PARAMETERS.\nCORRELATION TEST FOR THE PAIRS",fontweight="bold")
-    # plt.ylim(bottom=0)
-    plt.show()
-
+#######################################################################################
+#######################################################################################
 
 def main():
     dec_const = pd.read_csv("../data/old_data/results_decaying_constant.txt", header=None).values.flatten()
@@ -1707,6 +1734,25 @@ def penalisation_vs_stake_items_collected(n_scaboteurs=3):
     plt.show()
 
 
+
+def after_transitory_phase():
+    withoutpen = pd.read_csv("../data/new/items_evolution/nopen.csv", converters={"items_list": pd.eval})
+    withpen = pd.read_csv('../data/new/items_evolution/pen.csv', converters={"items_list": pd.eval})
+    # withoutpen = pd.read_csv("../data/new/items_evolution/nopen.csv", header=None)
+    # withpen = pd.read_csv('../data/new/items_evolution/pen.csv', header=None)
+    withpen['penalisation'] = 'with'
+    withoutpen['penalisation'] = 'without'
+    df = pd.concat([withoutpen, withpen]).sort_values('penalisation')
+    df['Number of items collected (after first half of simulation)'] = df.iloc[:, :25].apply(lambda row: row.sum(), axis=1)
+    df["Scaboteur 'lie angle' (in degrees)"] = 0
+    fig, ax = plt.subplots(1, 1)
+    fig.set_size_inches(3, 6)
+    sns.boxplot(data=df, x="Scaboteur 'lie angle' (in degrees)", y='Number of items collected (after first half of simulation)', hue='penalisation', ax=ax)
+    plt.title("Swarm Performance: With or Without Penalisation, Ignoring First 7500 Steps")
+    plt.ylim(0, None)
+    plt.show()
+
+
 if __name__ == '__main__':
     # supply_demand_simulation()
     # compare_behaviors()
@@ -1736,14 +1782,13 @@ if __name__ == '__main__':
     # scaboteur_rotation(3)
 
     # metric,mode=parse_args()
-    # myboxplots(
-    #             filenames=filenames,
-    #             data_folder=DATA_DIR,
-    #             metric=metric,
-    #             mode=mode)
-    # myttest(data_folder="../data/old/",compare="")
+    # myboxplots()
+    # myttest(data_folder="../data/all/",compare="")
     # myanovatest()
     # sidebyside_boxplots()
     # plot_evolution(compare="g")
-    evolution_boxplot()
+    evolution_boxplot0()
+    # after_transitory_phase()
+    # boxplots_pen_lie()
+    # boxplot_evo_pen_lie()
     pass
