@@ -10,7 +10,7 @@ import numpy as np
 from model.payment import PaymentDB
 
 
-def my_random_seed(seed,n=None):
+def random_seeder(seed,n=None):
     """
     applies the random.seed using input, when seed is not None
     """
@@ -31,7 +31,7 @@ class Environment:
                  market_params,
                  simulation_seed=None
                  ):
-        my_random_seed(simulation_seed)
+        random_seeder(simulation_seed)
         self.population = list()
         self.width = width
         self.height = height
@@ -42,10 +42,30 @@ class Environment:
         self.create_robots(agent_params, behavior_params)
         self.best_bot_id = self.get_best_bot_id()
         self.payment_database = PaymentDB([bot.id for bot in self.population], payment_system_params)
-
         self.market = market_factory(market_params)
         self.img = None
         self.timestep = 0
+
+
+    def step(self):
+        # compute neighbors
+        self.timestep += 1
+        pop_size = len(self.population)
+        neighbors_table = [[] for i in range(pop_size)]
+        for id1 in range(pop_size):
+            for id2 in range(id1 + 1, pop_size):
+                if distance_between(self.population[id1], self.population[id2]) < self.population[id1].communication_radius:
+                    neighbors_table[id1].append(self.population[id2])
+                    neighbors_table[id2].append(self.population[id1])
+        # 1. Negotiation/communication
+        for robot in self.population:
+            robot.communicate(neighbors_table[robot.id])
+        # 2. Movement
+        for robot in self.population:
+            self.check_locations(robot)
+            robot.step()
+        # 3. Market
+        self.market.step()
 
 
     def load_images(self):
@@ -68,32 +88,12 @@ class Environment:
                 self.population.append(robot)
 
 
-    def step(self):
-        # compute neighbors
-        self.timestep += 1
-        pop_size = len(self.population)
-        neighbors_table = [[] for i in range(pop_size)]
-        for id1 in range(pop_size):
-            for id2 in range(id1 + 1, pop_size):
-                if distance_between(self.population[id1], self.population[id2]) < self.population[id1].communication_radius:
-                    neighbors_table[id1].append(self.population[id2])
-                    neighbors_table[id2].append(self.population[id1])
-        # 1. Negotiation/communication
-        for robot in self.population:
-            robot.communicate(neighbors_table[robot.id])
-        # 2. Move
-        for robot in self.population:
-            self.check_locations(robot)
-            robot.step()
-
-        self.market.step()
-
-
     def get_sensors(self, robot):
         orientation = robot.orientation
         speed = robot.speed()
         sensors = {Location.FOOD: self.senses(robot, Location.FOOD),
                    Location.NEST: self.senses(robot, Location.NEST),
+                   #TODO any() in check_border_collision
                    "FRONT": any(self.check_border_collision(robot, robot.pos[0] + speed * cos(radians(orientation)),
                                                             robot.pos[1] + speed * sin(radians(orientation)))),
                    "RIGHT": any(
@@ -115,10 +115,9 @@ class Environment:
         collide_y = False
         if new_x + robot._radius >= self.width or new_x - robot._radius < 0:
             collide_x = True
-
         if new_y + robot._radius >= self.height or new_y - robot._radius < 0:
             collide_y = True
-
+        # return any([collide_x, collide_y])
         return collide_x, collide_y
 
 
@@ -178,14 +177,6 @@ class Environment:
                                          outline="")
 
 
-    def get_best_bot_id(self):
-        best_bot_id = 0
-        for bot in self.population:
-            if 1 - abs(bot.noise_mu) > 1 - abs(self.population[best_bot_id].noise_mu):
-                best_bot_id = bot.id
-        return best_bot_id
-
-
     def draw_strawberries(self, canvas):
         for bot_id, pos in self.foraging_spawns[Location.FOOD].items():
             canvas.create_image(pos[0] - 8, pos[1] - 8, image=self.img, anchor='nw')
@@ -197,6 +188,14 @@ class Environment:
                                     self.population[self.best_bot_id].pos[0] + 4,
                                     self.population[self.best_bot_id].pos[1] + 4,
                                     fill="red")
+
+
+    def get_best_bot_id(self):
+        best_bot_id = 0
+        for bot in self.population:
+            if 1 - abs(bot.noise_mu) > 1 - abs(self.population[best_bot_id].noise_mu):
+                best_bot_id = bot.id
+        return best_bot_id
 
 
     def get_robot_at(self, x, y):

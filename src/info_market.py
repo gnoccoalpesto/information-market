@@ -55,7 +55,7 @@ def run(config:Configuration, i):
     if simulation_seed!='' and simulation_seed!='random':
         config.set("simulation_seed", simulation_seed+i)
         print(f", setting run seed to {simulation_seed+i}")
-    else: print("")#newline
+    else: print("")
     controller = MainController(config)
     controller.start_simulation()
     return controller
@@ -145,8 +145,6 @@ def record_data(config:Configuration, controllers):
         current_filename=check_filename_existence(output_directory,metric,filename)
         pd.concat(transaction_logs).to_csv(join(output_directory, "transaction_logs", current_filename))
             
-
-
 
 def check_filename_existence(output_directory,metric,filename):
     new_filename = filename

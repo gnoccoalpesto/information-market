@@ -1,4 +1,5 @@
-# Master's Thesis: An Information Market for Social Navigation in Robots
+# Master's Thesis: Task allocation in open robot swarms: 
+perspectives for blockchain-based algorithms in hostile environments
 ## Requirements
 To be able to run information-market, you must have:
 - A recent version of Linux, MacOSX or Windows
@@ -43,7 +44,7 @@ A simulation's parameters are defined in a json configuration file (such as `con
 - simulation_seed: the base seed for the simulation. Accepted values are:
   - an integer, or a string (seeder activated)
   - empty string ("") or keyword "random" (seeder deactivated)<br />
-For more informations, refer to the [Randomization](#randomization) section.
+For more informations, refer to the [Randomisation](#randomisation) section.
 - visualization: parameters related to the visualization
   - activate: whether to activate the simulation GUI
   - fps: maximum framerate of the simulation
@@ -95,6 +96,10 @@ Robots can exhibit multiple behaviors. This sections briefly lists these behavio
   - parameters:
     - `threshold`: see ScepticalBehavior
     - `rotation_angle`: see SaboteurBehavior
+- `ChoosyBehavior`: honest robot which uses seller as putlier detection method reputation to decide if it should buy its information
+- `ChoosoteurBehavior`: SaboteurBehaviour using reputation
+  - parameters:
+    -`rotation_angle`: see SaboteurBehavior
 
 ## Payment Systems
 
@@ -103,7 +108,7 @@ Payment systems implement the logic responsible for controlling the price of inf
 - `DelayedPaymentPaymentSystem`: information is exchanged for a token that is redeemed for a fixed share of the reward the buying robot receives when it completes a round trip.
 - `OutlierPenalisationPaymentSystem`: similar to the DelayedPaymentPayment system, but the share of the reward is proportional to how similar the information sold is to other information that was sold to the buying robot.
 
-## Randomization
+## Randomisation
 
 Seeding the random number generator is useful when repeating experiments is needed.<br />
 If empty string ("") or "random" is passed in the configuration, the simulation utilizes a different seed for each time a random function is called.<br /> Otherwise, the passed seed is used as base, increased by the number of the run.

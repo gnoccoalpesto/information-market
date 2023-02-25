@@ -38,3 +38,9 @@ class CommunicationSession:
 
     def get_own_reward(self):
         return self._client.reward()
+
+    def get_neighbor_reward(self, neighbor_id):
+        return self._neighbors[neighbor_id].reward()
+
+    def get_average_neighbor_reward(self):
+        return sum([n.reward() for n in self._neighbors.values()]) / len(self._neighbors)

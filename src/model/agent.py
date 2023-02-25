@@ -1,7 +1,7 @@
 import copy
 
 from helpers import random_walk as rw
-from random import random, choices, gauss, seed as random_seed
+from random import random, choices, gauss
 from math import sin, cos, radians
 from tkinter import LAST
 from collections import deque
@@ -62,7 +62,7 @@ class Agent:
         self._time_since_last_comm = self._comm_stop_time + self._communication_cooldown + 1
         self.comm_state = CommunicationState.OPEN
 
-        self.orientation = random() * 360  # 360 degree angle
+        self.orientation = random() * 360
         self.noise_mu = gauss(noise_sampling_mu, noise_sampling_sigma)
         if random() >= 0.5:
             self.noise_mu = -self.noise_mu
