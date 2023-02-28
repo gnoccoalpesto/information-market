@@ -58,7 +58,7 @@
       "class": "ChoosoteurBehavior",
       "population_size": 3,
       "parameters": {
-        "rotation_angle": 90
+        "rotation_angle": 0
       }
     },
     {
@@ -78,7 +78,7 @@
     }
   ],
   "payment_system": {
-    "class": "DelayedPaymentPaymentSystem",
+    "class": "OutlierPenalisationPaymentSystem",
     "initial_reward": 1,
     "parameters": {
       "information_share": 0.5
@@ -92,7 +92,7 @@
   },
   "data_collection": {
     "output_directory": "../data/reputation/new",
-    "filename": "22c_np_03tr_90r.csv",
+    "filename": "22c_p_05tr_0r.csv",
     "metrics": ["items_evolution","rewards_evolution","items_collected","rewards"],
     "precise_recording_interval": 100
   }

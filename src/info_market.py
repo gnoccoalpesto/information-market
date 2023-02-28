@@ -12,15 +12,15 @@ from controllers.view_controller import ViewController
 
 
 ### UTILITIES ######################################################################
-#TODO
-def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-a', '--all',action='store_true',
-                    help='use all files from a single folder')
-    args=parser.parse_args()
-    if args.all:
-        select_all=True
-    return select_all
+# #TODO
+# def parse_args():
+#     parser = argparse.ArgumentParser()
+#     parser.add_argument('-a', '--all',action='store_true',required=False,
+#                     help='use all files from a single folder')
+#     args=parser.parse_args()
+#     if args.all:
+#         select_all=True
+#     return select_all
 
 
 def generate_filename(config:Configuration,):
@@ -55,27 +55,31 @@ def generate_filename(config:Configuration,):
 ####################################################################################
 
 def main():
-    config = Configuration(config_file=argv[1])
-    if config.value_of("visualization")['activate']:
-        main_controller = MainController(config)
-        view_controller = ViewController(main_controller,
-                                         config.value_of("width"),
-                                         config.value_of("height"),
-                                         config.value_of("visualization")['fps'])
-    else:
-        # select_all=parse_args()
-        # if select_all:
-        #     directory=argv[1]
-        #     #TODO: check if directory exists
-        #     filenames=[join(directory, f) for f in listdir(directory) if isfile(join(directory, f))]
-        #     filenames=
-        # else: filenames=argv[1:] 2?
-        # for arg in filenames:
-        for arg in argv[1:]:
+    try:
+        if isfile(argv[1]):
+            config = Configuration(config_file=argv[1])
+            if config.value_of("visualization")['activate']:
+                print(config)
+                main_controller = MainController(config)
+                view_controller = ViewController(main_controller,
+                                                    config.value_of("width"),
+                                                    config.value_of("height"),
+                                                    config.value_of("visualization")['fps'])
+                exit(0)
+            else:
+                run_processes(config)
+                exit(0)
+        directory=argv[1]
+        filenames=[join(directory, f) for f in listdir(directory) if isfile(join(directory, f))]
+        for arg in filenames:
             config = Configuration(config_file=arg)
             run_processes(config)
+        exit(0)
+    except IndexError:
+        print("ERROR: no config file specified, running default config.")
+        exit(1)
 
-
+        
 def run_processes(config: Configuration):
     nb_runs = config.value_of("number_runs")
     simulation_seed = config.value_of("simulation_seed")
