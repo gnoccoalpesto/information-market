@@ -91,9 +91,9 @@
     }
   },
   "data_collection": {
-    "output_directory": "../data/reputation/",
-    "filename": "22c_np_repu_90r.csv",
-    "metrics": ["items_evolution","reward_evolution","items_collected","rewards"],
+    "output_directory": "../data/reputation/new",
+    "filename": "22c_np_03tr_90r.csv",
+    "metrics": ["items_evolution","rewards_evolution","items_collected","rewards"],
     "precise_recording_interval": 100
   }
 }

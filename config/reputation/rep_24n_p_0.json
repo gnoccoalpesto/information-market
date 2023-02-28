@@ -36,7 +36,7 @@
   "behaviors": [
     {
       "class": "NaiveBehavior",
-      "population_size": 0,
+      "population_size": 24,
       "parameters": {
       }
     },
@@ -49,19 +49,6 @@
     },
 
     {
-      "class": "ChoosyBehavior",
-      "population_size": 22,
-      "parameters": {
-      }
-    },
-    {
-      "class": "ChoosoteurBehavior",
-      "population_size": 3,
-      "parameters": {
-        "rotation_angle": 0
-      }
-    },
-    {
       "class": "SaboteurBehavior",
       "population_size": 0,
       "parameters": {
@@ -70,7 +57,7 @@
     },
     {
       "class": "ScaboteurBehavior",
-      "population_size": 0,
+      "population_size": 1,
       "parameters": {
         "rotation_angle": 0,
         "threshold": 0.25
@@ -91,8 +78,8 @@
     }
   },
   "data_collection": {
-    "output_directory": "../data/reputation/new",
-    "filename": "22c_p_03tr_0r.csv",
+    "output_directory": "../data/reputation/",
+    "filename": "24n_p_0r.csv",
     "metrics": ["items_evolution","rewards_evolution","items_collected","rewards"],
     "precise_recording_interval": 100
   }

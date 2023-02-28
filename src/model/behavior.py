@@ -356,7 +356,7 @@ class ChoosyBehavior(NaiveBehavior):
 
     def reputation_threshold(self, session: CommunicationSession,method='static',):
         if method == 'static':
-            return 0.5
+            return 0.3
         elif method == 'average':
             return session.get_average_reward()
 
