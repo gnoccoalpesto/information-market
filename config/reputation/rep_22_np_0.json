@@ -92,7 +92,7 @@
   },
   "data_collection": {
     "output_directory": "../data/reputation/new",
-    "filename": "22c_np_03tr_0r.csv",
+    "filename": "22c_np_05tr_0r.csv",
     "metrics": ["items_evolution","rewards_evolution","items_collected","rewards"],
     "precise_recording_interval": 100
   }
