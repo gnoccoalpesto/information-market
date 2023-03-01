@@ -23,6 +23,15 @@ from controllers.view_controller import ViewController
 #     return select_all
 
 
+def check_filename_existence(output_directory,metric,filename):
+    new_filename = filename
+    if exists(join(output_directory, metric, filename)):
+        exist_count = len([f for f in Path(join(output_directory, metric))\
+            .iterdir() if f.name.startswith(new_filename.replace(".csv", ""))])
+        new_filename = new_filename.replace(".csv", f"_{exist_count}.csv")
+    return new_filename
+
+
 def generate_filename(config:Configuration,):
     filename = config.value_of("data_collection")["filename"]
     #TODO INCREMENTAL NAME GENERATION: if "+" in param name->add before
@@ -71,6 +80,9 @@ def main():
                 exit(0)
         directory=argv[1]
         filenames=[join(directory, f) for f in listdir(directory) if isfile(join(directory, f))]
+        print(f"Running {len(filenames)} config"
+                f"{'s' if len(filenames)>1 else ''}: ",end="\t")
+        print(*filenames, sep="\n\t\t\t")
         for arg in filenames:
             config = Configuration(config_file=arg)
             run_processes(config)
@@ -153,27 +165,18 @@ def record_data(config:Configuration, controllers):
                 Path(join(output_directory, "items_evolution")).mkdir(parents=True, exist_ok=True)
                 current_filename=check_filename_existence(output_directory,metric,filename)
                 pd.concat(dataframes).to_csv(join(output_directory, "items_evolution", current_filename))
+            case "transactions":
+                transaction_logs=[]
+                for i, controller in enumerate(controllers):
+                    df = pd.DataFrame(controller.get_transaction_log(), columns=["tick", "buyer", "seller"])
+                    df["simulation_id"] = i
+                    df = df.set_index("simulation_id")
+                    transaction_logs.append(df)
+                Path(join(output_directory, "transactions")).mkdir(parents=True, exist_ok=True)
+                current_filename=check_filename_existence(output_directory,metric,filename)
+                pd.concat(transaction_logs).to_csv(join(output_directory, "transactions", current_filename))
             case _:
                 print(f"[WARNING] Could not record metric: '{metric}'. Metric name is not valid.")
-        #new transaction log dataframe
-        transaction_logs = []
-        for i, controller in enumerate(controllers):
-            df = pd.DataFrame(controller.get_transaction_log(), columns=["tick", "buyer", "seller"])
-            df["simulation_id"] = i
-            df = df.set_index("simulation_id")
-            transaction_logs.append(df)
-        Path(join(output_directory, "transaction_logs")).mkdir(parents=True, exist_ok=True)
-        current_filename=check_filename_existence(output_directory,metric,filename)
-        pd.concat(transaction_logs).to_csv(join(output_directory, "transaction_logs", current_filename))
-            
-
-def check_filename_existence(output_directory,metric,filename):
-    new_filename = filename
-    if exists(join(output_directory, metric, filename)):
-        exist_count = len([f for f in Path(join(output_directory, metric))\
-            .iterdir() if f.name.startswith(new_filename.replace(".csv", ""))])
-        new_filename = new_filename.replace(".csv", f"_{exist_count}.csv")
-    return new_filename
 
 
 if __name__ == '__main__':

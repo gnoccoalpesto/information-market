@@ -430,21 +430,29 @@ def boxplot_repu(
                 "22n_p_0r.csv",
                 "22n_p_90r.csv",
                 ],
-                # [
-                # "22c_np_03tr_0r.csv",
-                # "22c_np_03tr_90r.csv",
-                # ],
                 [
-                "22c_p_05tr_0r.csv",
-                "22c_p_05tr_90r.csv",
+                "22c_np_03tr_0r.csv",
+                "22c_np_03tr_90r.csv",
                 ],
-                # [
-                # "22c_np_08tr_0r.csv",
-                # "22c_np_08tr_90r.csv",
-                # ],
                 [
-                "22c_p_11tr_0r.csv",
-                "22c_p_11tr_90r.csv",
+                "22c_np_05tr_0r.csv",
+                "22c_np_05tr_90r.csv",
+                ],
+                [
+                "22c_np_08tr_0r.csv",
+                "22c_np_08tr_90r.csv",
+                ],
+                [
+                "22c_np_11tr_0r.csv",
+                "22c_np_11tr_90r.csv",
+                ],
+                [
+                "22c_np_13tr_0r.csv",
+                "22c_np_13tr_90r.csv",
+                ],
+                [
+                "22c_np_16tr_0r.csv",
+                "22c_np_16tr_90r.csv",
                 ]
             ]
     """
@@ -481,47 +489,64 @@ def boxplot_repu(
     24n_p_0r.csv
     24n_p_90r.csv
     """
-    experiments_labels=["naive (penalized)","choosy 0.5 (threshold)","choosy 1.1"]
+    experiments_labels=["naive (penalized)",
+                        "choosy 30%(of initial wealth)",
+                        "choosy 50%",
+                        "choosy 80%",
+                        "choosy 110%",
+                        "choosy 130%",
+                        "choosy 160%",]
     # experiments_labels=["naive","choosy 0.3 (treshold)","choosy 0.5","choosy 0.8","choosy 1.1"]
     new_labels=["items collected", "agent type"]
     n_boxes=len(filenames[0])// by
     fig, axs = plt.subplots(by, n_boxes, sharey=True)
-    # for idx,(f_naive,f_03tr,f_05tr,f_08tr,f_11tr,) in enumerate(zip(filenames[0],
-    for idx,(f_naive,f_05tr,f_11tr,) in enumerate(zip(filenames[0],
+    for idx,(f_naive,f_03tr,f_05tr,f_08tr,f_11tr,f_13tr,f_16tr,) in enumerate(zip(filenames[0],
                                                                     filenames[1],
                                                                     filenames[2],
-                                                                    # filenames[3],
-                                                                    # filenames[4]
+                                                                    filenames[3],
+                                                                    filenames[4],
+                                                                    filenames[5],
+                                                                    filenames[6]
                                                                     )):
         filename_naive=f"{data_folder}{metric}/{f_naive}"
-        # filename_f_03tr=f"{data_folder}{metric}/{f_03tr}"
+        filename_f_03tr=f"{data_folder}{metric}/{f_03tr}"
         filename_f_05tr=f"{data_folder}{metric}/{f_05tr}"
-        # filename_f_08tr=f"{data_folder}{metric}/{f_08tr}"
+        filename_f_08tr=f"{data_folder}{metric}/{f_08tr}"
         filename_f_11tr=f"{data_folder}{metric}/{f_11tr}"
+        filename_f_13tr=f"{data_folder}{metric}/{f_13tr}"
+        filename_f_16tr=f"{data_folder}{metric}/{f_16tr}"
         #TODO OPTIMIZE THIS IS SO SLOW
         naive_df = pd.read_csv(filename_naive,converters={'items_list': pd.eval})
-        # f_03tr_df = pd.read_csv(filename_f_03tr,converters={'items_list': pd.eval})
+        f_03tr_df = pd.read_csv(filename_f_03tr,converters={'items_list': pd.eval})
         f_05tr_df = pd.read_csv(filename_f_05tr,converters={'items_list': pd.eval})
-        # f_08tr_df = pd.read_csv(filename_f_08tr,converters={'items_list': pd.eval})
+        f_08tr_df = pd.read_csv(filename_f_08tr,converters={'items_list': pd.eval})
         f_11tr_df = pd.read_csv(filename_f_11tr,converters={'items_list': pd.eval})
+        f_13tr_df = pd.read_csv(filename_f_13tr,converters={'items_list': pd.eval})
+        f_16tr_df = pd.read_csv(filename_f_16tr,converters={'items_list': pd.eval})
         labels=naive_df.columns.to_list()
         selected_runs=naive_df[labels[0]].unique()
         naive_data=[]
-        # f_03tr_data=[]
+        f_03tr_data=[]
         f_05tr_data=[]
-        # f_08tr_data=[]
+        f_08tr_data=[]
         f_11tr_data=[]
+        f_13tr_data=[]
+        f_16tr_data=[]
         for run in selected_runs:
             naive_run_row=naive_df.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
-            # f_03tr_run_row=f_03tr_df.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
+            f_03tr_run_row=f_03tr_df.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
             f_05tr_run_row=f_05tr_df.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
-            # f_08tr_run_row=f_08tr_df.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
+            f_08tr_run_row=f_08tr_df.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
             f_11tr_run_row=f_11tr_df.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
+            f_13tr_run_row=f_13tr_df.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
+            f_16tr_run_row=f_16tr_df.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
             naive_last=naive_run_row.iloc[-1]
-            # f_03tr_last=f_03tr_run_row.iloc[-1]
+            f_03tr_last=f_03tr_run_row.iloc[-1]
             f_05tr_last=f_05tr_run_row.iloc[-1]
-            # f_08tr_last=f_08tr_run_row.iloc[-1]
+            f_08tr_last=f_08tr_run_row.iloc[-1]
             f_11tr_last=f_11tr_run_row.iloc[-1]
+            f_13tr_last=f_13tr_run_row.iloc[-1]
+            f_16tr_last=f_16tr_run_row.iloc[-1]
             # nopen_end_transitory=nopen_run_row.iloc[2*len(nopen_run_row)//3]
             # pen_end_transitory=pen_run_row.iloc[2*len(pen_run_row)//3]
             # delta_nopen=nopen_last-nopen_end_transitory
@@ -529,33 +554,41 @@ def boxplot_repu(
             # nopen_data.append([delta_nopen.sum()])
             # pen_data.append([delta_pen.sum()])
             naive_data.append([naive_last.sum()])
-            # f_03tr_data.append([f_03tr_last.sum()])
+            f_03tr_data.append([f_03tr_last.sum()])
             f_05tr_data.append([f_05tr_last.sum()])
-            # f_08tr_data.append([f_08tr_last.sum()])
+            f_08tr_data.append([f_08tr_last.sum()])
             f_11tr_data.append([f_11tr_last.sum()])
+            f_13tr_data.append([f_13tr_last.sum()])
+            f_16tr_data.append([f_16tr_last.sum()])
         list_naive_flat = pd.DataFrame(naive_data)
-        # list_f_03tr_flat = pd.DataFrame(f_03tr_data)
+        list_f_03tr_flat = pd.DataFrame(f_03tr_data)
         list_f_05tr_flat = pd.DataFrame(f_05tr_data)
-        # list_f_08tr_flat = pd.DataFrame(f_08tr_data)
+        list_f_08tr_flat = pd.DataFrame(f_08tr_data)
         list_f_11tr_flat = pd.DataFrame(f_11tr_data)
+        list_f_13tr_flat = pd.DataFrame(f_13tr_data)
+        list_f_16tr_flat = pd.DataFrame(f_16tr_data)
         # ttest_pv=stats.ttest_ind(list_nopen_flat,list_pen_flat)[1][0]
         list_naive= pd.DataFrame(np.full(list_naive_flat.shape, experiments_labels[0]))
-        # list_f_03tr= pd.DataFrame(np.full(list_f_03tr_flat.shape, experiments_labels[1]))
-        # list_f_05tr= pd.DataFrame(np.full(list_f_05tr_flat.shape, experiments_labels[2]))
-        list_f_05tr= pd.DataFrame(np.full(list_f_05tr_flat.shape, experiments_labels[1]))
-        # list_f_08tr= pd.DataFrame(np.full(list_f_08tr_flat.shape, experiments_labels[3]))
-        # list_f_11tr= pd.DataFrame(np.full(list_f_11tr_flat.shape, experiments_labels[4]))
-        list_f_11tr= pd.DataFrame(np.full(list_f_11tr_flat.shape, experiments_labels[2]))
+        list_f_03tr= pd.DataFrame(np.full(list_f_03tr_flat.shape, experiments_labels[1]))
+        list_f_05tr= pd.DataFrame(np.full(list_f_05tr_flat.shape, experiments_labels[2]))
+        list_f_08tr= pd.DataFrame(np.full(list_f_08tr_flat.shape, experiments_labels[3]))
+        list_f_11tr= pd.DataFrame(np.full(list_f_11tr_flat.shape, experiments_labels[4]))
+        list_f_13tr= pd.DataFrame(np.full(list_f_13tr_flat.shape, experiments_labels[5]))
+        list_f_16tr= pd.DataFrame(np.full(list_f_16tr_flat.shape, experiments_labels[6]))
         list_naive_flat = pd.concat([list_naive_flat, list_naive], axis=1)
-        # list_f_03tr_flat = pd.concat([list_f_03tr_flat, list_f_03tr], axis=1)
+        list_f_03tr_flat = pd.concat([list_f_03tr_flat, list_f_03tr], axis=1)
         list_f_05tr_flat = pd.concat([list_f_05tr_flat, list_f_05tr], axis=1)
-        # list_f_08tr_flat = pd.concat([list_f_08tr_flat, list_f_08tr], axis=1)
+        list_f_08tr_flat = pd.concat([list_f_08tr_flat, list_f_08tr], axis=1)
         list_f_11tr_flat = pd.concat([list_f_11tr_flat, list_f_11tr], axis=1)
+        list_f_13tr_flat = pd.concat([list_f_13tr_flat, list_f_13tr], axis=1)
+        list_f_16tr_flat = pd.concat([list_f_16tr_flat, list_f_16tr], axis=1)
         data = pd.concat([  list_naive_flat,
-                            # list_f_03tr_flat,
+                            list_f_03tr_flat,
                             list_f_05tr_flat,
-                            # list_f_08tr_flat,
-                            list_f_11tr_flat
+                            list_f_08tr_flat,
+                            list_f_11tr_flat,
+                            list_f_13tr_flat,
+                            list_f_16tr_flat
                         ])
         data.columns = new_labels
         if idx==0:
@@ -570,10 +603,11 @@ def boxplot_repu(
         params=f"{lie_angle}"#,\nT-test (thr={ttest_th})\np-value: \n{np.round(ttest_pv,5)}"
         axs[idx].set_xlabel(params)
     fig.set_size_inches(BASE_BOX_WIDTH*n_boxes,BASE_BOX_HEIGHT+1)
-    fig.suptitle("COMPARING REPUTATION THRESHOLD (WITH PEN)\nAT DIFFERENT LIE ANGLES\n"\
+    fig.suptitle("COMPARING REPUTATION THRESHOLD (WITHOUT PEN)\nAT DIFFERENT LIE ANGLES\n"\
     "FOR 22 CHOOSY AND 1 CHOOSOTEUR\nALL OF THE EXPERIMENT, SEEDED",fontweight="bold")
     plt.ylim(bottom=0)
     sns.despine(fig, axs[idx], trim=False)
+    # plt.legend(loc='upper right', bbox_to_anchor=(1.3, 1.0), ncol=1)
     plt.show()
 
 

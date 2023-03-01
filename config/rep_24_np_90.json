@@ -49,13 +49,13 @@
     },
 
     {
-      "class": "ChoosyBehavior",
+      "class": "ReputationStaticThresholdBehavior",
       "population_size": 24,
       "parameters": {
       }
     },
     {
-      "class": "ChoosoteurBehavior",
+      "class": "SaboteurReputationStaticThresholdBehavior",
       "population_size": 1,
       "parameters": {
         "rotation_angle": 0

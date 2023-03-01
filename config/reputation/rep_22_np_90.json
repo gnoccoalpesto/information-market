@@ -41,39 +41,16 @@
       }
     },
     {
-      "class": "ScepticalBehavior",
-      "population_size": 0,
-      "parameters": {
-        "threshold": 0.25
-      }
-    },
-
-    {
-      "class": "ChoosyBehavior",
+      "class": "ReputationStaticThresholdBehavior",
       "population_size": 22,
       "parameters": {
       }
     },
     {
-      "class": "ChoosoteurBehavior",
+      "class": "SaboteurReputationStaticThresholdBehavior",
       "population_size": 3,
       "parameters": {
         "rotation_angle": 90
-      }
-    },
-    {
-      "class": "SaboteurBehavior",
-      "population_size": 0,
-      "parameters": {
-        "rotation_angle": 0
-      }
-    },
-    {
-      "class": "ScaboteurBehavior",
-      "population_size": 0,
-      "parameters": {
-        "rotation_angle": 0,
-        "threshold": 0.25
       }
     }
   ],
@@ -91,7 +68,7 @@
     }
   },
   "data_collection": {
-    "output_directory": "../data/reputation/new",
+    "output_directory": "../data/test_andor/",
     "filename": "22c_np_05tr_90r.csv",
     "metrics": ["items_evolution","rewards_evolution","items_collected","rewards"],
     "precise_recording_interval": 100

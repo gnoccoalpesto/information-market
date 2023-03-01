@@ -1,10 +1,14 @@
 # Master's Thesis: Task allocation in open robot swarms: 
 perspectives for blockchain-based algorithms in hostile environments
+
 ## Requirements
+
 To be able to run information-market, you must have:
 - A recent version of Linux, MacOSX or Windows
 - **Python** 3.10 or newer
+
 ## Installation
+
 First clone the git repository into a given folder on your computer:
 ```bash
 git clone https://github.com/ludericv/information-market.git
@@ -16,20 +20,17 @@ python -m venv infomarket-env
 source infomarket-env/bin/activate
 pip install -r requirements.txt
 ```
-## Run
-First, edit the `config.json` file inside the config folder with the parameters you want to use. Then, to run information-market, simply open a terminal, cd to the src folder and run the program.
-```bash
-cd path/to/src
-python info_market.py ../config/config.json
-```
 
-## Running Multiple Experiments
-To conduct multiple experiments with different configurations, one can specify multiple configuration file paths as arguments when running the `info_market.py` script, interposing a space between the selected files. Example:
+## Run single or multiple experiments
+
+It is possible to run a single or multiple experiments using information-market. First, edit the config file(s) inside the config folder with the parameter you want to use; you can start from `config.json`. Then open a terminal, cd to the src folder and run the program.
 ```bash
 cd path/to/src
-python info_market.py path/to/config1.json path/to/config2.json path/to/config99.json
+python info_market.py ARGS
 ```
-This is mostly useful to run simulations without the GUI (set `activate` to false in the visualization parameters in the config files, as well as the `number_runs` parameter for the number of simulations you wish to perform with this configuration)
+If ARGS us a single file, it will check if the GUI simulation is requested (set `activate` to true in the visualization parameters in the config files).<br />
+ Otherwise a folder, or multiple filenames can be specified. In the last case, interpose a space between the selected files.
+This is mostly useful to run simulations without the GUI (set `activate` to false in the visualization parameters in the config files, as well as the `number_runs` parameter for the number of simulations you wish to perform with this configuration).
 
 ## Configuration
 
@@ -96,10 +97,10 @@ Robots can exhibit multiple behaviors. This sections briefly lists these behavio
   - parameters:
     - `threshold`: see ScepticalBehavior
     - `rotation_angle`: see SaboteurBehavior
-- `ChoosyBehavior`: honest robot which uses seller as putlier detection method reputation to decide if it should buy its information
-- `ChoosoteurBehavior`: SaboteurBehaviour using reputation
+- `ReputationStaticThresholdBehavior`: honest robot which uses seller as putlier detection method reputation to decide if it should buy its information
+- `SaboteurReputationStaticThresholdBehavior`: SaboteurBehaviour using reputation
   - parameters:
-    -`rotation_angle`: see SaboteurBehavior
+    - `rotation_angle`: see SaboteurBehavior
 
 ## Payment Systems
 

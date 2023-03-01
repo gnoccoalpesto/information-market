@@ -346,24 +346,18 @@ class ScepticalGreedyBehavior(ScepticalBehavior):
 ###################################################################################
 # BEHAVIOURS WITH REPUTATION (SYSTEMIC) PROTECTION ################################
 
-class ReputationStaticThresholdBehavior(NaiveBehavior):
+class ReputationWealthBehavior(NaiveBehavior):
     def __init__(self):
-        super(ReputationStaticThresholdBehavior, self).__init__()
+        super(ReputationWealthBehavior, self).__init__()
         #TODO if reputation level raises, has pending info sense?
         # self.pending_information = {location: {} for location in Location}
 
+    @abstractmethod
+    def verify_reputation(self, session: CommunicationSession, bot_id):
+        pass
+
     def get_reputation_score(self, session: CommunicationSession, bot_id):
         return session.get_neighbor_reward(bot_id)
-
-    def reputation_threshold(self, session: CommunicationSession,method='static',):
-        if method == 'static':
-            return 0.5
-        elif method == 'average':
-            return session.get_average_reward()
-
-    def verify_reputation(self, session: CommunicationSession, bot_id):
-        return self.get_reputation_score(session, bot_id) > self.reputation_threshold(session)
-
 
     def buy_info(self, session: CommunicationSession):
         for location in Location:
@@ -375,9 +369,9 @@ class ReputationStaticThresholdBehavior(NaiveBehavior):
                     try:
                         other_target = session.make_transaction(neighbor_id=bot_id, location=location)
                         other_target.set_distance(other_target.get_distance() + session.get_distance_from(bot_id))
-                        
-                        # if not self.navigation_table.is_information_valid_for_location(location) or \
-                        if not self.navigation_table.is_information_valid_for_location(location) and \
+                        #TODO veryfy and/or
+                        # if not self.navigation_table.is_information_valid_for_location(location) and \
+                        if not self.navigation_table.is_information_valid_for_location(location) or \
                             self.verify_reputation(session,bot_id):
                             new_target = self.strategy.combine(self.navigation_table.get_information_entry(location),
                                                                other_target,
@@ -393,11 +387,24 @@ class ReputationStaticThresholdBehavior(NaiveBehavior):
         super().step(api)
 
 
+class ReputationStaticThresholdBehavior(ReputationWealthBehavior):
+    def __init__(self,threshold=1):
+        super(ReputationStaticThresholdBehavior, self).__init__()
+        self.reputation_threshold = threshold
+
+    def get_threshold(self):
+            return self.reputation_threshold
+
+    def verify_reputation(self, session: CommunicationSession, bot_id):
+        return self.get_reputation_score(session, bot_id) > self.reputation_threshold(session)
+
+
 class SaboteurReputationStaticThresholdBehavior(ReputationStaticThresholdBehavior):
-    def __init__(self, rotation_angle=90):
+    def __init__(self, rotation_angle=90,threshold=1):
         super().__init__()
         self.color = "red"
         self.rotation_angle = rotation_angle
+        self.reputation_threshold = threshold
 
     def sell_info(self, location):
         t = copy.deepcopy(self.navigation_table.get_information_entry(location))
