@@ -376,7 +376,6 @@ class ReputationStaticThresholdBehavior(NaiveBehavior):
                         other_target = session.make_transaction(neighbor_id=bot_id, location=location)
                         other_target.set_distance(other_target.get_distance() + session.get_distance_from(bot_id))
                         
-                        # if not self.navigation_table.is_information_valid_for_location(location) or \
                         if not self.navigation_table.is_information_valid_for_location(location) and \
                             self.verify_reputation(session,bot_id):
                             new_target = self.strategy.combine(self.navigation_table.get_information_entry(location),
@@ -395,6 +394,92 @@ class ReputationStaticThresholdBehavior(NaiveBehavior):
 
 class SaboteurReputationStaticThresholdBehavior(ReputationStaticThresholdBehavior):
     def __init__(self, rotation_angle=90):
+        super().__init__()
+        self.color = "red"
+        self.rotation_angle = rotation_angle
+
+    def sell_info(self, location):
+        t = copy.deepcopy(self.navigation_table.get_information_entry(location))
+        t.rotate(self.rotation_angle)
+        return t
+
+
+class ReputationDynamicThresholdBehavior(NaiveBehavior):
+    def __init__(self,method='neigh_avg'):
+        super().__init__()
+        self.method=method
+
+    def get_reputation_score(self, session: CommunicationSession, bot_id):
+        return session.get_neighbor_reward(bot_id)
+
+    def reputation_threshold(self, session: CommunicationSession):
+        """
+        all_max: selects only above a certain percentage of maximum wealth (wealthiest bots), of all robots
+
+        all_avg:selects only above certain percentage of average wealth, considering all robots
+
+        all_rise:  selects above a certaint value, increasing with time, starting from a certain level, of all robots
+
+        all_min: selects only above a certain percentage of minimum wealth (poorest bots), of all robots
+
+        neigh_max: selects only above a certain percentage of maximum wealth (wealthiest bots), of neighbors
+
+        neigh_avg: selects only above certain percentage of average wealth, considering neighbors
+
+        neigh_rise: selects above a certaint value, increasing with time, starting from a certain level, of neighbors
+
+        neigh_min: selects only above a certain percentage of minimum wealth (poorest bots), of neighbors
+        """
+
+        if self.method =='neigh_avg':
+            COEFF=.8
+            return COEFF*session.get_average_neighbor_reward()
+        elif self.method == 'neigh_max':
+            #TODO change this to return the whole array of max neighboor rewards
+            # and the check the position in that array (best N% of robots)
+            COEFF=.5
+            return COEFF*session.get_max_neighboor_reward()
+        elif self.method == 'neigh_min':
+            COEFF=2.5
+            return COEFF*session.get_min_neighboor_reward()
+        #TODO
+        # elif method == 'neigh_rise':
+        #     BASE_VALUE = 0.5
+        #     return BASE_VALUE + session.get_time() * 0.01
+        else:
+            exit(1)
+            return super().reputation_threshold(session, self.method)
+
+    def verify_reputation(self, session: CommunicationSession, bot_id):
+        return self.get_reputation_score(session, bot_id) > self.reputation_threshold(session)
+
+    def buy_info(self, session: CommunicationSession):
+        for location in Location:
+            metadata = session.get_metadata(location)
+            metadata_sorted_by_age = sorted(metadata.items(), key=lambda item: item[1]["age"])
+            for bot_id, data in metadata_sorted_by_age:
+                if data["age"] < self.navigation_table.get_age_for_location(location):
+                    try:
+                        other_target = session.make_transaction(neighbor_id=bot_id, location=location)
+                        other_target.set_distance(other_target.get_distance() + session.get_distance_from(bot_id))
+                        
+                        if not self.navigation_table.is_information_valid_for_location(location) and \
+                            self.verify_reputation(session,bot_id):
+                            new_target = self.strategy.combine(self.navigation_table.get_information_entry(location),
+                                                               other_target,
+                                                               np.array([0, 0]))
+                            self.navigation_table.replace_information_entry(location, new_target)
+                    except InsufficientFundsException:
+                        pass
+                    except NoInformationSoldException:
+                        pass
+        
+    def step(self, api):
+        super().step(api)
+            
+
+class SaboteurReputationDynamicThresholdBehavior(ReputationDynamicThresholdBehavior):
+    def __init__(self, method='',rotation_angle=90):
         super().__init__()
         self.color = "red"
         self.rotation_angle = rotation_angle

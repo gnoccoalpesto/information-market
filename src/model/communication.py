@@ -44,3 +44,11 @@ class CommunicationSession:
 
     def get_average_neighbor_reward(self):
         return sum([n.reward() for n in self._neighbors.values()]) / len(self._neighbors)
+
+    def get_max_neighboor_reward(self):
+        return max([n.reward() for n in self._neighbors.values()])
+
+    def get_min_neighboor_reward(self):
+        return min([n.reward() for n in self._neighbors.values()])
+
+        

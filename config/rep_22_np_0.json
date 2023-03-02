@@ -44,14 +44,12 @@
       "class": "ReputationStaticThresholdBehavior",
       "population_size": 22,
       "parameters": {
-        "threshold": 0.5
       }
     },
     {
       "class": "SaboteurReputationStaticThresholdBehavior",
       "population_size": 3,
       "parameters": {
-        "threshold": 0.5,
         "rotation_angle": 0
       }
     }

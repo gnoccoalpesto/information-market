@@ -410,3 +410,47 @@ class SaboteurReputationStaticThresholdBehavior(ReputationStaticThresholdBehavio
         t = copy.deepcopy(self.navigation_table.get_information_entry(location))
         t.rotate(self.rotation_angle)
         return t
+
+
+class ReputationDynamicThresholdBehavior(ReputationStaticThresholdBehavior):
+    def __init__(self,method='neigh_avg'):
+        super().__init__()
+        self.method=method
+
+    def reputation_threshold(self, session: CommunicationSession):
+        """
+        all_max: selects only above a certain percentage of maximum wealth (wealthiest bots), of all robots
+
+        all_avg:selects only above certain percentage of average wealth, considering all robots
+
+        all_rise:  selects above a certaint value, increasing with time, starting from a certain level, of all robots
+
+        all_min: selects only above a certain percentage of minimum wealth (poorest bots), of all robots
+
+        neigh_max: selects only above a certain percentage of maximum wealth (wealthiest bots), of neighbors
+
+        neigh_avg: selects only above certain percentage of average wealth, considering neighbors
+
+        neigh_rise: selects above a certaint value, increasing with time, starting from a certain level, of neighbors
+
+        neigh_min: selects only above a certain percentage of minimum wealth (poorest bots), of neighbors
+        """
+
+        if self.method =='neigh_avg':
+            COEFF=.8
+            return COEFF*session.get_average_neighbor_reward()
+        elif self.method == 'neigh_max':
+            #TODO change this to return the whole array of max neighboor rewards
+            # and the check the position in that array (best N% of robots)
+            COEFF=.5
+            return COEFF*session.get_max_neighboor_reward()
+        elif self.method == 'neigh_min':
+            COEFF=2.5
+            return COEFF*session.get_min_neighboor_reward()
+        #TODO
+        # elif method == 'neigh_rise':
+        #     BASE_VALUE = 0.5
+        #     return BASE_VALUE + session.get_time() * 0.01
+        else:
+            exit(1)
+            return super().reputation_threshold(session, self.method)

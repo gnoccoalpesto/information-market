@@ -496,10 +496,11 @@ def boxplot_repu(
                         "choosy 110%",
                         "choosy 130%",
                         "choosy 160%",]
-    # experiments_labels=["naive","choosy 0.3 (treshold)","choosy 0.5","choosy 0.8","choosy 1.1"]
     new_labels=["items collected", "agent type"]
     n_boxes=len(filenames[0])// by
     fig, axs = plt.subplots(by, n_boxes, sharey=True)
+    fig.suptitle("COMPARING REPUTATION THRESHOLD (WITHOUT PEN)\nAT DIFFERENT LIE ANGLES\n"\
+    "FOR 22 CHOOSY AND 1 CHOOSOTEUR\nALL OF THE EXPERIMENT, SEEDED",fontweight="bold")
     for idx,(f_naive,f_03tr,f_05tr,f_08tr,f_11tr,f_13tr,f_16tr,) in enumerate(zip(filenames[0],
                                                                     filenames[1],
                                                                     filenames[2],
@@ -603,8 +604,6 @@ def boxplot_repu(
         params=f"{lie_angle}"#,\nT-test (thr={ttest_th})\np-value: \n{np.round(ttest_pv,5)}"
         axs[idx].set_xlabel(params)
     fig.set_size_inches(BASE_BOX_WIDTH*n_boxes,BASE_BOX_HEIGHT+1)
-    fig.suptitle("COMPARING REPUTATION THRESHOLD (WITHOUT PEN)\nAT DIFFERENT LIE ANGLES\n"\
-    "FOR 22 CHOOSY AND 1 CHOOSOTEUR\nALL OF THE EXPERIMENT, SEEDED",fontweight="bold")
     plt.ylim(bottom=0)
     sns.despine(fig, axs[idx], trim=False)
     # plt.legend(loc='upper right', bbox_to_anchor=(1.3, 1.0), ncol=1)
