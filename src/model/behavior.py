@@ -346,24 +346,18 @@ class ScepticalGreedyBehavior(ScepticalBehavior):
 ###################################################################################
 # BEHAVIOURS WITH REPUTATION (SYSTEMIC) PROTECTION ################################
 
-class ReputationStaticThresholdBehavior(NaiveBehavior):
+class ReputationWealthBehaviour(NaiveBehavior):
     def __init__(self):
-        super(ReputationStaticThresholdBehavior, self).__init__()
+        super(ReputationWealthBehaviour, self).__init__()
         #TODO if reputation level raises, has pending info sense?
         # self.pending_information = {location: {} for location in Location}
 
+    @abstractmethod
+    def verify_reputation(self, session: CommunicationSession, bot_id):
+        pass
+
     def get_reputation_score(self, session: CommunicationSession, bot_id):
         return session.get_neighbor_reward(bot_id)
-
-    def reputation_threshold(self, session: CommunicationSession,method='static',):
-        if method == 'static':
-            return 0.5
-        elif method == 'average':
-            return session.get_average_reward()
-
-    def verify_reputation(self, session: CommunicationSession, bot_id):
-        return self.get_reputation_score(session, bot_id) > self.reputation_threshold(session)
-
 
     def buy_info(self, session: CommunicationSession):
         for location in Location:
@@ -371,13 +365,14 @@ class ReputationStaticThresholdBehavior(NaiveBehavior):
             metadata_sorted_by_age = sorted(metadata.items(), key=lambda item: item[1]["age"])
             for bot_id, data in metadata_sorted_by_age:
                 if data["age"] < self.navigation_table.get_age_for_location(location):
-                    # and bot_id not in self.pending_information[location]:
+                    #  and bot_id not in self.pending_information[location]:
                     try:
                         other_target = session.make_transaction(neighbor_id=bot_id, location=location)
-                        other_target.set_distance(other_target.get_distance() + session.get_distance_from(bot_id))
-                        
+                        other_target.set_distance(other_target.get_distance() + session.get_distance_from(
+                            bot_id))
+
                         if not self.navigation_table.is_information_valid_for_location(location) and \
-                            self.verify_reputation(session,bot_id):
+                                self.verify_reputation(session, bot_id):
                             new_target = self.strategy.combine(self.navigation_table.get_information_entry(location),
                                                                other_target,
                                                                np.array([0, 0]))
@@ -387,13 +382,36 @@ class ReputationStaticThresholdBehavior(NaiveBehavior):
                         pass
                     except NoInformationSoldException:
                         pass
-
     def step(self, api):
-        super().step(api)
+        return super().step(api)
+
+
+class ReputationTresholdBehaviour(ReputationWealthBehaviour):
+    def __init__(self):
+        super(ReputationTresholdBehaviour, self).__init__()
+        #TODO if reputation level raises, has pending info sense?
+        # self.pending_information = {location: {} for location in Location}
+
+    @abstractmethod
+    def get_treshold_value(self, session: CommunicationSession):
+        pass
+
+    def verify_reputation(self, session: CommunicationSession, bot_id):
+        return self.get_reputation_score(session, bot_id) >\
+                 self.get_treshold_value(session)
+
+
+class ReputationStaticThresholdBehavior(ReputationTresholdBehaviour):
+    def __init__(self,threshold=1):
+        super(ReputationStaticThresholdBehavior, self).__init__()
+        self.threshold=threshold
+
+    def reputation_threshold(self, session: CommunicationSession):
+            return self.threshold
 
 
 class SaboteurReputationStaticThresholdBehavior(ReputationStaticThresholdBehavior):
-    def __init__(self, rotation_angle=90):
+    def __init__(self, threshold=1,rotation_angle=90):
         super().__init__()
         self.color = "red"
         self.rotation_angle = rotation_angle
@@ -404,13 +422,10 @@ class SaboteurReputationStaticThresholdBehavior(ReputationStaticThresholdBehavio
         return t
 
 
-class ReputationDynamicThresholdBehavior(NaiveBehavior):
+class ReputationDynamicThresholdBehavior(ReputationTresholdBehaviour):
     def __init__(self,method='neigh_avg'):
-        super().__init__()
+        super(ReputationDynamicThresholdBehavior, self).__init__()
         self.method=method
-
-    def get_reputation_score(self, session: CommunicationSession, bot_id):
-        return session.get_neighbor_reward(bot_id)
 
     def reputation_threshold(self, session: CommunicationSession):
         """
@@ -450,33 +465,6 @@ class ReputationDynamicThresholdBehavior(NaiveBehavior):
             exit(1)
             return super().reputation_threshold(session, self.method)
 
-    def verify_reputation(self, session: CommunicationSession, bot_id):
-        return self.get_reputation_score(session, bot_id) > self.reputation_threshold(session)
-
-    def buy_info(self, session: CommunicationSession):
-        for location in Location:
-            metadata = session.get_metadata(location)
-            metadata_sorted_by_age = sorted(metadata.items(), key=lambda item: item[1]["age"])
-            for bot_id, data in metadata_sorted_by_age:
-                if data["age"] < self.navigation_table.get_age_for_location(location):
-                    try:
-                        other_target = session.make_transaction(neighbor_id=bot_id, location=location)
-                        other_target.set_distance(other_target.get_distance() + session.get_distance_from(bot_id))
-                        
-                        if not self.navigation_table.is_information_valid_for_location(location) and \
-                            self.verify_reputation(session,bot_id):
-                            new_target = self.strategy.combine(self.navigation_table.get_information_entry(location),
-                                                               other_target,
-                                                               np.array([0, 0]))
-                            self.navigation_table.replace_information_entry(location, new_target)
-                    except InsufficientFundsException:
-                        pass
-                    except NoInformationSoldException:
-                        pass
-        
-    def step(self, api):
-        super().step(api)
-            
 
 class SaboteurReputationDynamicThresholdBehavior(ReputationDynamicThresholdBehavior):
     def __init__(self, method='',rotation_angle=90):
