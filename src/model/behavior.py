@@ -404,10 +404,10 @@ class ReputationTresholdBehaviour(ReputationWealthBehaviour):
 class ReputationStaticThresholdBehavior(ReputationTresholdBehaviour):
     def __init__(self,threshold=1):
         super(ReputationStaticThresholdBehavior, self).__init__()
-        self.threshold=threshold
+        self.reputation_threshold=threshold
 
-    def reputation_threshold(self, session: CommunicationSession):
-            return self.threshold
+    def get_treshold_value(self, session: CommunicationSession):
+            return self.reputation_threshold
 
 
 class SaboteurReputationStaticThresholdBehavior(ReputationStaticThresholdBehavior):
@@ -427,7 +427,7 @@ class ReputationDynamicThresholdBehavior(ReputationTresholdBehaviour):
         super(ReputationDynamicThresholdBehavior, self).__init__()
         self.method=method
 
-    def reputation_threshold(self, session: CommunicationSession):
+    def get_treshold_value(self, session: CommunicationSession):
         """
         all_max: selects only above a certain percentage of maximum wealth (wealthiest bots), of all robots
 
