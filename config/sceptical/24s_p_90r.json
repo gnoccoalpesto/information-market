@@ -11,9 +11,9 @@
     "y": 300,
     "radius": 50
   },
-  "simulation_steps": 15,
-  "simulation_seed": 5684436,
+  "simulation_steps": 15000,
   "number_runs": 128,
+  "simulation_seed": 5684436,
   "visualization": {
     "activate": false,
     "fps": 60
@@ -41,31 +41,26 @@
       }
     },
     {
-      "class": "ReputationStaticThresholdBehavior",
-      "population_size": 0,
+      "class": "ScepticalBehavior",
+      "population_size": 24,
       "parameters": {
+        "threshold": 0.25
+
       }
     },
     {
-      "class": "SaboteurReputationStaticThresholdBehavior",
+      "class": "SaboteurBehavior",
       "population_size": 0,
       "parameters": {
         "rotation_angle": 0
       }
     },
     {
-      "class": "ReputationDynamicThresholdBehavior",
-      "population_size": 22,
+      "class": "ScaboteurBehavior",
+      "population_size": 1,
       "parameters": {
-        "method":"neigh_max"
-      }
-    },
-    {
-      "class": "SaboteurReputationDynamicThresholdBehavior",
-      "population_size": 3,
-      "parameters": {
-        "rotation_angle": 0,
-        "method":"neigh_max"
+        "rotation_angle": 90,
+        "threshold": 0.25
       }
     }
   ],
@@ -83,8 +78,8 @@
     }
   },
   "data_collection": {
-    "output_directory": "../data/TEST/",
-    "filename": "22c_p_05neimax_0r.csv",
+    "output_directory": "../data/sceptical/",
+    "filename": "22s_p_90r.csv",
     "metrics": ["items_evolution","rewards_evolution","items_collected","rewards"],
     "precise_recording_interval": 100,
     "transactions_log": false

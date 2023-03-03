@@ -35,61 +35,98 @@ def check_filename_existence(output_directory,metric,filename):
 def generate_filename(config:Configuration,):
     filename = config.value_of("data_collection")["filename"]
     #TODO INCREMENTAL NAME GENERATION: if "+" in param name->add before
-    if filename is None or filename == "" or "+" in filename:
-        # if "+" in filename:
-        #     prefix=REMOVE + FROM NAME
-        n_naive=config.value_of("behaviors")[0]['population_size']
-        n_sceptical=config.value_of("behaviors")[1]['population_size']
-        n_honest=n_naive+n_sceptical
-        n_saboteur=config.value_of("behaviors")[2]['population_size']
-        n_scaboteur=config.value_of("behaviors")[3]['population_size']
-        n_dishonest=n_saboteur+n_scaboteur
-        #arbitrary threshold for the naives
-        th_honest= 3000 if n_sceptical==0 and n_honest>0 \
-            else config.value_of("behaviors")[1]['parameters']['threshold']
-        text_th_honest=str(th_honest).replace(".","").replace(",","")#eg 0.5 -> 05
-        lie_angle = config.value_of("behaviors")[3]['parameters']['rotation_angle'] if n_scaboteur >0 \
-            else config.value_of("behaviors")[2]['parameters']['rotation_angle']
-        penalization="no" if config.value_of("payment_system")["class"]=="DelayedPaymentPaymentSystem" else ""
-        seed=config.value_of("simulation_seed")
-        text_seed=f"{seed if seed!='' else 'random'}"
-        #TODO rework name convention to include more characteristics
-        filename = \
-            f"{n_honest}sceptical_{text_th_honest}th_"+\
-            f"{n_dishonest}scaboteur_{lie_angle}rotation_"+\
-            f"{penalization}penalisation_"+\
-            f"{text_seed}Seed.csv"
+    #BUG wrong name generation, with passed name
+    # if filename is None or filename == "":# or "+" in filename:
+    #     # if "+" in filename:
+    #     #     prefix=REMOVE + FROM NAME
+    #     n_naive=config.value_of("behaviors")[0]['population_size']
+    #     n_sceptical=config.value_of("behaviors")[1]['population_size']
+    #     n_honest=n_naive+n_sceptical
+    #     n_saboteur=config.value_of("behaviors")[2]['population_size']
+    #     n_scaboteur=config.value_of("behaviors")[3]['population_size']
+    #     n_dishonest=n_saboteur+n_scaboteur
+    #     #arbitrary threshold for the naives
+    #     th_honest= 3000 if n_sceptical==0 and n_honest>0 \
+    #         else config.value_of("behaviors")[1]['parameters']['threshold']
+    #     text_th_honest=str(th_honest).replace(".","").replace(",","")#eg 0.5 -> 05
+    #     lie_angle = config.value_of("behaviors")[3]['parameters']['rotation_angle'] if n_scaboteur >0 \
+    #         else config.value_of("behaviors")[2]['parameters']['rotation_angle']
+    #     penalization="no" if config.value_of("payment_system")["class"]=="DelayedPaymentPaymentSystem" else ""
+    #     seed=config.value_of("simulation_seed")
+    #     text_seed=f"{seed if seed!='' else 'random'}"
+    #     #TODO rework name convention to include more characteristics
+    #     filename = \
+    #         f"{n_honest}sceptical_{text_th_honest}th_"+\
+    #         f"{n_dishonest}scaboteur_{lie_angle}rotation_"+\
+    #         f"{penalization}penalisation_"+\
+    #         f"{text_seed}Seed.csv"
     return filename
 
 ####################################################################################
 
 def main():
     try:
-        if isfile(argv[1]):
-            config = Configuration(config_file=argv[1])
-            if config.value_of("visualization")['activate']:
-                print(config)
-                main_controller = MainController(config)
-                view_controller = ViewController(main_controller,
-                                                    config.value_of("width"),
-                                                    config.value_of("height"),
-                                                    config.value_of("visualization")['fps'])
-                exit(0)
+    #TODO cycle on all passed args:
+    #    if arg is a file, run it
+    #        &if visualization is activated, run the view controller, then exit
+    #    if arg is a directory, run all files in it
+        configs=[]
+        filenames=[]
+        for p in argv[1:]:
+            if isfile(p):
+                config = Configuration(config_file=p)
+                if config.value_of("visualization")['activate']:
+                    main_controller = MainController(config)
+                    view_controller = ViewController(main_controller,
+                                                        config.value_of("width"),
+                                                        config.value_of("height"),
+                                                        config.value_of("visualization")['fps'])
+                    exit(0)
+                else:
+                    configs.append(config)
+                    filenames.append(p)
+                    # run_processes(config)
             else:
-                run_processes(config)
-                exit(0)
-        directory=argv[1]
-        filenames=[join(directory, f) for f in listdir(directory) if isfile(join(directory, f))]
+                filenames.extend([join(p, f) for f in listdir(p) if isfile(join(p, f))])
+                for f in filenames:
+                    config = Configuration(config_file=f)
+                    configs.append(config)
+                    # run_processes(config)
         print(f"Running {len(filenames)} config"
                 f"{'s' if len(filenames)>1 else ''}: ",end="\t")
         print(*filenames, sep="\n\t\t\t")
-        for arg in filenames:
-            config = Configuration(config_file=arg)
-            run_processes(config)
-        exit(0)
+        for c in configs:
+            run_processes(c)
     except IndexError:
         print("ERROR: no config file specified, running default config.")
         exit(1)
+    exit(0)
+    ############
+    #     if isfile(argv[1]):
+    #         config = Configuration(config_file=argv[1])
+    #         if config.value_of("visualization")['activate']:
+    #             print(config)
+    #             main_controller = MainController(config)
+    #             view_controller = ViewController(main_controller,
+    #                                                 config.value_of("width"),
+    #                                                 config.value_of("height"),
+    #                                                 config.value_of("visualization")['fps'])
+    #             exit(0)
+    #         else:
+    #             run_processes(config)
+    #             exit(0)
+    #     directory=argv[1]
+    #     filenames=[join(directory, f) for f in listdir(directory) if isfile(join(directory, f))]
+    #     print(f"Running {len(filenames)} config"
+    #             f"{'s' if len(filenames)>1 else ''}: ",end="\t")
+    #     print(*filenames, sep="\n\t\t\t")
+    #     for arg in filenames:
+    #         config = Configuration(config_file=arg)
+    #         run_processes(config)
+    #     exit(0)
+    # except IndexError:
+    #     print("ERROR: no config file specified, running default config.")
+    #     exit(1)
 
         
 def run_processes(config: Configuration):
@@ -120,6 +157,7 @@ def run(config:Configuration, i):
 
 
 def record_data(config:Configuration, controllers):
+    #TODO check if passed folder arg in terminal, otherwise use this
     output_directory = config.value_of("data_collection")["output_directory"]
     filename=generate_filename(config)
     for metric in config.value_of("data_collection")["metrics"]:
@@ -165,19 +203,20 @@ def record_data(config:Configuration, controllers):
                 Path(join(output_directory, "items_evolution")).mkdir(parents=True, exist_ok=True)
                 current_filename=check_filename_existence(output_directory,metric,filename)
                 pd.concat(dataframes).to_csv(join(output_directory, "items_evolution", current_filename))
-            case "transactions":
-                transaction_logs=[]
-                for i, controller in enumerate(controllers):
-                    df = pd.DataFrame(controller.get_transaction_log(), columns=["tick", "buyer", "seller"])
-                    df["simulation_id"] = i
-                    df = df.set_index("simulation_id")
-                    transaction_logs.append(df)
-                Path(join(output_directory, "transactions")).mkdir(parents=True, exist_ok=True)
-                current_filename=check_filename_existence(output_directory,metric,filename)
-                pd.concat(transaction_logs).to_csv(join(output_directory, "transactions", current_filename))
             case _:
                 print(f"[WARNING] Could not record metric: '{metric}'. Metric name is not valid.")
 
+        if config.value_of("data_collection")["transactions_log"]:
+            transaction_logs=[]
+            for i, controller in enumerate(controllers):
+                df = pd.DataFrame(controller.get_transaction_log(), columns=["tick", "buyer", "seller"])
+                df["simulation_id"] = i
+                df = df.set_index("simulation_id")
+                transaction_logs.append(df)
+            Path(join(output_directory, "transactions")).mkdir(parents=True, exist_ok=True)
+            current_filename=check_filename_existence(output_directory,metric,filename)
+            pd.concat(transaction_logs).to_csv(join(output_directory, "transactions", current_filename))
+            
 
 if __name__ == '__main__':
     main()

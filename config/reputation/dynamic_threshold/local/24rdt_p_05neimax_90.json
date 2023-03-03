@@ -11,7 +11,7 @@
     "y": 300,
     "radius": 50
   },
-  "simulation_steps": 15,
+  "simulation_steps": 15000,
   "simulation_seed": 5684436,
   "number_runs": 128,
   "visualization": {
@@ -83,10 +83,9 @@
     }
   },
   "data_collection": {
-    "output_directory": "../data/TEST/",
-    "filename": "22c_p_05neimax_0r.csv",
+    "output_directory": "../data/reputation_dynamic/",
+    "filename": "24c_p_05neimax_90r.csv",
     "metrics": ["items_evolution","rewards_evolution","items_collected","rewards"],
     "precise_recording_interval": 100,
-    "transactions_log": false
-  }
+    "transactions_log": false  }
 }

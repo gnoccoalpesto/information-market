@@ -11,7 +11,7 @@
     "y": 300,
     "radius": 50
   },
-  "simulation_steps": 15,
+  "simulation_steps": 15000,
   "simulation_seed": 5684436,
   "number_runs": 128,
   "visualization": {
@@ -57,7 +57,7 @@
       "class": "ReputationDynamicThresholdBehavior",
       "population_size": 22,
       "parameters": {
-        "method":"neigh_max"
+        "method":"neigh_min"
       }
     },
     {
@@ -65,7 +65,7 @@
       "population_size": 3,
       "parameters": {
         "rotation_angle": 0,
-        "method":"neigh_max"
+        "method":"neigh_min"
       }
     }
   ],
@@ -83,10 +83,9 @@
     }
   },
   "data_collection": {
-    "output_directory": "../data/TEST/",
-    "filename": "22c_p_05neimax_0r.csv",
+    "output_directory": "../data/reputation_dynamic/",
+    "filename": "22c_p_25neimin_0r.csv",
     "metrics": ["items_evolution","rewards_evolution","items_collected","rewards"],
     "precise_recording_interval": 100,
-    "transactions_log": false
-  }
+    "transactions_log": false  }
 }

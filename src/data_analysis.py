@@ -416,8 +416,10 @@ def boxplot_evo_pen_lie(
 
 def boxplot_repu(
                 filenames=[],
-                data_folder="../data/reputation/",\
+                data_folder="../data/reputation/",
                 metric="items_evolution",
+                experiments_labels=[],
+                title="",
                 by=1
                 ):
     '''
@@ -425,36 +427,6 @@ def boxplot_repu(
     '''
     BASE_BOX_WIDTH=3
     BASE_BOX_HEIGHT=7
-    filenames=[
-                [
-                "22n_p_0r.csv",
-                "22n_p_90r.csv",
-                ],
-                [
-                "22c_np_03tr_0r.csv",
-                "22c_np_03tr_90r.csv",
-                ],
-                [
-                "22c_np_05tr_0r.csv",
-                "22c_np_05tr_90r.csv",
-                ],
-                [
-                "22c_np_08tr_0r.csv",
-                "22c_np_08tr_90r.csv",
-                ],
-                [
-                "22c_np_11tr_0r.csv",
-                "22c_np_11tr_90r.csv",
-                ],
-                [
-                "22c_np_13tr_0r.csv",
-                "22c_np_13tr_90r.csv",
-                ],
-                [
-                "22c_np_16tr_0r.csv",
-                "22c_np_16tr_90r.csv",
-                ]
-            ]
     """
     plot:   n,c03, c05, c08
             lie ancgle 0..............lie angle 90
@@ -489,41 +461,28 @@ def boxplot_repu(
     24n_p_0r.csv
     24n_p_90r.csv
     """
-    experiments_labels=["naive (penalized)",
-                        "choosy 30%(of initial wealth)",
-                        "choosy 50%",
-                        "choosy 80%",
-                        "choosy 110%",
-                        "choosy 130%",
-                        "choosy 160%",]
-    new_labels=["items collected", "agent type"]
+
+    new_labels=["items collected", "protection type"]
     n_boxes=len(filenames[0])// by
     fig, axs = plt.subplots(by, n_boxes, sharey=True)
-    fig.suptitle("COMPARING REPUTATION THRESHOLD (WITHOUT PEN)\nAT DIFFERENT LIE ANGLES\n"\
-    "FOR 22 CHOOSY AND 1 CHOOSOTEUR\nALL OF THE EXPERIMENT, SEEDED",fontweight="bold")
-    for idx,(f_naive,f_03tr,f_05tr,f_08tr,f_11tr,f_13tr,f_16tr,) in enumerate(zip(filenames[0],
+    fig.suptitle(title,fontweight="bold")
+    for idx,(f_naive,f_03tr,f_05tr,f_08tr,f_11tr) in enumerate(zip(filenames[0],
                                                                     filenames[1],
                                                                     filenames[2],
                                                                     filenames[3],
-                                                                    filenames[4],
-                                                                    filenames[5],
-                                                                    filenames[6]
+                                                                    filenames[4]
                                                                     )):
         filename_naive=f"{data_folder}{metric}/{f_naive}"
         filename_f_03tr=f"{data_folder}{metric}/{f_03tr}"
         filename_f_05tr=f"{data_folder}{metric}/{f_05tr}"
         filename_f_08tr=f"{data_folder}{metric}/{f_08tr}"
         filename_f_11tr=f"{data_folder}{metric}/{f_11tr}"
-        filename_f_13tr=f"{data_folder}{metric}/{f_13tr}"
-        filename_f_16tr=f"{data_folder}{metric}/{f_16tr}"
         #TODO OPTIMIZE THIS IS SO SLOW
         naive_df = pd.read_csv(filename_naive,converters={'items_list': pd.eval})
         f_03tr_df = pd.read_csv(filename_f_03tr,converters={'items_list': pd.eval})
         f_05tr_df = pd.read_csv(filename_f_05tr,converters={'items_list': pd.eval})
         f_08tr_df = pd.read_csv(filename_f_08tr,converters={'items_list': pd.eval})
         f_11tr_df = pd.read_csv(filename_f_11tr,converters={'items_list': pd.eval})
-        f_13tr_df = pd.read_csv(filename_f_13tr,converters={'items_list': pd.eval})
-        f_16tr_df = pd.read_csv(filename_f_16tr,converters={'items_list': pd.eval})
         labels=naive_df.columns.to_list()
         selected_runs=naive_df[labels[0]].unique()
         naive_data=[]
@@ -531,65 +490,53 @@ def boxplot_repu(
         f_05tr_data=[]
         f_08tr_data=[]
         f_11tr_data=[]
-        f_13tr_data=[]
-        f_16tr_data=[]
         for run in selected_runs:
             naive_run_row=naive_df.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
             f_03tr_run_row=f_03tr_df.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
             f_05tr_run_row=f_05tr_df.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
             f_08tr_run_row=f_08tr_df.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
             f_11tr_run_row=f_11tr_df.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
-            f_13tr_run_row=f_13tr_df.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
-            f_16tr_run_row=f_16tr_df.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
             naive_last=naive_run_row.iloc[-1]
             f_03tr_last=f_03tr_run_row.iloc[-1]
             f_05tr_last=f_05tr_run_row.iloc[-1]
             f_08tr_last=f_08tr_run_row.iloc[-1]
             f_11tr_last=f_11tr_run_row.iloc[-1]
-            f_13tr_last=f_13tr_run_row.iloc[-1]
-            f_16tr_last=f_16tr_run_row.iloc[-1]
-            # nopen_end_transitory=nopen_run_row.iloc[2*len(nopen_run_row)//3]
-            # pen_end_transitory=pen_run_row.iloc[2*len(pen_run_row)//3]
-            # delta_nopen=nopen_last-nopen_end_transitory
-            # delta_pen=pen_last-pen_end_transitory
-            # nopen_data.append([delta_nopen.sum()])
-            # pen_data.append([delta_pen.sum()])
-            naive_data.append([naive_last.sum()])
-            f_03tr_data.append([f_03tr_last.sum()])
-            f_05tr_data.append([f_05tr_last.sum()])
-            f_08tr_data.append([f_08tr_last.sum()])
-            f_11tr_data.append([f_11tr_last.sum()])
-            f_13tr_data.append([f_13tr_last.sum()])
-            f_16tr_data.append([f_16tr_last.sum()])
+            naive_end_transitory=naive_run_row.iloc[2*len(naive_run_row)//3]
+            f_03tr_end_transitory=f_03tr_run_row.iloc[2*len(f_03tr_run_row)//3]
+            f_05tr_end_transitory=f_05tr_run_row.iloc[2*len(f_05tr_run_row)//3]
+            f_08tr_end_transitory=f_08tr_run_row.iloc[2*len(f_08tr_run_row)//3]
+            f_11tr_end_transitory=f_11tr_run_row.iloc[2*len(f_11tr_run_row)//3]
+            delta_naive=naive_last-naive_end_transitory
+            delta_f_03tr=f_03tr_last-f_03tr_end_transitory
+            delta_f_05tr=f_05tr_last-f_05tr_end_transitory
+            delta_f_08tr=f_08tr_last-f_08tr_end_transitory
+            delta_f_11tr=f_11tr_last-f_11tr_end_transitory
+            naive_data.append([delta_naive.sum()])
+            f_03tr_data.append([delta_f_03tr.sum()])
+            f_05tr_data.append([delta_f_05tr.sum()])
+            f_08tr_data.append([delta_f_08tr.sum()])
+            f_11tr_data.append([delta_f_11tr.sum()])
         list_naive_flat = pd.DataFrame(naive_data)
         list_f_03tr_flat = pd.DataFrame(f_03tr_data)
         list_f_05tr_flat = pd.DataFrame(f_05tr_data)
         list_f_08tr_flat = pd.DataFrame(f_08tr_data)
         list_f_11tr_flat = pd.DataFrame(f_11tr_data)
-        list_f_13tr_flat = pd.DataFrame(f_13tr_data)
-        list_f_16tr_flat = pd.DataFrame(f_16tr_data)
         # ttest_pv=stats.ttest_ind(list_nopen_flat,list_pen_flat)[1][0]
         list_naive= pd.DataFrame(np.full(list_naive_flat.shape, experiments_labels[0]))
         list_f_03tr= pd.DataFrame(np.full(list_f_03tr_flat.shape, experiments_labels[1]))
         list_f_05tr= pd.DataFrame(np.full(list_f_05tr_flat.shape, experiments_labels[2]))
         list_f_08tr= pd.DataFrame(np.full(list_f_08tr_flat.shape, experiments_labels[3]))
         list_f_11tr= pd.DataFrame(np.full(list_f_11tr_flat.shape, experiments_labels[4]))
-        list_f_13tr= pd.DataFrame(np.full(list_f_13tr_flat.shape, experiments_labels[5]))
-        list_f_16tr= pd.DataFrame(np.full(list_f_16tr_flat.shape, experiments_labels[6]))
         list_naive_flat = pd.concat([list_naive_flat, list_naive], axis=1)
         list_f_03tr_flat = pd.concat([list_f_03tr_flat, list_f_03tr], axis=1)
         list_f_05tr_flat = pd.concat([list_f_05tr_flat, list_f_05tr], axis=1)
         list_f_08tr_flat = pd.concat([list_f_08tr_flat, list_f_08tr], axis=1)
         list_f_11tr_flat = pd.concat([list_f_11tr_flat, list_f_11tr], axis=1)
-        list_f_13tr_flat = pd.concat([list_f_13tr_flat, list_f_13tr], axis=1)
-        list_f_16tr_flat = pd.concat([list_f_16tr_flat, list_f_16tr], axis=1)
         data = pd.concat([  list_naive_flat,
                             list_f_03tr_flat,
                             list_f_05tr_flat,
                             list_f_08tr_flat,
                             list_f_11tr_flat,
-                            list_f_13tr_flat,
-                            list_f_16tr_flat
                         ])
         data.columns = new_labels
         if idx==0:
@@ -1818,6 +1765,40 @@ def after_transitory_phase():
 
 
 if __name__ == '__main__':
+
+
+
+    filenames=[
+                [
+                "22n_p_0r.csv",
+                "24n_p_90r.csv",
+                ],
+                [
+                "24n_p_0r.csv",
+                "24s_p_90r.csv",
+                ],
+                [
+                "24c_p_05neimax_0r.csv",
+                "24c_p_05neimax_90r.csv",
+                ],
+                [
+                "24c_p_08neiavg_0r.csv",
+                "24c_p_08neiavg_90r.csv",
+                ],
+                [
+                "24c_p_25neimin_0r.csv",
+                "24c_p_25neimin_90r.csv",
+                ]
+            ]
+
+    labels=["naive penalisation",
+            "sceptical penalisation",
+            "% max reputation",
+            "% avg reputation",
+            "coeff*min reputation"]
+
+    title="COMPARISON 24 AGENTS, 1 SABOTEURS, penalised\ndifferent protection schemes\nstable part of experiment, seeded"
+            
     # metric,mode=parse_args()
     # myboxplots()
     # myttest(data_folder="../data/all/",compare="")
@@ -1827,5 +1808,9 @@ if __name__ == '__main__':
     # evolution_boxplot0()
     # after_transitory_phase()
     # boxplot_evo_pen_lie()
-    boxplot_repu()
+    boxplot_repu(filenames=filenames,
+                data_folder="../data/reputation_dynamic/",
+                metric="items_evolution",
+                experiments_labels=labels,
+                title=title,) 
     pass
