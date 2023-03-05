@@ -169,6 +169,18 @@ class PaymentDB:
         return self.database[robot_id]["reward"]
 
 
+    def get_highest_reward(self):
+        return np.max([self.database[robot_id]["reward"] for robot_id in self.database])
+
+
+    def get_lowest_reward(self):
+        return np.min([self.database[robot_id]["reward"] for robot_id in self.database])
+
+    
+    def get_average_reward(self):
+        return np.mean([self.database[robot_id]["reward"] for robot_id in self.database])
+
+        
     def apply_cost(self, robot_id, cost):
         if cost < 0:
             raise ValueError("Cost must be positive")
