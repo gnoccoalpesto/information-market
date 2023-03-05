@@ -66,10 +66,6 @@ def generate_filename(config:Configuration,):
 
 def main():
     try:
-    #TODO cycle on all passed args:
-    #    if arg is a file, run it
-    #        &if visualization is activated, run the view controller, then exit
-    #    if arg is a directory, run all files in it
         configs=[]
         filenames=[]
         for p in argv[1:]:
@@ -101,32 +97,6 @@ def main():
         print("ERROR: no config file specified, running default config.")
         exit(1)
     exit(0)
-    ############
-    #     if isfile(argv[1]):
-    #         config = Configuration(config_file=argv[1])
-    #         if config.value_of("visualization")['activate']:
-    #             print(config)
-    #             main_controller = MainController(config)
-    #             view_controller = ViewController(main_controller,
-    #                                                 config.value_of("width"),
-    #                                                 config.value_of("height"),
-    #                                                 config.value_of("visualization")['fps'])
-    #             exit(0)
-    #         else:
-    #             run_processes(config)
-    #             exit(0)
-    #     directory=argv[1]
-    #     filenames=[join(directory, f) for f in listdir(directory) if isfile(join(directory, f))]
-    #     print(f"Running {len(filenames)} config"
-    #             f"{'s' if len(filenames)>1 else ''}: ",end="\t")
-    #     print(*filenames, sep="\n\t\t\t")
-    #     for arg in filenames:
-    #         config = Configuration(config_file=arg)
-    #         run_processes(config)
-    #     exit(0)
-    # except IndexError:
-    #     print("ERROR: no config file specified, running default config.")
-    #     exit(1)
 
         
 def run_processes(config: Configuration):
@@ -161,9 +131,8 @@ def record_data(config:Configuration, controllers):
     output_directory = config.value_of("data_collection")["output_directory"]
     filename=generate_filename(config)
     for metric in config.value_of("data_collection")["metrics"]:
-    #TODO reintroduce append option
-    #TODO rework this removing match and introducing a dictionary of functions
-    #        and using same structure for all
+    #TODO reintroduce append option, butwhat about seed?
+    #TODO more parametric, use dict of functions and pass args
         match metric:
             case "rewards":
                 rewards_df = pd.DataFrame([controller.get_rewards() for controller in controllers])
@@ -182,7 +151,6 @@ def record_data(config:Configuration, controllers):
                 Path(join(output_directory, "drifts")).mkdir(parents=True, exist_ok=True)
                 current_filename=check_filename_existence(output_directory,metric,filename)
                 drifts_df.to_csv(join(output_directory, "drifts", current_filename), index=False, header=False)
-            #TODO append instead of rewriting
             case "rewards_evolution":
                 dataframes = []
                 for i, controller in enumerate(controllers):

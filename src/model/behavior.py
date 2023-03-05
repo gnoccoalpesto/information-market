@@ -5,6 +5,7 @@ from math import cos, radians, sin
 
 import numpy as np
 
+from model.payment import PaymentDB
 from model.communication import CommunicationSession
 from model.navigation import Location, NavigationTable
 from model.strategy import WeightedAverageAgeStrategy
@@ -16,6 +17,17 @@ class State(Enum):
     EXPLORING = 1
     SEEKING_FOOD = 2
     SEEKING_NEST = 3
+
+
+class RequiredInformation(Enum):
+    """
+    This class characterizes the information required
+    local: Naive, scepticals, scaboteurs
+    global: uses wealth reputataion
+    """
+    LOCAL = 0
+    GLOBAL = 1
+
 
 
 def behavior_factory(behavior_params):
@@ -51,6 +63,7 @@ class NaiveBehavior(Behavior):
         self.strategy = WeightedAverageAgeStrategy()
         self.dr = np.array([0, 0]).astype('float64')
         self.id = -1
+        self.required_information = RequiredInformation.LOCAL
 
 
     def buy_info(self, session: CommunicationSession):
@@ -351,6 +364,8 @@ class ReputationWealthBehaviour(NaiveBehavior):
         super(ReputationWealthBehaviour, self).__init__()
         #TODO if reputation level raises, has pending info sense?
         # self.pending_information = {location: {} for location in Location}
+        self.required_information=RequiredInformation.GLOBAL
+
 
     @abstractmethod
     def verify_reputation(self, session: CommunicationSession, bot_id):
@@ -359,7 +374,7 @@ class ReputationWealthBehaviour(NaiveBehavior):
     def get_reputation_score(self, session: CommunicationSession, bot_id):
         return session.get_neighbor_reward(bot_id)
 
-    def buy_info(self, session: CommunicationSession):
+    def buy_info(self, session: CommunicationSession, payment_database: PaymentDB):
         for location in Location:
             metadata = session.get_metadata(location)
             metadata_sorted_by_age = sorted(metadata.items(), key=lambda item: item[1]["age"])
@@ -372,7 +387,7 @@ class ReputationWealthBehaviour(NaiveBehavior):
                             bot_id))
 
                         if not self.navigation_table.is_information_valid_for_location(location) and \
-                                self.verify_reputation(session, bot_id):
+                                self.verify_reputation(session, bot_id,payment_database):
                             new_target = self.strategy.combine(self.navigation_table.get_information_entry(location),
                                                                other_target,
                                                                np.array([0, 0]))
@@ -445,8 +460,17 @@ class ReputationDynamicThresholdBehavior(ReputationTresholdBehaviour):
 
         neigh_min: selects only above a certain percentage of minimum wealth (poorest bots), of neighbors
         """
-
-        if self.method =='neigh_avg':
+        #TODO BREAK DOWN WHERE_WHAT: WHEER acquires data, WHAT processes it
+        #    can i use match fot it?
+        if self.method == 'all_max':
+            COEFF=.5
+        elif self.method == 'all_avg':
+            COEFF=.8
+        elif self.method == 'all_rise':
+            pass
+        elif self.method == 'all_min':
+            COEFF=2.5
+        elif self.method =='neigh_avg':
             COEFF=.8
             return COEFF*session.get_average_neighbor_reward()
         elif self.method == 'neigh_max':
@@ -464,6 +488,7 @@ class ReputationDynamicThresholdBehavior(ReputationTresholdBehaviour):
         else:
             exit(1)
             return super().reputation_threshold(session, self.method)
+
 
 
 class SaboteurReputationDynamicThresholdBehavior(ReputationDynamicThresholdBehavior):

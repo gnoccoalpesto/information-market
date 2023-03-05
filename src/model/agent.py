@@ -6,7 +6,7 @@ from math import sin, cos, radians
 from tkinter import LAST
 from collections import deque
 
-from model.behavior import State, behavior_factory
+from model.behavior import State, behavior_factory, RequiredInformation
 from model.communication import CommunicationSession
 from model.navigation import Location
 import numpy as np
@@ -118,7 +118,10 @@ class Agent:
         self.previous_nav = copy.deepcopy(self.behavior.navigation_table)
         if self.comm_state == CommunicationState.OPEN:
             session = CommunicationSession(self, neighbors)
-            self.behavior.buy_info(session)
+            if self.behavior.required_information==RequiredInformation.LOCAL:
+                self.behavior.buy_info(session)
+            elif self.behavior.required_information==RequiredInformation.GLOBAL:    
+                self.behavior.buy_info(session,self.environment.payment_database)
         self.new_nav = self.behavior.navigation_table
         self.behavior.navigation_table = self.previous_nav
 

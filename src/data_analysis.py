@@ -1,16 +1,13 @@
 import re
 import os
-from time import perf_counter
 import argparse
 
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.ticker as mtick #percentage on axis for matplotlib
 import seaborn as sns
 import scipy.stats as stats
-
-#percentage on axis for matplotlib
-import matplotlib.ticker as mtick
 
 from model.market import exponential_model, logistics_model
 from model.navigation import Location
@@ -332,89 +329,8 @@ def boxplots_pen_lie(
     plt.show()
 
 
-def boxplot_evo_pen_lie(
-                filenames=[],
-                data_folder="../data/reputation/",\
-                metric="items_evolution",
-                by=1
-                ):
-    '''
-    this function uses as input not headed, numeric rows, csv files
-    '''
-    BASE_BOX_WIDTH=3
-    BASE_BOX_HEIGHT=7
-    filenames=[
-                # [
-                # "24c_np_03tr_0r.csv",
-                # "24c_np_03tr_90r.csv"
-                # ],[
-                # "24c_p_03tr_0r.csv",
-                # "24c_p_03tr_90r.csv"
-                # ]
-                [
-                "22c_np_03tr_0r.csv",
-                "22c_np_03tr_90r.csv"
-                ],[
-                "22c_p_03tr_0r.csv",
-                "22c_p_03tr_90r.csv"
-                ]
-            ]
-    labels=["no penalisation","penalisation"]
-    columns_labels=["items collected", "lie angle"]
-    n_boxes=len(filenames[0])// by
-    fig, axs = plt.subplots(by, n_boxes, sharey=True)
-    for idx,(f_nopen,f_pen) in enumerate(zip(filenames[0],filenames[1])):
-        filename_nopen=f"{data_folder}{metric}/{f_nopen}"
-        filename_pen=f"{data_folder}{metric}/{f_pen}"
-        #TODO OPTIMIZE THIS IS SO SLOW
-        nopen_df = pd.read_csv(filename_nopen,converters={'items_list': pd.eval})
-        per_df = pd.read_csv(filename_pen,converters={'items_list': pd.eval})
-        labels=nopen_df.columns.to_list()
-        selected_runs=nopen_df[labels[0]].unique()
-        nopen_data=[]; pen_data=[]
-        for run in selected_runs:
-            nopen_run_row=nopen_df.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
-            pen_run_row=per_df.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
-            nopen_last=nopen_run_row.iloc[-1]
-            pen_last=pen_run_row.iloc[-1]
-            # nopen_end_transitory=nopen_run_row.iloc[2*len(nopen_run_row)//3]
-            # pen_end_transitory=pen_run_row.iloc[2*len(pen_run_row)//3]
-            # delta_nopen=nopen_last-nopen_end_transitory
-            # delta_pen=pen_last-pen_end_transitory
-            # nopen_data.append([delta_nopen.sum()])
-            # pen_data.append([delta_pen.sum()])
-            nopen_data.append([nopen_last.sum()])
-            pen_data.append([pen_last.sum()])
-        list_nopen_flat = pd.DataFrame(nopen_data)
-        list_pen_flat = pd.DataFrame(pen_data)
-        ttest_pv=stats.ttest_ind(list_nopen_flat,list_pen_flat)[1][0]
-        list_nopen= pd.DataFrame(np.full(list_nopen_flat.shape, labels[0]))
-        list_pen= pd.DataFrame(np.full(list_pen_flat.shape, labels[1]))
-        list_nopen_flat = pd.concat([list_nopen_flat, list_nopen], axis=1)
-        list_pen_flat = pd.concat([list_pen_flat, list_pen], axis=1)
-        data = pd.concat([list_nopen_flat, list_pen_flat])
-        data.columns = columns_labels
-        #TODO FIX LEGEND
-        if idx==0:
-            sns.boxplot(data=data,y=data.columns[0],x=columns_labels[1],hue=columns_labels[1],linewidth=1, dodge=False, ax=axs[idx]).set(
-                 xlabel=None,ylabel=None,xticklabels=[],xticks=[])
-            axs[idx].set_ylabel("totat items collected")
-        else:
-            sns.boxplot(data=data,y=data.columns[0],x=columns_labels[1],linewidth=1, dodge=False, ax=axs[idx]).set(
-                xlabel=None, ylabel=None,xticklabels=[],xticks=[])
-        lie_angle=idx*10
-        ttest_th=0.05
-        params=f"{lie_angle},\nT-test (thr={ttest_th})\np-value: \n{np.round(ttest_pv,5)}"
-        axs[idx].set_xlabel(params)
-    fig.set_size_inches(BASE_BOX_WIDTH*n_boxes,BASE_BOX_HEIGHT+1)
-    fig.suptitle("COMPARING PENALISATION (WITH AND WITHOUT)\nAT DIFFERENT LIE ANGLES\n"\
-    "FOR 24 SCEPTICALS AND 1 SCABOTEUR\nFOR LAST 5000 STEPS OF THE EXPERIMENT, SEEDED",fontweight="bold")
-    plt.ylim(bottom=0)
-    sns.despine(fig, axs[idx], trim=False)
-    plt.show()
 
-
-def boxplot_repu(
+def multi_boxplot(
                 filenames=[],
                 data_folder="../data/reputation/",
                 metric="items_evolution",
@@ -422,46 +338,12 @@ def boxplot_repu(
                 title="",
                 by=1
                 ):
+    #TODO import NON EVO data reading from above
     '''
     this function uses as input not headed, numeric rows, csv files
     '''
     BASE_BOX_WIDTH=3
     BASE_BOX_HEIGHT=7
-    """
-    plot:   n,c03, c05, c08
-            lie ancgle 0..............lie angle 90
-
-    22c_np_03tr_0r.csv
-    22c_np_03tr_90r.csv
-    22c_np_05tr_0r.csv
-    22c_np_05tr_90r.csv
-    22c_np_08tr_0r.csv
-    22c_np_08tr_90r.csv
-    22c_p_03tr_0r.csv
-    22c_p_03tr_90r.csv
-    22c_p_05tr_0r.csv
-    22c_p_05tr_90r.csv
-    22c_p_08tr_0r.csv
-    22c_p_08tr_90r.csv
-    22n_p_0r.csv
-    22n_p_90r.csv
-
-    24c_np_03tr_0r.csv
-    24c_np_03tr_90r.csv
-    24c_np_05tr_0r.csv
-    24c_np_05tr_90r.csv
-    24c_np_08tr_0r.csv
-    24c_np_08tr_90r.csv
-    24c_p_03tr_0r.csv
-    24c_p_03tr_90r.csv
-    24c_p_05tr_0r.csv
-    24c_p_05tr_90r.csv
-    24c_p_08tr_0r.csv
-    24c_p_08tr_90r.csv
-    24n_p_0r.csv
-    24n_p_90r.csv
-    """
-
     new_labels=["items collected", "protection type"]
     n_boxes=len(filenames[0])// by
     fig, axs = plt.subplots(by, n_boxes, sharey=True)
@@ -557,10 +439,10 @@ def boxplot_repu(
     plt.show()
 
 
-# def boxplot_evo_test(
-#                 data_folder="../data/reputation/",\
-#                 metric="items_evolution",
-#                 ):
+# def iterative_boxplot(
+#                     data_folder="../data/reputation/",\
+#                     metric="items_evolution",
+#                     ):
 #     BASE_BOX_WIDTH=3
 #     BASE_BOX_HEIGHT=7
 #     filenames=[
@@ -1797,7 +1679,8 @@ if __name__ == '__main__':
             "% avg reputation",
             "coeff*min reputation"]
 
-    title="COMPARISON 24 AGENTS, 1 SABOTEURS, penalised\ndifferent protection schemes\nstable part of experiment, seeded"
+    title="COMPARISON 24 AGENTS, 1 SABOTEURS, penalised\n"
+    "different protection schemes\nstable part of experiment, seeded"
             
     # metric,mode=parse_args()
     # myboxplots()
@@ -1808,7 +1691,7 @@ if __name__ == '__main__':
     # evolution_boxplot0()
     # after_transitory_phase()
     # boxplot_evo_pen_lie()
-    boxplot_repu(filenames=filenames,
+    multi_boxplot(filenames=filenames,
                 data_folder="../data/reputation_dynamic/",
                 metric="items_evolution",
                 experiments_labels=labels,

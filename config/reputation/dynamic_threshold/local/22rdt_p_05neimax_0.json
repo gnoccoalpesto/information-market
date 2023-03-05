@@ -15,7 +15,7 @@
   "simulation_seed": 5684436,
   "number_runs": 128,
   "visualization": {
-    "activate": false,
+    "activate": true,
     "fps": 60
   },
   "random_walk": {

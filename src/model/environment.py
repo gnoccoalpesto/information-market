@@ -110,6 +110,12 @@ class Environment:
         return sensors
 
 
+    def senses(self, robot:Agent, location:Location):
+        dist_vector = robot.pos - np.array([self.locations[location][0], self.locations[location][1]])
+        dist_from_center = np.sqrt(dist_vector.dot(dist_vector))
+        return dist_from_center < self.locations[location][2]
+
+
     def check_border_collision(self, robot:Agent, new_x, new_y):
         collide_x = False
         collide_y = False
@@ -119,12 +125,6 @@ class Environment:
             collide_y = True
         # return any([collide_x, collide_y])
         return collide_x, collide_y
-
-
-    def senses(self, robot:Agent, location:Location):
-        dist_vector = robot.pos - np.array([self.locations[location][0], self.locations[location][1]])
-        dist_from_center = np.sqrt(dist_vector.dot(dist_vector))
-        return dist_from_center < self.locations[location][2]
 
 
     def is_on_top_of_spawn(self, robot:Agent, location:Location):
