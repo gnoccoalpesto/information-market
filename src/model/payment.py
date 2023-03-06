@@ -130,9 +130,20 @@ class PaymentAPI:
 
 
 class PaymentDB:
+    """
+    data stored on the blockchain:
+    - reward (float): the amount of reward the robot has at the moment;
+    - payment_system (PaymentSystem): the payment system used by the robot;
+    - age (int): the age of the robot, exoressed in number of ticks;
+    - n_transactions (int): the number of transactions the robot has done;
+    - reward_trend (?): the trend of the reward of the robot. Could be expressed
+        qith derivative, difference or sign of the difference;
+    - n_transactions_trend (?): the trend of the number of transactions of the robot.
+    """
     def __init__(self, population_ids, payment_system_params):
         self.nb_transactions = 0
         self.database = {}
+        #TODO which is the best one?
         # self.log_db=set()
         # self.log_db=""
         self.log_db=[]
@@ -140,7 +151,12 @@ class PaymentDB:
         for robot_id in population_ids:
             self.database[robot_id] = {"reward": payment_system_params["initial_reward"],
                                        "payment_system": eval(payment_system_params['class'])(
-                                           **payment_system_params['parameters'])}
+                                                **payment_system_params['parameters']),
+                                        "age": 0,
+                                        "n_transactions": 0,
+                                        "reward_trend": 0,
+                                        "n_transactions_trend": 0,
+                                }
 
 
     def pay_reward(self, robot_id, reward=1):
@@ -178,7 +194,7 @@ class PaymentDB:
 
     
     def get_average_reward(self):
-        return np.mean([self.database[robot_id]["reward"] for robot_id in self.database])
+        return np.average([self.database[robot_id]["reward"] for robot_id in self.database])
 
         
     def apply_cost(self, robot_id, cost):

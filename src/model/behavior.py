@@ -1,8 +1,8 @@
 import copy
+import re
 from abc import ABC, abstractmethod
 from enum import Enum
 from math import cos, radians, sin
-
 import numpy as np
 
 from model.payment import PaymentDB
@@ -368,11 +368,13 @@ class ReputationWealthBehaviour(NaiveBehavior):
 
 
     @abstractmethod
-    def verify_reputation(self, session: CommunicationSession, bot_id):
+    def verify_reputation(self,payment_database:PaymentDB, session: CommunicationSession, bot_id):
         pass
 
-    def get_reputation_score(self, session: CommunicationSession, bot_id):
-        return session.get_neighbor_reward(bot_id)
+    # def get_reputation_score(self, session: CommunicationSession, bot_id):
+        # return session.get_neighbor_reward(bot_id)
+    def get_reputation_score(self, payment_database:PaymentDB, bot_id):
+        return payment_database.get_reward(bot_id)
 
     def buy_info(self, session: CommunicationSession, payment_database: PaymentDB):
         for location in Location:
@@ -386,8 +388,9 @@ class ReputationWealthBehaviour(NaiveBehavior):
                         other_target.set_distance(other_target.get_distance() + session.get_distance_from(
                             bot_id))
 
-                        if not self.navigation_table.is_information_valid_for_location(location) and \
-                                self.verify_reputation(session, bot_id,payment_database):
+                        if not self.navigation_table.is_information_valid_for_location(location) or \
+                                self.verify_reputation(payment_database,session, bot_id):
+                            print("sold")####    ####     ####     #####
                             new_target = self.strategy.combine(self.navigation_table.get_information_entry(location),
                                                                other_target,
                                                                np.array([0, 0]))
@@ -411,9 +414,10 @@ class ReputationTresholdBehaviour(ReputationWealthBehaviour):
     def get_treshold_value(self, session: CommunicationSession):
         pass
 
-    def verify_reputation(self, session: CommunicationSession, bot_id):
-        return self.get_reputation_score(session, bot_id) >\
-                 self.get_treshold_value(session)
+    def verify_reputation(self,payment_database:PaymentDB, session: CommunicationSession, bot_id):
+        # return self.get_reputation_score(session, bot_id) >\
+        return self.get_reputation_score(payment_database, bot_id) >\
+                 self.get_treshold_value(payment_database, session)
 
 
 class ReputationStaticThresholdBehavior(ReputationTresholdBehaviour):
@@ -421,7 +425,7 @@ class ReputationStaticThresholdBehavior(ReputationTresholdBehaviour):
         super(ReputationStaticThresholdBehavior, self).__init__()
         self.reputation_threshold=threshold
 
-    def get_treshold_value(self, session: CommunicationSession):
+    def get_treshold_value(self, payment_database:PaymentDB,session: CommunicationSession):
             return self.reputation_threshold
 
 
@@ -442,52 +446,45 @@ class ReputationDynamicThresholdBehavior(ReputationTresholdBehaviour):
         super(ReputationDynamicThresholdBehavior, self).__init__()
         self.method=method
 
-    def get_treshold_value(self, session: CommunicationSession):
+    def get_treshold_value(self, payment_database:PaymentDB,session: CommunicationSession):
         """
         all_max: selects only above a certain percentage of maximum wealth (wealthiest bots), of all robots
-
         all_avg:selects only above certain percentage of average wealth, considering all robots
-
         all_rise:  selects above a certaint value, increasing with time, starting from a certain level, of all robots
-
         all_min: selects only above a certain percentage of minimum wealth (poorest bots), of all robots
-
         neigh_max: selects only above a certain percentage of maximum wealth (wealthiest bots), of neighbors
-
         neigh_avg: selects only above certain percentage of average wealth, considering neighbors
-
         neigh_rise: selects above a certaint value, increasing with time, starting from a certain level, of neighbors
-
         neigh_min: selects only above a certain percentage of minimum wealth (poorest bots), of neighbors
         """
-        #TODO BREAK DOWN WHERE_WHAT: WHEER acquires data, WHAT processes it
-        #    can i use match fot it?
-        if self.method == 'all_max':
-            COEFF=.5
-        elif self.method == 'all_avg':
-            COEFF=.8
-        elif self.method == 'all_rise':
-            pass
-        elif self.method == 'all_min':
-            COEFF=2.5
-        elif self.method =='neigh_avg':
-            COEFF=.8
-            return COEFF*session.get_average_neighbor_reward()
-        elif self.method == 'neigh_max':
-            #TODO change this to return the whole array of max neighboor rewards
-            # and the check the position in that array (best N% of robots)
-            COEFF=.5
-            return COEFF*session.get_max_neighboor_reward()
-        elif self.method == 'neigh_min':
-            COEFF=2.5
-            return COEFF*session.get_min_neighboor_reward()
-        #TODO
-        # elif method == 'neigh_rise':
-        #     BASE_VALUE = 0.5
-        #     return BASE_VALUE + session.get_time() * 0.01
-        else:
+        print("trying")####    ####     ####     #####
+        extension, metric=re.split("_",self.method)
+        COEFF_MAX=.3
+        COEFF_AVG=.5
+        COEFF_MIN=2.5
+        reputation_dict = {"all":{"max":{"method":payment_database.get_highest_reward,
+                                        "coefficient":COEFF_MAX},
+                                 "avg":{"method":payment_database.get_average_reward,
+                                        "coefficient":COEFF_AVG},
+                                 "min":{"method":payment_database.get_lowest_reward,
+                                        "coefficient":COEFF_MIN},
+                                # "rise":{"method": BASE_VALUE = 0.5, BASE_VALUE + session.get_time() * 0.01,
+                                #         "coefficient":COEFF_MAX},
+                                },
+                            "neigh":{"max":{"method":session.get_max_neighboor_reward,
+                                            "coefficient":COEFF_MAX},
+                                    "avg":{"method":session.get_average_neighbor_reward,
+                                            "coefficient":COEFF_AVG},
+                                    "min":{"method":session.get_min_neighboor_reward,
+                                            "coefficient":COEFF_MIN},
+                                }
+                            }
+        try:
+            return reputation_dict[extension][metric]["coefficient"]*\
+                    reputation_dict[extension][metric]["method"]()
+        except KeyError:
             exit(1)
-            return super().reputation_threshold(session, self.method)
+            # return super().reputation_threshold(session, self.method)
 
 
 

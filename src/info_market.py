@@ -133,46 +133,52 @@ def record_data(config:Configuration, controllers):
     for metric in config.value_of("data_collection")["metrics"]:
     #TODO reintroduce append option, butwhat about seed?
     #TODO more parametric, use dict of functions and pass args
-        match metric:
-            case "rewards":
-                rewards_df = pd.DataFrame([controller.get_rewards() for controller in controllers])
-                Path(join(output_directory, "rewards")).mkdir(parents=True, exist_ok=True)
-                #TODO fix append then use this
-                # if seed!='' and seed!='random':
-                current_filename=check_filename_existence(output_directory,metric,filename)
-                rewards_df.to_csv(join(output_directory, "rewards", current_filename), index=False, header=False)
-            case "items_collected":
-                items_collected_df = pd.DataFrame([controller.get_items_collected() for controller in controllers])
-                Path(join(output_directory, "items_collected")).mkdir(parents=True, exist_ok=True)
-                current_filename=check_filename_existence(output_directory,metric,filename)
-                items_collected_df.to_csv(join(output_directory, "items_collected", current_filename), index=False, header=False)
-            case "drifts":
-                drifts_df = pd.DataFrame([controller.get_drifts() for controller in controllers])
-                Path(join(output_directory, "drifts")).mkdir(parents=True, exist_ok=True)
-                current_filename=check_filename_existence(output_directory,metric,filename)
-                drifts_df.to_csv(join(output_directory, "drifts", current_filename), index=False, header=False)
-            case "rewards_evolution":
-                dataframes = []
-                for i, controller in enumerate(controllers):
-                    df = pd.DataFrame(controller.get_rewards_evolution_list(), columns=["tick", "rewards_list"])
-                    df["simulation_id"] = i
-                    df = df.set_index("simulation_id")
-                    dataframes.append(df)
-                Path(join(output_directory, "rewards_evolution")).mkdir(parents=True, exist_ok=True)
-                current_filename=check_filename_existence(output_directory,metric,filename)
-                pd.concat(dataframes).to_csv(join(output_directory, "rewards_evolution", current_filename))
-            case "items_evolution":
-                dataframes = []
-                for i, controller in enumerate(controllers):
-                    df = pd.DataFrame(controller.get_items_evolution_list(), columns=["tick", "items_list"])
-                    df["simulation_id"] = i
-                    df = df.set_index("simulation_id")
-                    dataframes.append(df)
-                Path(join(output_directory, "items_evolution")).mkdir(parents=True, exist_ok=True)
-                current_filename=check_filename_existence(output_directory,metric,filename)
-                pd.concat(dataframes).to_csv(join(output_directory, "items_evolution", current_filename))
-            case _:
-                print(f"[WARNING] Could not record metric: '{metric}'. Metric name is not valid.")
+        # match metric:
+        # case "rewards":
+        if metric=="rewards":
+            rewards_df = pd.DataFrame([controller.get_rewards() for controller in controllers])
+            Path(join(output_directory, "rewards")).mkdir(parents=True, exist_ok=True)
+            #TODO fix append then use this
+            # if seed!='' and seed!='random':
+            current_filename=check_filename_existence(output_directory,metric,filename)
+            rewards_df.to_csv(join(output_directory, "rewards", current_filename), index=False, header=False)
+        # case "items_collected":
+        elif metric=="items_collected":
+            items_collected_df = pd.DataFrame([controller.get_items_collected() for controller in controllers])
+            Path(join(output_directory, "items_collected")).mkdir(parents=True, exist_ok=True)
+            current_filename=check_filename_existence(output_directory,metric,filename)
+            items_collected_df.to_csv(join(output_directory, "items_collected", current_filename), index=False, header=False)
+        # case "drifts":
+        elif metric=="drifts":
+            drifts_df = pd.DataFrame([controller.get_drifts() for controller in controllers])
+            Path(join(output_directory, "drifts")).mkdir(parents=True, exist_ok=True)
+            current_filename=check_filename_existence(output_directory,metric,filename)
+            drifts_df.to_csv(join(output_directory, "drifts", current_filename), index=False, header=False)
+        # case "rewards_evolution":
+        elif metric=="rewards_evolution":
+            dataframes = []
+            for i, controller in enumerate(controllers):
+                df = pd.DataFrame(controller.get_rewards_evolution_list(), columns=["tick", "rewards_list"])
+                df["simulation_id"] = i
+                df = df.set_index("simulation_id")
+                dataframes.append(df)
+            Path(join(output_directory, "rewards_evolution")).mkdir(parents=True, exist_ok=True)
+            current_filename=check_filename_existence(output_directory,metric,filename)
+            pd.concat(dataframes).to_csv(join(output_directory, "rewards_evolution", current_filename))
+        # case "items_evolution":
+        elif metric=="items_evolution":
+            dataframes = []
+            for i, controller in enumerate(controllers):
+                df = pd.DataFrame(controller.get_items_evolution_list(), columns=["tick", "items_list"])
+                df["simulation_id"] = i
+                df = df.set_index("simulation_id")
+                dataframes.append(df)
+            Path(join(output_directory, "items_evolution")).mkdir(parents=True, exist_ok=True)
+            current_filename=check_filename_existence(output_directory,metric,filename)
+            pd.concat(dataframes).to_csv(join(output_directory, "items_evolution", current_filename))
+        # case _:
+        else:
+            print(f"[WARNING] Could not record metric: '{metric}'. Metric name is not valid.")
 
         if config.value_of("data_collection")["transactions_log"]:
             transaction_logs=[]

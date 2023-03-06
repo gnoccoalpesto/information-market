@@ -11,7 +11,7 @@
     "y": 300,
     "radius": 50
   },
-  "simulation_steps": 15,
+  "simulation_steps": 15000,
   "simulation_seed": 5684436,
   "number_runs": 128,
   "visualization": {
@@ -41,31 +41,18 @@
       }
     },
     {
-      "class": "ReputationStaticThresholdBehavior",
-      "population_size": 0,
-      "parameters": {
-      }
-    },
-    {
-      "class": "SaboteurReputationStaticThresholdBehavior",
-      "population_size": 0,
-      "parameters": {
-        "rotation_angle": 0
-      }
-    },
-    {
       "class": "ReputationDynamicThresholdBehavior",
       "population_size": 22,
       "parameters": {
-        "method":"neigh_avg"
+        "method":"all_avg"
       }
     },
     {
       "class": "SaboteurReputationDynamicThresholdBehavior",
-      "population_size": 3,
+      "population_size": 1,
       "parameters": {
-        "rotation_angle": 0,
-        "method":"neigh_avg"
+        "rotation_angle": 90,
+        "method":"all_avg"
       }
     }
   ],
@@ -83,10 +70,10 @@
     }
   },
   "data_collection": {
-    "output_directory": "../data/reputation_dynamic/",
-    "filename": "22c_p_08neiavg_0r.csv",
+    "output_directory": "../data/reputation_global/",
+    "filename": "24c_p_08allavg_90r.csv",
     "metrics": ["items_evolution","rewards_evolution","items_collected","rewards"],
     "precise_recording_interval": 100,
     "transactions_log": false
-      }
+  }
 }
