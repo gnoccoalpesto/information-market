@@ -97,10 +97,22 @@ Robots can exhibit multiple behaviors. This sections briefly lists these behavio
   - parameters:
     - `threshold`: see ScepticalBehavior
     - `rotation_angle`: see SaboteurBehavior
-- `ReputationStaticThresholdBehavior`: honest robot which uses seller as putlier detection method reputation to decide if it should buy its information
-- `SaboteurReputationStaticThresholdBehavior`: SaboteurBehaviour using reputation
+- `ReputationStaticThresholdBehavior`: honest robot which uses seller's reputation (function of wealth) to decide if it should buy its information. Outlier detection method is based on comparison of wealth with a static threshold.
+- `SaboteurReputationStaticThresholdBehavior`: SaboteurBehaviour comparing wealth reputation with a static threshold.
   - parameters:
     - `rotation_angle`: see SaboteurBehavior
+- `ReputationDynamicThresholdBehavior`: as for Static, but in this case threshold depends on some runtime information
+  - parameters:
+    - `method`: method used to compute the threshold. Accepted values are:
+      - `all_max`: threshold is .5 of maximum wealth, among all robots;
+      - `all_min`: threshold is 2.5 of minimum wealth, among all robots;
+      - `all_avg`: threshold is .8 of average wealth, among all robots;
+      - `all_rise`: threshold varies with time; TODO;
+- ...
+- `SaboteurReputationStaticThresholdBehavior`: SaboteurBehaviour comparing wealth reputation with a dynamic threshold.
+  - parameters:
+    - `rotation_angle`: see SaboteurBehavior;
+    - `method`: see ReputationDynamicThresholdBehavior.
 
 ## Payment Systems
 

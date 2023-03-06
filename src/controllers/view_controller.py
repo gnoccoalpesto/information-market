@@ -120,20 +120,26 @@ class ViewController:
         if c is passed it keeps the counter of the last selected robot
         """
         #TODO test if resetting the counters when another one is selected is better
-        match counter:
-            case 0:
-                counter = self.selection_counters[0] = (self.selection_counters[0] + 1) % 10
-            case 1:
-                counter=self.selection_counters[1] = (self.selection_counters[1] + 1) % 10 +10
-            case 2:
-                #TODO dynamic range
-                counter=self.selection_counters[2] = (self.selection_counters[2] + 1) % (25-20) +20
-            case "+":
-                counter=self.selection_counters[-1]=(self.selection_counters[-1] + 1) % 25
-            case "-":
-                counter=self.selection_counters[-1]=(self.selection_counters[-1] - 1) % 25
-            case "c":
-                counter=self.selection_counters[-1]
+        # match counter:
+        # case 0:
+        if counter == 0:
+            counter = self.selection_counters[0] = (self.selection_counters[0] + 1) % 10
+        # case 1:
+        elif counter == 1:
+            counter=self.selection_counters[1] = (self.selection_counters[1] + 1) % 10 +10
+        # case 2:
+        elif counter == 2:
+            #TODO dynamic range
+            counter=self.selection_counters[2] = (self.selection_counters[2] + 1) % (25-20) +20
+        # case "+":
+        elif counter == "+":
+            counter=self.selection_counters[-1]=(self.selection_counters[-1] + 1) % 25
+        # case "-":
+        elif counter == "-":
+            counter=self.selection_counters[-1]=(self.selection_counters[-1] - 1) % 25
+        # case "c":
+        elif counter == "c":
+            counter=self.selection_counters[-1]
         self.selected_robot = self.controller.get_robot_by_id(counter)
 
     def select_robot_by_id(self, id):
@@ -145,3 +151,14 @@ class ViewController:
             self.debug_text = self.debug_canvas.create_text(5, 25, fill="gray45", text=self.selected_robot, anchor="nw", font="Arial 10")
         else:
             self.debug_text = self.debug_canvas.create_text(5, 25, fill="gray45", text=f"No robot selected", anchor="nw", font="Arial 10")
+
+#TODO
+def statistics_window():
+    """
+    must contain:
+    -statistics of robots wealth (bar plot with average, max, min)
+    -number of messages
+    -number of messages per robot
+    -statistic on messages
+    """
+    pass

@@ -245,27 +245,30 @@ def myboxplots(
         # params=f"{n_honest} honests,\n{skepticism},\n {lie_angle},\n {penalisation}"
         # axs[idx].set_xlabel(params)
         filename=f"{data_folder}{compare}/{metric}/{filename}"
-        match mode:
-            case "r":#RELATIVE DATA
-                #TODO correct?
-                data=pd.read_csv(filename, header=None).to_numpy()
-                print(type(data))
-                data=(100*data/np.sum(data,axis=1)[:,None]).flatten()
-                #TODO could use title functions inside plot calls
-                sns.boxplot(data=data,ax=axs[idx]).set(xticklabels=[],xticks=[])
-                data_title=metric+ " (relative)"
-                axs[idx].yaxis.set_major_formatter(mtick.PercentFormatter())
-            case "c":#CUMULATIVE DATA
-                data=pd.read_csv(filename, header=None)
-                datatot = data.apply(np.sum, axis=1)
-                sns.boxplot(data=datatot,ax=axs[idx]).set(xticklabels=[],xticks=[])
-                # angle = 10 * (idx + 0)
-                # sns.boxplot(x=[angle for _ in batch_total], y=data, ax=axs[idx], linewidth=2)
-                data_title=metric+ " (cumulative)"
-            case "s":#STANDALONE DATA
-                data=pd.read_csv(filename, header=None).values.flatten()
-                sns.boxplot(data=data.flatten(),ax=axs[idx]).set(xticklabels=[],xticks=[])
-                data_title=metric+ " (standalone)"
+        # match mode:
+        #     case "r":#RELATIVE DATA
+        if mode=="r":
+            #TODO correct?
+            data=pd.read_csv(filename, header=None).to_numpy()
+            print(type(data))
+            data=(100*data/np.sum(data,axis=1)[:,None]).flatten()
+            #TODO could use title functions inside plot calls
+            sns.boxplot(data=data,ax=axs[idx]).set(xticklabels=[],xticks=[])
+            data_title=metric+ " (relative)"
+            axs[idx].yaxis.set_major_formatter(mtick.PercentFormatter())
+        # case "c":#CUMULATIVE DATA
+        elif mode=="c":
+            data=pd.read_csv(filename, header=None)
+            datatot = data.apply(np.sum, axis=1)
+            sns.boxplot(data=datatot,ax=axs[idx]).set(xticklabels=[],xticks=[])
+            # angle = 10 * (idx + 0)
+            # sns.boxplot(x=[angle for _ in batch_total], y=data, ax=axs[idx], linewidth=2)
+            data_title=metric+ " (cumulative)"
+            # case "s":#STANDALONE DATA
+        elif mode=="s":
+            data=pd.read_csv(filename, header=None).values.flatten()
+            sns.boxplot(data=data.flatten(),ax=axs[idx]).set(xticklabels=[],xticks=[])
+            data_title=metric+ " (standalone)"
     sns.despine(fig, axs[idx], trim=False)
     fig.supylabel(data_title.replace("_"," "))
     title=title if title!="" else f"compare: {compare}".replace("_"," ")
@@ -654,13 +657,16 @@ def compare_strats():
             df["Strategy"] = strategies_tot
 
             title = ""
-            match f1:
-                case "mu":
-                    title = f"m = 0.{f2.split('_')[1]}, s = 0.05, N = 25"
-                case "sd":
-                    title = f"m = 0.05, s = 0.{f2.split('_')[1]}, N = 25"
-                case "popsize":
-                    title = f"m = 0.05, s = 0.05, N = {f2.split('_')[1]}"
+            # match f1:
+            if f1=="mu":
+            # case "mu":
+                title = f"m = 0.{f2.split('_')[1]}, s = 0.05, N = 25"
+            # case "sd":
+            elif f1=="sd":
+                title = f"m = 0.05, s = 0.{f2.split('_')[1]}, N = 25"
+            # case "popsize":
+            elif f1=="popsize":
+                title = f"m = 0.05, s = 0.05, N = {f2.split('_')[1]}"
 
             sns.boxplot(data=df, x="Strategy", y="Number of Items Collected", linewidth=2, ax=axs[i])
             axs[i].set_title(title)
