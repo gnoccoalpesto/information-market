@@ -442,9 +442,10 @@ class SaboteurReputationStaticThresholdBehavior(ReputationStaticThresholdBehavio
 
 
 class ReputationDynamicThresholdBehavior(ReputationTresholdBehaviour):
-    def __init__(self,method='neigh_avg'):
+    def __init__(self,method='neigh_avg',scaling=1):
         super(ReputationDynamicThresholdBehavior, self).__init__()
         self.method=method
+        self.scaling=scaling
 
     def get_treshold_value(self, payment_database:PaymentDB,session: CommunicationSession):
         """
@@ -459,29 +460,37 @@ class ReputationDynamicThresholdBehavior(ReputationTresholdBehaviour):
         """
         print("trying")####    ####     ####     #####
         extension, metric=re.split("_",self.method)
-        COEFF_MAX=.3
-        COEFF_AVG=.5
-        COEFF_MIN=2.5
-        reputation_dict = {"all":{"max":{"method":payment_database.get_highest_reward,
-                                        "coefficient":COEFF_MAX},
-                                 "avg":{"method":payment_database.get_average_reward,
-                                        "coefficient":COEFF_AVG},
-                                 "min":{"method":payment_database.get_lowest_reward,
-                                        "coefficient":COEFF_MIN},
-                                # "rise":{"method": BASE_VALUE = 0.5, BASE_VALUE + session.get_time() * 0.01,
-                                #         "coefficient":COEFF_MAX},
-                                },
-                            "neigh":{"max":{"method":session.get_max_neighboor_reward,
-                                            "coefficient":COEFF_MAX},
-                                    "avg":{"method":session.get_average_neighbor_reward,
-                                            "coefficient":COEFF_AVG},
-                                    "min":{"method":session.get_min_neighboor_reward,
-                                            "coefficient":COEFF_MIN},
+        # COEFF_MAX=.3; COEFF_AVG=.5; COEFF_MIN=2.5
+        # reputation_dict = {"all":{"max":{"method":payment_database.get_highest_reward,
+        #                                 "coefficient":COEFF_MAX},
+        #                          "avg":{"method":payment_database.get_average_reward,
+        #                                 "coefficient":COEFF_AVG},
+        #                          "min":{"method":payment_database.get_lowest_reward,
+        #                                 "coefficient":COEFF_MIN},
+        #                         # "rise":{"method": BASE_VALUE = 0.5, BASE_VALUE + session.get_time() * 0.01,
+        #                         #         "coefficient":COEFF_MAX},},
+        #                     "neigh":{"max":{"method":session.get_max_neighboor_reward,
+        #                                     "coefficient":COEFF_MAX},
+        #                             "avg":{"method":session.get_average_neighbor_reward,
+        #                                     "coefficient":COEFF_AVG},
+        #                             "min":{"method":session.get_min_neighboor_reward,
+        #                                     "coefficient":COEFF_MIN},}}
+        # try:
+        #     return reputation_dict[extension][metric]["coefficient"]*\
+        #             reputation_dict[extension][metric]["method"]()
+        reputation_dict = {"all":{
+                                "max":payment_database.get_highest_reward,
+                                 "avg":payment_database.get_average_reward,
+                                 "min":payment_database.get_lowest_reward,
+                                 },
+                            "neigh":{
+                                    "max":session.get_max_neighboor_reward,
+                                    "avg":session.get_average_neighbor_reward,
+                                    "min":session.get_min_neighboor_reward,
                                 }
                             }
         try:
-            return reputation_dict[extension][metric]["coefficient"]*\
-                    reputation_dict[extension][metric]["method"]()
+            return self.scaling*reputation_dict[extension][metric]()
         except KeyError:
             exit(1)
             # return super().reputation_threshold(session, self.method)
@@ -489,7 +498,7 @@ class ReputationDynamicThresholdBehavior(ReputationTresholdBehaviour):
 
 
 class SaboteurReputationDynamicThresholdBehavior(ReputationDynamicThresholdBehavior):
-    def __init__(self, method='',rotation_angle=90):
+    def __init__(self, method='',scaling=1,rotation_angle=90):
         super().__init__()
         self.color = "red"
         self.rotation_angle = rotation_angle

@@ -44,15 +44,17 @@
       "class": "ReputationDynamicThresholdBehavior",
       "population_size": 22,
       "parameters": {
-        "method":"all_avg"
+        "method":"all_avg",
+        "scaling": 1.1
       }
     },
     {
       "class": "SaboteurReputationDynamicThresholdBehavior",
       "population_size": 3,
       "parameters": {
-        "rotation_angle": 0,
-        "method":"all_avg"
+        "rotation_angle": 90,
+        "method":"all_avg",
+        "scaling": 1.1
       }
     }
   ],
@@ -71,7 +73,7 @@
   },
   "data_collection": {
     "output_directory": "../data/reputation_global/",
-    "filename": "22c_p_08allavg_0r.csv",
+    "filename": "22c_p_allavg_90r.csv",
     "metrics": ["items_evolution","rewards_evolution","items_collected","rewards"],
     "precise_recording_interval": 100,
     "transactions_log": false

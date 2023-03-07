@@ -42,17 +42,19 @@
     },
     {
       "class": "ReputationDynamicThresholdBehavior",
-      "population_size": 24,
+      "population_size": 22,
       "parameters": {
-        "method":"all_min"
+        "method":"all_avg",
+        "scaling": 0.5
       }
     },
     {
       "class": "SaboteurReputationDynamicThresholdBehavior",
-      "population_size": 1,
+      "population_size": 3,
       "parameters": {
         "rotation_angle": 90,
-        "method":"all_min"
+        "method":"all_avg",
+        "scaling": 0.5
       }
     }
   ],
@@ -71,9 +73,9 @@
   },
   "data_collection": {
     "output_directory": "../data/reputation_global/",
-    "filename": "24c_p_25allmin_90r.csv",
+    "filename": "22c_p_allavg08_90r.csv",
     "metrics": ["items_evolution","rewards_evolution","items_collected","rewards"],
     "precise_recording_interval": 100,
     "transactions_log": false
-   }
+      }
 }
