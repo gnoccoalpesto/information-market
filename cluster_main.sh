@@ -3,6 +3,5 @@
 DIR="$1"
 
 for file in "$DIR"/*.json; do
-    # echo "Processing $file"
-    sbatch /home/uga/ing/tesi/information-market/cluster_job.sh $file
+    sbatch /home/fcerri/information-market/cluster_job.sh $file
 done
