@@ -264,15 +264,12 @@ class GreedyBehavior(NaiveBehavior):
 
 
 ##################################################################################################
-# # SKEPTICISM 
+# # SKEPTICISM
 class ScepticalBehavior(NaiveBehavior):
-    def __init__(self, threshold=0.25):
+    def __init__(self, threshold):
         super(ScepticalBehavior, self).__init__()
         self.pending_information = {location: {} for location in Location}
         self.threshold = threshold
-
-    def get_skepticism_threshold(self):
-        return self.threshold
 
     def buy_info(self, session: CommunicationSession):
         for location in Location:
@@ -289,8 +286,8 @@ class ScepticalBehavior(NaiveBehavior):
                         if not self.navigation_table.is_information_valid_for_location(location) or \
                                 self.difference_score(
                                     self.navigation_table.get_relative_position_for_location(location),
-                                    other_target.get_distance())\
-                                < self.get_skepticism_threshold():
+                                    other_target.get_distance(bot_id))\
+                                < self.threshold:
                             new_target = self.strategy.combine(self.navigation_table.get_information_entry(location),
                                                                other_target,
                                                                np.array([0, 0]))
@@ -300,7 +297,7 @@ class ScepticalBehavior(NaiveBehavior):
                             for target in self.pending_information[location].values():
                                 if self.difference_score(target.get_distance(),
                                                          other_target.get_distance()) \
-                                        < self.get_skepticism_threshold():
+                                        < self.threshold:
                                     new_target = self.strategy.combine(target,
                                                                        other_target,
                                                                        np.array([0, 0]))
@@ -341,7 +338,7 @@ class FreeRiderBehavior(ScepticalBehavior):
 
 
 class ScaboteurBehavior(ScepticalBehavior):
-    def __init__(self, rotation_angle=90, threshold=0.25):
+    def __init__(self, rotation_angle, threshold):
         super().__init__()
         self.color = "red"
         self.rotation_angle = rotation_angle
@@ -429,7 +426,7 @@ class ReputationTresholdBehaviour(ReputationWealthBehaviour):
 
 
 class ReputationStaticThresholdBehavior(ReputationTresholdBehaviour):
-    def __init__(self,threshold=1):
+    def __init__(self,threshold):
         super(ReputationStaticThresholdBehavior, self).__init__()
         self.reputation_threshold=threshold
 
@@ -438,7 +435,7 @@ class ReputationStaticThresholdBehavior(ReputationTresholdBehaviour):
 
 
 class SaboteurReputationStaticThresholdBehavior(ReputationStaticThresholdBehavior):
-    def __init__(self, threshold=1,rotation_angle=90):
+    def __init__(self, threshold,rotation_angle):
         super().__init__()
         self.color = "red"
         self.rotation_angle = rotation_angle
@@ -450,7 +447,7 @@ class SaboteurReputationStaticThresholdBehavior(ReputationStaticThresholdBehavio
 
 
 class ReputationDynamicThresholdBehavior(ReputationTresholdBehaviour):
-    def __init__(self,method='neigh_avg',scaling=1):
+    def __init__(self,method,scaling):
         super(ReputationDynamicThresholdBehavior, self).__init__()
         self.method=method
         self.scaling=scaling
@@ -461,7 +458,7 @@ class ReputationDynamicThresholdBehavior(ReputationTresholdBehaviour):
         all_avg:selects only above certain percentage of average wealth, considering all robots
         all_min: selects only above a certain percentage of minimum wealth (poorest bots), of all robots
         TODO: all_rise:  selects above a certaint value, increasing with time, starting from a certain level, of all robots
-        
+
         DEPRECATED:
         neigh_max: selects only above a certain percentage of maximum wealth (wealthiest bots), of neighbors
         neigh_avg: selects only above certain percentage of average wealth, considering neighbors
@@ -469,24 +466,6 @@ class ReputationDynamicThresholdBehavior(ReputationTresholdBehaviour):
         """
         # print("trying")####    ####     ####     #####
         extension, metric=re.split("_",self.method)
-        # COEFF_MAX=.3; COEFF_AVG=.5; COEFF_MIN=2.5
-        # reputation_dict = {"all":{"max":{"method":payment_database.get_highest_reward,
-        #                                 "coefficient":COEFF_MAX},
-        #                          "avg":{"method":payment_database.get_average_reward,
-        #                                 "coefficient":COEFF_AVG},
-        #                          "min":{"method":payment_database.get_lowest_reward,
-        #                                 "coefficient":COEFF_MIN},
-        #                         # "rise":{"method": BASE_VALUE = 0.5, BASE_VALUE + session.get_time() * 0.01,
-        #                         #         "coefficient":COEFF_MAX},},
-        #                     "neigh":{"max":{"method":session.get_max_neighboor_reward,
-        #                                     "coefficient":COEFF_MAX},
-        #                             "avg":{"method":session.get_average_neighbor_reward,
-        #                                     "coefficient":COEFF_AVG},
-        #                             "min":{"method":session.get_min_neighboor_reward,
-        #                                     "coefficient":COEFF_MIN},}}
-        # try:
-        #     return reputation_dict[extension][metric]["coefficient"]*\
-        #             reputation_dict[extension][metric]["method"]()
         reputation_dict = {"all":{
                                 "max":payment_database.get_highest_reward,
                                  "avg":payment_database.get_average_reward,
@@ -507,7 +486,7 @@ class ReputationDynamicThresholdBehavior(ReputationTresholdBehaviour):
 
 
 class SaboteurReputationDynamicThresholdBehavior(ReputationDynamicThresholdBehavior):
-    def __init__(self, method='',scaling=1,rotation_angle=90):
+    def __init__(self, method,scaling,rotation_angle):
         super().__init__()
         self.color = "red"
         self.rotation_angle = rotation_angle
@@ -521,46 +500,186 @@ class SaboteurReputationDynamicThresholdBehavior(ReputationDynamicThresholdBehav
 #########################################################################################
 # SKEPTICISM + REPUTATION WITH WEALTH BEHAVIOURS
 
-class ReputationScepticalBehavior(ScepticalBehavior,ReputationWealthBehaviour):
-    """
-    IDEA: use ScepticalBehaviour, but rework get_scepticism_threshold with wReputation
+class ScepticalReputationBehavior(NaiveBehavior):
+    def __init__(self,method="all_min",scaling=.5,base_scepticism=.4):
+        super(ScepticalReputationBehavior, self).__init__()
+        self.base_scepticism=base_scepticism
+        self.method=method
+        self.scaling=scaling
+        self.pending_information = {location: {} for location in Location}
+        self.required_information=RequiredInformation.GLOBAL
 
-    https://www.programiz.com/python-programming/multiple-inheritance
-
-    https://stackoverflow.com/questions/3277367/how-does-pythons-super-work-with-multiple-inheritance
-
-    https://stackoverflow.com/questions/576169/understanding-python-super-with-init-methods/576183#576183
-
-
-    OTHERWISE SIMPLY INHERIT FROM ONE AND REWRITE THE REST
-    """
-    def __init__(self):
-        super(ReputationScepticalBehavior, self).__init__()
-
-    # def verify_reputation(self,payment_database:PaymentDB, session: CommunicationSession, bot_id):
-    #     return self.get_reputation_score(payment_database, bot_id) >\
-    #              self.get_treshold_value(payment_database, session)
-
-    # @abstractmethod
-    # def get_treshold_value(self, payment_database:PaymentDB,session: CommunicationSession):
-    #     pass
+    @staticmethod
+    def difference_score(current_vector, bought_vector):
+        v_norm = norm(current_vector)
+        score = norm(current_vector - bought_vector) / v_norm if v_norm > 0 else 1000
+        return score
 
 
-    def get_skepticism_threshold(self):
-        """
-        in this case threshold is modulated wrt reputation:
-        the higher the reputation, the lower the threshold -> penalizing poors 
-
-        ? is penalizing the riches better (they should not do mistakes)
-        """
-        pass
+    def step(self, api):
+        super().step(api)
+        self.update_pending_information()
 
 
+    def update_pending_information(self):
+        for location in Location:
+            for target in self.pending_information[location].values():
+                target.update(self.dr)
+                target.rotate(-get_orientation_from_vector(self.dr))
+
+
+    def get_reputation_score(self,payment_database:PaymentDB,bot_id):
+        return payment_database.get_reward(bot_id)
+
+        
+    def get_skepticism_threshold(self,payment_database:PaymentDB,bot_id):
+        reputation_score=self.get_reputation_score(payment_database,bot_id)
+        extension, metric=re.split("_",self.method)
+
+        reputation_dict = {"all":{
+                            "max":payment_database.get_highest_reward,
+                            "avg":payment_database.get_average_reward,
+                            "min":payment_database.get_lowest_reward,
+                            },
+                        }
+        try:
+            # return self.weighted_sceticism(reputation_score,reputation_dict[extension][metric])
+            return self.weight_scepticism(reputation_score,reputation_dict[extension][metric]())
+        except KeyError:
+            return self.base_scepticism
+
+    def weight_scepticism(self,reputation_score,metric_score,weight_method="linear"):
+        if weight_method=="linear":
+            return self.base_scepticism+reputation_score/metric_score
+
+
+    def buy_info(self, session: CommunicationSession,payment_database:PaymentDB):
+        for location in Location:
+            metadata = session.get_metadata(location)
+            metadata_sorted_by_age = sorted(metadata.items(), key=lambda item: item[1]["age"])
+            for bot_id, data in metadata_sorted_by_age:
+                if data["age"] < self.navigation_table.get_age_for_location(location) and bot_id not in \
+                        self.pending_information[location]:
+                    try:
+                        other_target = session.make_transaction(neighbor_id=bot_id, location=location)
+                        other_target.set_distance(other_target.get_distance() + session.get_distance_from(
+                            bot_id))
+                        if not self.navigation_table.is_information_valid_for_location(location) or \
+                                self.difference_score(
+                                    self.navigation_table.get_relative_position_for_location(location),
+                                    other_target.get_distance())\
+                                < self.get_skepticism_threshold(payment_database,bot_id):
+                            new_target = self.strategy.combine(self.navigation_table.get_information_entry(location),
+                                                               other_target,
+                                                               np.array([0, 0]))
+                            self.navigation_table.replace_information_entry(location, new_target)
+                            self.pending_information[location].clear()
+                        else:
+                            for target in self.pending_information[location].values():
+                                if self.difference_score(target.get_distance(),
+                                                         other_target.get_distance()) \
+                                        < self.get_skepticism_threshold(payment_database,bot_id):
+                                    new_target = self.strategy.combine(target,
+                                                                       other_target,
+                                                                       np.array([0, 0]))
+                                    self.navigation_table.replace_information_entry(location, new_target)
+                                    self.pending_information[location].clear()
+                                    break
+                            else:
+                                self.pending_information[location][bot_id] = other_target
+                    except InsufficientFundsException:
+                        pass
+                    except NoInformationSoldException:
+                        pass
 
 
 
-class SaboteurReputationScepticalBehavior(ReputationScepticalBehavior):
-    def __init__(self, rotation_angle=90):
+
+'''
+
+class ScepticalReputationBehavior(ReputationDynamicThresholdBehavior,ScepticalBehavior):
+
+    def __init__(self,method,scaling,base_scepticism):
+        super(ScepticalReputationBehavior, self).__init__()
+        self.base_scepticism=base_scepticism
+
+    def get_skepticism_threshold(self,payment_database:PaymentDB,bot_id):
+        reputation_score=self.get_reputation_score(payment_database,bot_id)
+        extension, metric=re.split("_",self.method)
+
+        reputation_dict = {"all":{
+                            "max":payment_database.get_highest_reward,
+                            "avg":payment_database.get_average_reward,
+                            "min":payment_database.get_lowest_reward,
+                            },
+                    # "neigh":{
+                    #         "max":session.get_max_neighboor_reward,
+                    #         "avg":session.get_average_neighbor_reward,
+                    #         "min":session.get_min_neighboor_reward,
+                    #     }
+                    }
+        try:
+            return self.scaling*self.base_scepticism*\
+                self.weight_skepticism(reputation_score,reputation_dict[extension][metric]())
+        except KeyError:
+            print("method not found ",self.method)
+            exit(1)
+
+
+    def weight_skepticism(self, reputation_score, metric,weight_method="ratio"):
+        if weight_method=="ratio":
+            return reputation_score/metric
+
+
+    def buy_info(self, session: CommunicationSession,payment_database:PaymentDB):
+        for location in Location:
+            metadata = session.get_metadata(location)
+            metadata_sorted_by_age = sorted(metadata.items(), key=lambda item: item[1]["age"])
+            for bot_id, data in metadata_sorted_by_age:
+                if data["age"] < self.navigation_table.get_age_for_location(location) and bot_id not in \
+                        self.pending_information[location]:
+                    try:
+                        other_target = session.make_transaction(neighbor_id=bot_id, location=location)
+                        other_target.set_distance(other_target.get_distance() + session.get_distance_from(
+                            bot_id))
+                        print("aaaaa")
+                        print(bot_id)
+                        if not self.navigation_table.is_information_valid_for_location(location) or \
+                                self.difference_score(
+                                    self.navigation_table.get_relative_position_for_location(location),
+                                    other_target.get_distance())\
+                                < self.get_skepticism_threshold(payment_database,bot_id):
+                            new_target = self.strategy.combine(self.navigation_table.get_information_entry(location),
+                                                               other_target,
+                                                               np.array([0, 0]))
+                            self.navigation_table.replace_information_entry(location, new_target)
+                            self.pending_information[location].clear()
+                        else:
+                            for target in self.pending_information[location].values():
+                                if self.difference_score(target.get_distance(),
+                                                         other_target.get_distance()) \
+                                        < self.get_skepticism_threshold(payment_database,bot_id):
+                                    new_target = self.strategy.combine(target,
+                                                                       other_target,
+                                                                       np.array([0, 0]))
+                                    self.navigation_table.replace_information_entry(location, new_target)
+                                    self.pending_information[location].clear()
+                                    break
+                            else:
+                                self.pending_information[location][bot_id] = other_target
+                    except InsufficientFundsException:
+                        pass
+                    except NoInformationSoldException:
+                        pass
+
+    def step(self, api):
+        super().step(api)
+        # self.update_pending_information()
+
+'''
+
+class SaboteurScepticalReputationBehavior(ScepticalReputationBehavior):
+    def __init__(self,method,scaling,base_scepticism, rotation_angle):
         super().__init__()
         self.color = "red"
         self.rotation_angle = rotation_angle

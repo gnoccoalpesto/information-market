@@ -11,7 +11,7 @@
     "y": 300,
     "radius": 50
   },
-  "simulation_steps": 15,
+  "simulation_steps": 15000,
   "simulation_seed": 5684436,
   "number_runs": 128,
   "visualization": {
@@ -44,17 +44,17 @@
       "class": "ReputationDynamicThresholdBehavior",
       "population_size": 22,
       "parameters": {
-        "method":"all_avg",
-        "scaling": 0.5
+        "method":"all_min",
+        "scaling":100
       }
     },
     {
       "class": "SaboteurReputationDynamicThresholdBehavior",
       "population_size": 3,
       "parameters": {
-        "rotation_angle": 90,
-        "method":"all_avg",
-        "scaling": 0.5
+        "rotation_angle": 0,
+        "method":"all_min",
+        "scaling":100
       }
     }
   ],
@@ -72,8 +72,8 @@
     }
   },
   "data_collection": {
-    "output_directory": "/tmp/fcerri/test/",
-    "filename": "22c_p_allavg08_90r.csv",
+    "output_directory": "/home/fcerri/data/repusceptisicm/",
+    "filename": "22rs_p_allmin100_0r.csv",
     "metrics": ["items_evolution","rewards_evolution","items_collected","rewards"],
     "precise_recording_interval": 100,
     "transactions_log": false
