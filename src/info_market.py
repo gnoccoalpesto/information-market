@@ -8,7 +8,6 @@ from sys import argv
 import argparse
 
 from controllers.main_controller import MainController, Configuration
-from controllers.view_controller import ViewController
 
 
 ### UTILITIES ######################################################################
@@ -71,23 +70,13 @@ def main():
         for p in argv[1:]:
             if isfile(p):
                 config = Configuration(config_file=p)
-                if config.value_of("visualization")['activate']:
-                    main_controller = MainController(config)
-                    view_controller = ViewController(main_controller,
-                                                        config.value_of("width"),
-                                                        config.value_of("height"),
-                                                        config.value_of("visualization")['fps'])
-                    exit(0)
-                else:
-                    configs.append(config)
-                    filenames.append(p)
-                    # run_processes(config)
+                configs.append(config)
+                filenames.append(p)
             else:
                 filenames.extend([join(p, f) for f in listdir(p) if isfile(join(p, f))])
                 for f in filenames:
                     config = Configuration(config_file=f)
                     configs.append(config)
-                    # run_processes(config)
         print(f"Running {len(filenames)} config"
                 f"{'s' if len(filenames)>1 else ''}: ",end="\t")
         print(*filenames, sep="\n\t\t\t")
