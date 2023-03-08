@@ -1,5 +1,4 @@
 from math import cos, sin, radians
-from PIL import ImageTk
 from model.agent import Agent
 from model.market import market_factory
 from model.navigation import Location
@@ -66,10 +65,6 @@ class Environment:
             robot.step()
         # 3. Market
         self.market.step()
-
-
-    def load_images(self):
-        self.img = ImageTk.PhotoImage(file="../assets/strawberry.png")
 
 
     def create_robots(self, agent_params, behavior_params):

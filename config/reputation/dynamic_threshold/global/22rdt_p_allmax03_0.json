@@ -72,7 +72,7 @@
     }
   },
   "data_collection": {
-    "output_directory": "../data/reputation_global/",
+    "output_directory": "/home/fcerri/data/reputation_global/",
     "filename": "22c_p_allmax03_0r.csv",
     "metrics": ["items_evolution","rewards_evolution","items_collected","rewards"],
     "precise_recording_interval": 100,
