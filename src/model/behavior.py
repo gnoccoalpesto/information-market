@@ -56,6 +56,8 @@ class Behavior(ABC):
         return ""
 
 
+#################################################################################################
+## NAIVE BEHAVIOR
 class NaiveBehavior(Behavior):
     def __init__(self):
         super().__init__()
@@ -178,6 +180,8 @@ class NaiveBehavior(Behavior):
         self.navigation_table.rotate_from_angle(-get_orientation_from_vector(self.dr))
 
 
+#####################################
+# #
 class CarefulBehavior(NaiveBehavior):
     def __init__(self, security_level=3):
         super(CarefulBehavior, self).__init__()
@@ -236,12 +240,39 @@ class CarefulBehavior(NaiveBehavior):
                f"{self.pending_information[Location.NEST]}"
 
 
+class SaboteurBehavior(NaiveBehavior):
+    def __init__(self, rotation_angle=90):
+        super().__init__()
+        self.color = "red"
+        self.rotation_angle = rotation_angle
+
+    def sell_info(self, location):
+        t = copy.deepcopy(self.navigation_table.get_information_entry(location))
+        t.rotate(self.rotation_angle)
+        return t
+
+
+class GreedyBehavior(NaiveBehavior):
+    def __init__(self):
+        super().__init__()
+        self.color = "green"
+
+    def sell_info(self, location):
+        t = copy.deepcopy(self.navigation_table.get_information_entry(location))
+        t.age = 1
+        return t
+
+
+##################################################################################################
+# # SKEPTICISM 
 class ScepticalBehavior(NaiveBehavior):
     def __init__(self, threshold=0.25):
         super(ScepticalBehavior, self).__init__()
         self.pending_information = {location: {} for location in Location}
         self.threshold = threshold
 
+    def get_skepticism_threshold(self):
+        return self.threshold
 
     def buy_info(self, session: CommunicationSession):
         for location in Location:
@@ -259,7 +290,7 @@ class ScepticalBehavior(NaiveBehavior):
                                 self.difference_score(
                                     self.navigation_table.get_relative_position_for_location(location),
                                     other_target.get_distance())\
-                                < self.threshold:
+                                < self.get_skepticism_threshold():
                             new_target = self.strategy.combine(self.navigation_table.get_information_entry(location),
                                                                other_target,
                                                                np.array([0, 0]))
@@ -269,7 +300,7 @@ class ScepticalBehavior(NaiveBehavior):
                             for target in self.pending_information[location].values():
                                 if self.difference_score(target.get_distance(),
                                                          other_target.get_distance()) \
-                                        < self.threshold:
+                                        < self.get_skepticism_threshold():
                                     new_target = self.strategy.combine(target,
                                                                        other_target,
                                                                        np.array([0, 0]))
@@ -298,29 +329,6 @@ class ScepticalBehavior(NaiveBehavior):
             for target in self.pending_information[location].values():
                 target.update(self.dr)
                 target.rotate(-get_orientation_from_vector(self.dr))
-
-
-class SaboteurBehavior(NaiveBehavior):
-    def __init__(self, rotation_angle=90):
-        super().__init__()
-        self.color = "red"
-        self.rotation_angle = rotation_angle
-
-    def sell_info(self, location):
-        t = copy.deepcopy(self.navigation_table.get_information_entry(location))
-        t.rotate(self.rotation_angle)
-        return t
-
-
-class GreedyBehavior(NaiveBehavior):
-    def __init__(self):
-        super().__init__()
-        self.color = "green"
-
-    def sell_info(self, location):
-        t = copy.deepcopy(self.navigation_table.get_information_entry(location))
-        t.age = 1
-        return t
 
 
 class FreeRiderBehavior(ScepticalBehavior):
@@ -371,8 +379,6 @@ class ReputationWealthBehaviour(NaiveBehavior):
     def verify_reputation(self,payment_database:PaymentDB, session: CommunicationSession, bot_id):
         pass
 
-    # def get_reputation_score(self, session: CommunicationSession, bot_id):
-        # return session.get_neighbor_reward(bot_id)
     def get_reputation_score(self, payment_database:PaymentDB, bot_id):
         return payment_database.get_reward(bot_id)
 
@@ -390,7 +396,7 @@ class ReputationWealthBehaviour(NaiveBehavior):
 
                         if not self.navigation_table.is_information_valid_for_location(location) or \
                                 self.verify_reputation(payment_database,session, bot_id):
-                            print("sold")####    ####     ####     #####
+                            # print("sold")####    ####     ####     #####
                             new_target = self.strategy.combine(self.navigation_table.get_information_entry(location),
                                                                other_target,
                                                                np.array([0, 0]))
@@ -411,7 +417,9 @@ class ReputationTresholdBehaviour(ReputationWealthBehaviour):
         # self.pending_information = {location: {} for location in Location}
 
     @abstractmethod
-    def get_treshold_value(self, session: CommunicationSession):
+    #TODO
+    # def get_treshold_value(self, session: CommunicationSession):
+    def get_treshold_value(self):
         pass
 
     def verify_reputation(self,payment_database:PaymentDB, session: CommunicationSession, bot_id):
@@ -451,14 +459,15 @@ class ReputationDynamicThresholdBehavior(ReputationTresholdBehaviour):
         """
         all_max: selects only above a certain percentage of maximum wealth (wealthiest bots), of all robots
         all_avg:selects only above certain percentage of average wealth, considering all robots
-        all_rise:  selects above a certaint value, increasing with time, starting from a certain level, of all robots
         all_min: selects only above a certain percentage of minimum wealth (poorest bots), of all robots
+        TODO: all_rise:  selects above a certaint value, increasing with time, starting from a certain level, of all robots
+        
+        DEPRECATED:
         neigh_max: selects only above a certain percentage of maximum wealth (wealthiest bots), of neighbors
         neigh_avg: selects only above certain percentage of average wealth, considering neighbors
-        neigh_rise: selects above a certaint value, increasing with time, starting from a certain level, of neighbors
         neigh_min: selects only above a certain percentage of minimum wealth (poorest bots), of neighbors
         """
-        print("trying")####    ####     ####     #####
+        # print("trying")####    ####     ####     #####
         extension, metric=re.split("_",self.method)
         # COEFF_MAX=.3; COEFF_AVG=.5; COEFF_MIN=2.5
         # reputation_dict = {"all":{"max":{"method":payment_database.get_highest_reward,
@@ -499,6 +508,59 @@ class ReputationDynamicThresholdBehavior(ReputationTresholdBehaviour):
 
 class SaboteurReputationDynamicThresholdBehavior(ReputationDynamicThresholdBehavior):
     def __init__(self, method='',scaling=1,rotation_angle=90):
+        super().__init__()
+        self.color = "red"
+        self.rotation_angle = rotation_angle
+
+    def sell_info(self, location):
+        t = copy.deepcopy(self.navigation_table.get_information_entry(location))
+        t.rotate(self.rotation_angle)
+        return t
+
+
+#########################################################################################
+# SKEPTICISM + REPUTATION WITH WEALTH BEHAVIOURS
+
+class ReputationScepticalBehavior(ScepticalBehavior,ReputationWealthBehaviour):
+    """
+    IDEA: use ScepticalBehaviour, but rework get_scepticism_threshold with wReputation
+
+    https://www.programiz.com/python-programming/multiple-inheritance
+
+    https://stackoverflow.com/questions/3277367/how-does-pythons-super-work-with-multiple-inheritance
+
+    https://stackoverflow.com/questions/576169/understanding-python-super-with-init-methods/576183#576183
+
+
+    OTHERWISE SIMPLY INHERIT FROM ONE AND REWRITE THE REST
+    """
+    def __init__(self):
+        super(ReputationScepticalBehavior, self).__init__()
+
+    # def verify_reputation(self,payment_database:PaymentDB, session: CommunicationSession, bot_id):
+    #     return self.get_reputation_score(payment_database, bot_id) >\
+    #              self.get_treshold_value(payment_database, session)
+
+    # @abstractmethod
+    # def get_treshold_value(self, payment_database:PaymentDB,session: CommunicationSession):
+    #     pass
+
+
+    def get_skepticism_threshold(self):
+        """
+        in this case threshold is modulated wrt reputation:
+        the higher the reputation, the lower the threshold -> penalizing poors 
+
+        ? is penalizing the riches better (they should not do mistakes)
+        """
+        pass
+
+
+
+
+
+class SaboteurReputationScepticalBehavior(ReputationScepticalBehavior):
+    def __init__(self, rotation_angle=90):
         super().__init__()
         self.color = "red"
         self.rotation_angle = rotation_angle

@@ -18,6 +18,8 @@
 source  /home/fcerri/envs/tesi/bin/activate
 # do i need to load modules once in the env?
 
-
 ## Job
 python3 /home/fcerri/information-market/src/info_market.py $1
+
+## Deactivate env
+deactivate
