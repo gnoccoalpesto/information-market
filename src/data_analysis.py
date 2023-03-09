@@ -351,93 +351,183 @@ def multi_boxplot(
     n_boxes=len(filenames[0])// by
     fig, axs = plt.subplots(by, n_boxes, sharey=True)
     fig.suptitle(title,fontweight="bold")
-    for idx,(f_naive,f_03tr,f_05tr,f_08tr,f_11tr) in enumerate(zip(filenames[0],
-                                                                    filenames[1],
-                                                                    filenames[2],
-                                                                    filenames[3],
-                                                                    filenames[4]
-                                                                    )):
-        filename_naive=f"{data_folder}{metric}/{f_naive}"
-        filename_f_03tr=f"{data_folder}{metric}/{f_03tr}"
-        filename_f_05tr=f"{data_folder}{metric}/{f_05tr}"
-        filename_f_08tr=f"{data_folder}{metric}/{f_08tr}"
-        filename_f_11tr=f"{data_folder}{metric}/{f_11tr}"
+    # filename_naive,
+    for idx,(filename_scept,f_1,f_2,f_3,f_4,f_5,f_6,f_7,f_8,f_9) in enumerate(zip(
+                                                                            filenames[0],
+                                                                            filenames[1],
+                                                                            filenames[2],
+                                                                            filenames[3],
+                                                                            filenames[4],
+                                                                            filenames[5],
+                                                                            filenames[6],
+                                                                            filenames[7],
+                                                                            filenames[8],
+                                                                            filenames[9],
+                                                                            # filenames[10]
+                                                                        )):
+        filename_1=f"{data_folder}{metric}/{f_1}"
+        filename_2=f"{data_folder}{metric}/{f_2}"
+        filename_3=f"{data_folder}{metric}/{f_3}"
+        filename_4=f"{data_folder}{metric}/{f_4}"
+        filename_5=f"{data_folder}{metric}/{f_5}"
+        filename_6=f"{data_folder}{metric}/{f_6}"
+        filename_7=f"{data_folder}{metric}/{f_7}"
+        filename_8=f"{data_folder}{metric}/{f_8}"
+        filename_9=f"{data_folder}{metric}/{f_9}"
         #TODO OPTIMIZE THIS IS SO SLOW
-        naive_df = pd.read_csv(filename_naive,converters={'items_list': pd.eval})
-        f_03tr_df = pd.read_csv(filename_f_03tr,converters={'items_list': pd.eval})
-        f_05tr_df = pd.read_csv(filename_f_05tr,converters={'items_list': pd.eval})
-        f_08tr_df = pd.read_csv(filename_f_08tr,converters={'items_list': pd.eval})
-        f_11tr_df = pd.read_csv(filename_f_11tr,converters={'items_list': pd.eval})
-        labels=naive_df.columns.to_list()
-        selected_runs=naive_df[labels[0]].unique()
-        naive_data=[]
-        f_03tr_data=[]
-        f_05tr_data=[]
-        f_08tr_data=[]
-        f_11tr_data=[]
+        # df_naive=pd.read_csv(filename_naive, converters={'items_list': pd.eval})
+        df_scept=pd.read_csv(filename_scept, converters={'items_list': pd.eval})
+        df_1=pd.read_csv(filename_1, converters={'items_list': pd.eval})
+        df_2=pd.read_csv(filename_2, converters={'items_list': pd.eval})
+        df_3=pd.read_csv(filename_3, converters={'items_list': pd.eval})
+        df_4=pd.read_csv(filename_4, converters={'items_list': pd.eval})
+        df_5=pd.read_csv(filename_5, converters={'items_list': pd.eval})
+        df_6=pd.read_csv(filename_6, converters={'items_list': pd.eval})
+        df_7=pd.read_csv(filename_7, converters={'items_list': pd.eval})
+        df_8=pd.read_csv(filename_8, converters={'items_list': pd.eval})
+        df_9=pd.read_csv(filename_9, converters={'items_list': pd.eval})
+        # data_naive=[]
+        data_scept=[]
+        data_1=[]
+        data_2=[]
+        data_3=[]
+        data_4=[]
+        data_5=[]
+        data_6=[]
+        data_7=[]
+        data_8=[]
+        data_9=[]
+        labels=df_1.columns.to_list()
+        selected_runs=df_1[labels[0]].unique()
         for run in selected_runs:
-            naive_run_row=naive_df.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
-            f_03tr_run_row=f_03tr_df.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
-            f_05tr_run_row=f_05tr_df.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
-            f_08tr_run_row=f_08tr_df.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
-            f_11tr_run_row=f_11tr_df.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
-            naive_last=naive_run_row.iloc[-1]
-            f_03tr_last=f_03tr_run_row.iloc[-1]
-            f_05tr_last=f_05tr_run_row.iloc[-1]
-            f_08tr_last=f_08tr_run_row.iloc[-1]
-            f_11tr_last=f_11tr_run_row.iloc[-1]
-            naive_end_transitory=naive_run_row.iloc[2*len(naive_run_row)//3]
-            f_03tr_end_transitory=f_03tr_run_row.iloc[2*len(f_03tr_run_row)//3]
-            f_05tr_end_transitory=f_05tr_run_row.iloc[2*len(f_05tr_run_row)//3]
-            f_08tr_end_transitory=f_08tr_run_row.iloc[2*len(f_08tr_run_row)//3]
-            f_11tr_end_transitory=f_11tr_run_row.iloc[2*len(f_11tr_run_row)//3]
-            delta_naive=naive_last-naive_end_transitory
-            delta_f_03tr=f_03tr_last-f_03tr_end_transitory
-            delta_f_05tr=f_05tr_last-f_05tr_end_transitory
-            delta_f_08tr=f_08tr_last-f_08tr_end_transitory
-            delta_f_11tr=f_11tr_last-f_11tr_end_transitory
-            naive_data.append([delta_naive.sum()])
-            f_03tr_data.append([delta_f_03tr.sum()])
-            f_05tr_data.append([delta_f_05tr.sum()])
-            f_08tr_data.append([delta_f_08tr.sum()])
-            f_11tr_data.append([delta_f_11tr.sum()])
-        list_naive_flat = pd.DataFrame(naive_data)
-        list_f_03tr_flat = pd.DataFrame(f_03tr_data)
-        list_f_05tr_flat = pd.DataFrame(f_05tr_data)
-        list_f_08tr_flat = pd.DataFrame(f_08tr_data)
-        list_f_11tr_flat = pd.DataFrame(f_11tr_data)
+            # run_row_naive=df_naive.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
+            run_row_scept=df_scept.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
+            run_row_1=df_1.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
+            run_row_2=df_2.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
+            run_row_3=df_3.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
+            run_row_4=df_4.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
+            run_row_5=df_5.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
+            run_row_6=df_6.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
+            run_row_7=df_7.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
+            run_row_8=df_8.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
+            run_row_9=df_9.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
+            # last_row_naive=run_row_naive.iloc[-1]
+            last_row_scept=run_row_scept.iloc[-1]
+            last_1=run_row_1.iloc[-1]
+            last_2=run_row_2.iloc[-1]
+            last_3=run_row_3.iloc[-1]
+            last_4=run_row_4.iloc[-1]
+            last_5=run_row_5.iloc[-1]
+            last_6=run_row_6.iloc[-1]
+            last_7=run_row_7.iloc[-1]
+            last_8=run_row_8.iloc[-1]
+            last_9=run_row_9.iloc[-1]
+            # end_transitory_naive=run_row_naive.iloc[2*len(run_row_naive)//3]
+            end_transitory_scept=run_row_scept.iloc[2*len(run_row_scept)//3]
+            end_transitory_1=run_row_1.iloc[2*len(run_row_1)//3]
+            end_transitory_2=run_row_2.iloc[2*len(run_row_2)//3]
+            end_transitory_3=run_row_3.iloc[2*len(run_row_3)//3]
+            end_transitory_4=run_row_4.iloc[2*len(run_row_4)//3]
+            end_transitory_5=run_row_5.iloc[2*len(run_row_5)//3]
+            end_transitory_6=run_row_6.iloc[2*len(run_row_6)//3]
+            end_transitory_7=run_row_7.iloc[2*len(run_row_7)//3]
+            end_transitory_8=run_row_8.iloc[2*len(run_row_8)//3]
+            end_transitory_9=run_row_9.iloc[2*len(run_row_9)//3]
+            # delta_naive=last_row_naive-end_transitory_naive
+            delta_scept=last_row_scept#-end_transitory_scept
+            delta_1=last_1#-end_transitory_1
+            delta_2=last_2#-end_transitory_2
+            delta_3=last_3#-end_transitory_3
+            delta_4=last_4#-end_transitory_4
+            delta_5=last_5#-end_transitory_5
+            delta_6=last_6#-end_transitory_6
+            delta_7=last_7#-end_transitory_7
+            delta_8=last_8#-end_transitory_8
+            delta_9=last_9#-end_transitory_9
+            # data_naive.append([delta_naive.sum()])
+            data_scept.append([delta_scept.sum()])
+            data_1.append([delta_1.sum()])
+            data_2.append([delta_2.sum()])
+            data_3.append([delta_3.sum()])
+            data_4.append([delta_4.sum()])
+            data_5.append([delta_5.sum()])
+            data_6.append([delta_6.sum()])
+            data_7.append([delta_7.sum()])
+            data_8.append([delta_8.sum()])
+            data_9.append([delta_9.sum()])
+        # list_naive_flat=pd.DataFrame(data_naive)
+        list_scept_flat=pd.DataFrame(data_scept)
+        list_1_flat=pd.DataFrame(data_1)
+        list_2_flat=pd.DataFrame(data_2)
+        list_3_flat=pd.DataFrame(data_3)
+        list_4_flat=pd.DataFrame(data_4)
+        list_5_flat=pd.DataFrame(data_5)
+        list_6_flat=pd.DataFrame(data_6)
+        list_7_flat=pd.DataFrame(data_7)
+        list_8_flat=pd.DataFrame(data_8)
+        list_9_flat=pd.DataFrame(data_9)
         # ttest_pv=stats.ttest_ind(list_nopen_flat,list_pen_flat)[1][0]
-        list_naive= pd.DataFrame(np.full(list_naive_flat.shape, experiments_labels[0]))
-        list_f_03tr= pd.DataFrame(np.full(list_f_03tr_flat.shape, experiments_labels[1]))
-        list_f_05tr= pd.DataFrame(np.full(list_f_05tr_flat.shape, experiments_labels[2]))
-        list_f_08tr= pd.DataFrame(np.full(list_f_08tr_flat.shape, experiments_labels[3]))
-        list_f_11tr= pd.DataFrame(np.full(list_f_11tr_flat.shape, experiments_labels[4]))
-        list_naive_flat = pd.concat([list_naive_flat, list_naive], axis=1)
-        list_f_03tr_flat = pd.concat([list_f_03tr_flat, list_f_03tr], axis=1)
-        list_f_05tr_flat = pd.concat([list_f_05tr_flat, list_f_05tr], axis=1)
-        list_f_08tr_flat = pd.concat([list_f_08tr_flat, list_f_08tr], axis=1)
-        list_f_11tr_flat = pd.concat([list_f_11tr_flat, list_f_11tr], axis=1)
-        data = pd.concat([  list_naive_flat,
-                            list_f_03tr_flat,
-                            list_f_05tr_flat,
-                            list_f_08tr_flat,
-                            list_f_11tr_flat,
+        # list_naive= pd.DataFrame(np.full(list_naive_flat.shape, experiments_labels[0]))
+        list_scept= pd.DataFrame(np.full(list_scept_flat.shape, experiments_labels[1]))
+        list_1= pd.DataFrame(np.full(list_1_flat.shape, experiments_labels[0]))
+        list_2= pd.DataFrame(np.full(list_2_flat.shape, experiments_labels[1]))
+        list_3= pd.DataFrame(np.full(list_3_flat.shape, experiments_labels[2]))
+        list_4= pd.DataFrame(np.full(list_4_flat.shape, experiments_labels[3]))
+        list_5= pd.DataFrame(np.full(list_5_flat.shape, experiments_labels[4]))
+        list_6= pd.DataFrame(np.full(list_6_flat.shape, experiments_labels[5]))
+        list_7= pd.DataFrame(np.full(list_7_flat.shape, experiments_labels[6]))
+        list_8= pd.DataFrame(np.full(list_8_flat.shape, experiments_labels[7]))
+        list_9= pd.DataFrame(np.full(list_9_flat.shape, experiments_labels[8]))
+        # list_naive_flat = pd.concat([list_naive_flat, list_naive], axis=1)
+        list_scept_flat = pd.concat([list_scept_flat, list_scept], axis=1)
+        list_1_flat = pd.concat([list_1_flat, list_1], axis=1)
+        list_2_flat = pd.concat([list_2_flat, list_2], axis=1)
+        list_3_flat = pd.concat([list_3_flat, list_3], axis=1)
+        list_4_flat = pd.concat([list_4_flat, list_4], axis=1)
+        list_5_flat = pd.concat([list_5_flat, list_5], axis=1)
+        list_6_flat = pd.concat([list_6_flat, list_6], axis=1)
+        list_7_flat = pd.concat([list_7_flat, list_7], axis=1)
+        list_8_flat = pd.concat([list_8_flat, list_8], axis=1)
+        list_9_flat = pd.concat([list_9_flat, list_9], axis=1)
+        data = pd.concat([  
+                        # list_naive_flat,
+                        list_scept_flat,
+                        list_1_flat,
+                        list_2_flat,
+                        list_3_flat,
+                        list_4_flat,
+                        list_5_flat,
+                        list_6_flat,
+                        list_7_flat,
+                        list_8_flat,
+                        list_9_flat,
                         ])
         data.columns = new_labels
-        if idx==0:
-            sns.boxplot(data=data,y=data.columns[0],x=new_labels[1],hue=new_labels[1],linewidth=1, dodge=False, ax=axs[idx]).set(
-                 xlabel=None,ylabel=None,xticklabels=[],xticks=[])
-            axs[idx].set_ylabel("totat items collected")
-        else:
-            sns.boxplot(data=data,y=data.columns[0],x=new_labels[1],linewidth=1, dodge=False, ax=axs[idx]).set(
-                xlabel=None, ylabel=None,xticklabels=[],xticks=[])
-        lie_angle=idx*90
         # ttest_th=0.05
+        lie_angle=idx*90
         params=f"{lie_angle}"#,\nT-test (thr={ttest_th})\np-value: \n{np.round(ttest_pv,5)}"
-        axs[idx].set_xlabel(params)
+        try:
+            if idx==0:
+                sns.boxplot(data=   data,y=data.columns[0],x=new_labels[1],hue=new_labels[1],linewidth=1, dodge=False, ax=axs[idx]).set(
+                        xlabel=None,ylabel=None,xticklabels=[],xticks=[]) 
+                axs[idx].set_ylabel("totat items collected")
+            else:
+                sns.boxplot(data=data,y=data.columns[0],x=new_labels[1],linewidth=1, dodge=False, ax=axs[idx]).set(
+                        xlabel=None, ylabel=None,xticklabels=[],xticks=[])
+            axs[idx].set_xlabel(params)
+            sns.despine(fig, axs[idx], trim=False)
+        except TypeError:
+            if idx==0:
+                sns.boxplot(data=   data,y=data.columns[0],x=new_labels[1],hue=new_labels[1],linewidth=1, dodge=False, ax=axs).set(
+                        xlabel=None,ylabel=None,xticklabels=[],xticks=[]) 
+                axs.set_ylabel("totat items collected")
+            else:
+                sns.boxplot(data=data,y=data.columns[0],x=new_labels[1],linewidth=1, dodge=False, ax=axs).set(
+                        xlabel=None, ylabel=None,xticklabels=[],xticks=[])
+            axs.set_xlabel(params)
+            sns.despine(fig, axs, trim=False)
     fig.set_size_inches(BASE_BOX_WIDTH*n_boxes,BASE_BOX_HEIGHT+1)
     plt.ylim(bottom=0)
-    sns.despine(fig, axs[idx], trim=False)
     # plt.legend(loc='upper right', bbox_to_anchor=(1.3, 1.0), ncol=1)
     plt.show()
 
@@ -1656,37 +1746,65 @@ if __name__ == '__main__':
 
 
 
-    filenames=[
+    filenames=[ 
+                # ["../data/naive/items_evolution/22n_p_0r.csv",
+                # "../data/naive/items_evolution/22n_p_90r.csv"],
+                ["../data/sceptical/items_evolution/22s_p_0r.csv",
+                "../data/sceptical/items_evolution/22s_p_90r.csv"],
                 [
-                "22n_p_0r.csv",
-                "24n_p_90r.csv",
+                "22c_p_allavg05_0r.csv",
+                "22c_p_allavg05_90r.csv",
                 ],
                 [
-                "24n_p_0r.csv",
-                "24s_p_90r.csv",
+                "22c_p_allavg08_0r.csv",
+                "22c_p_allavg08_90r.csv",
                 ],
                 [
-                "24c_p_05neimax_0r.csv",
-                "24c_p_05neimax_90r.csv",
+                "22c_p_allavg11_0r.csv",
+                "22c_p_allavg11_90r.csv",
                 ],
                 [
-                "24c_p_08neiavg_0r.csv",
-                "24c_p_08neiavg_90r.csv",
+                "22c_p_allmax02_0r.csv",
+                "22c_p_allmax02_90r.csv",
                 ],
                 [
-                "24c_p_25neimin_0r.csv",
-                "24c_p_25neimin_90r.csv",
+                "22c_p_allmax03_0r.csv",
+                "22c_p_allmax03_90r.csv",
+                ],
+                [
+                "22c_p_allmax035_0r.csv",
+                "22c_p_allmax035_90r.csv",
+                ],
+                [
+                "22c_p_allmin100_0r.csv",
+                "22c_p_allmin100_90r.csv",
+                ],
+                [
+                "22c_p_allmin250_0r.csv",
+                "22c_p_allmin250_90r.csv",
+                ],
+                [
+                "22c_p_allmin400_0r.csv",
+                "22c_p_allmin400_90r.csv",
                 ]
             ]
+    labels=[
+            # "naive penalisation",
+            "sceptical",
+            "threshold: .5 of average",
+            "t: .8 of average",
+            "t: 1.1 of average",
+            "t: .2 of max",
+            "t: .3 of max",
+            "t: .35 of max",
+            "t: *100 of min",
+            "t: *250 of min",
+            "t: *400 of min",
+            ]
 
-    labels=["naive penalisation",
-            "sceptical penalisation",
-            "% max reputation",
-            "% avg reputation",
-            "coeff*min reputation"]
-
-    title="COMPARISON 24 AGENTS, 1 SABOTEURS, penalised\n"
-    "different protection schemes\nstable part of experiment, seeded"
+    title="COMPARISON 22 AGENTS, 3 SABOTEURS, penalisation\n"\
+        "whole experiment, seeded\n"\
+            "different protection schemes"
             
     # metric,mode=parse_args()
     # myboxplots()
@@ -1698,7 +1816,7 @@ if __name__ == '__main__':
     # after_transitory_phase()
     # boxplot_evo_pen_lie()
     multi_boxplot(filenames=filenames,
-                data_folder="../data/reputation_dynamic/",
+                data_folder="../data/reputation_global/",
                 metric="items_evolution",
                 experiments_labels=labels,
                 title=title,) 

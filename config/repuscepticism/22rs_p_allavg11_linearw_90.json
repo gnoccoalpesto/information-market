@@ -45,18 +45,20 @@
       "population_size": 22,
       "parameters": {
         "method":"all_avg",
-        "scaling": 0.8,
-        "base_scepticism":0.25
+        "scaling": 1.1,
+        "base_scepticism":0.25,
+        "weight_method":"linear"
       }
     },
     {
       "class": "SaboteurScepticalReputationBehavior",
       "population_size": 3,
       "parameters": {
-        "rotation_angle": 0,
+        "rotation_angle": 90,
         "method":"all_avg",
-        "scaling": 0.8,
-        "base_scepticism":0.25
+        "scaling": 1.5,
+        "base_scepticism":0.25,
+        "weight_method":"linear"
       }
     }
   ],
@@ -75,7 +77,7 @@
   },
   "data_collection": {
     "output_directory": "/home/fcerri/data/repusceptisicm/",
-    "filename": "22c_p_allavg08_0r.csv",
+    "filename": "22c_p_allavg11_linearw_90r.csv",
     "metrics": ["items_evolution","rewards_evolution","items_collected","rewards"],
     "precise_recording_interval": 100,
     "transactions_log": false

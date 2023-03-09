@@ -266,7 +266,7 @@ class GreedyBehavior(NaiveBehavior):
 ##################################################################################################
 # # SKEPTICISM
 class ScepticalBehavior(NaiveBehavior):
-    def __init__(self, threshold):
+    def __init__(self, threshold=.25):
         super(ScepticalBehavior, self).__init__()
         self.pending_information = {location: {} for location in Location}
         self.threshold = threshold
@@ -338,7 +338,7 @@ class FreeRiderBehavior(ScepticalBehavior):
 
 
 class ScaboteurBehavior(ScepticalBehavior):
-    def __init__(self, rotation_angle, threshold):
+    def __init__(self, rotation_angle=90, threshold=.25):
         super().__init__()
         self.color = "red"
         self.rotation_angle = rotation_angle
@@ -426,7 +426,7 @@ class ReputationTresholdBehaviour(ReputationWealthBehaviour):
 
 
 class ReputationStaticThresholdBehavior(ReputationTresholdBehaviour):
-    def __init__(self,threshold):
+    def __init__(self,threshold=1):
         super(ReputationStaticThresholdBehavior, self).__init__()
         self.reputation_threshold=threshold
 
@@ -435,7 +435,7 @@ class ReputationStaticThresholdBehavior(ReputationTresholdBehaviour):
 
 
 class SaboteurReputationStaticThresholdBehavior(ReputationStaticThresholdBehavior):
-    def __init__(self, threshold,rotation_angle):
+    def __init__(self, threshold=1,rotation_angle=90):
         super().__init__()
         self.color = "red"
         self.rotation_angle = rotation_angle
@@ -447,7 +447,7 @@ class SaboteurReputationStaticThresholdBehavior(ReputationStaticThresholdBehavio
 
 
 class ReputationDynamicThresholdBehavior(ReputationTresholdBehaviour):
-    def __init__(self,method,scaling):
+    def __init__(self,method="all_max",scaling=1):
         super(ReputationDynamicThresholdBehavior, self).__init__()
         self.method=method
         self.scaling=scaling
@@ -486,7 +486,7 @@ class ReputationDynamicThresholdBehavior(ReputationTresholdBehaviour):
 
 
 class SaboteurReputationDynamicThresholdBehavior(ReputationDynamicThresholdBehavior):
-    def __init__(self, method,scaling,rotation_angle):
+    def __init__(self, method="all_max",scaling=1,rotation_angle=90):
         super().__init__()
         self.color = "red"
         self.rotation_angle = rotation_angle
@@ -501,9 +501,10 @@ class SaboteurReputationDynamicThresholdBehavior(ReputationDynamicThresholdBehav
 # SKEPTICISM + REPUTATION WITH WEALTH BEHAVIOURS
 
 class ScepticalReputationBehavior(NaiveBehavior):
-    def __init__(self,method="all_min",scaling=.5,base_scepticism=.4):
+    def __init__(self,method="all_avg",scaling=1,base_scepticism=.25,weight_method="linear"):
         super(ScepticalReputationBehavior, self).__init__()
         self.base_scepticism=base_scepticism
+        self.weight_method=weight_method
         self.method=method
         self.scaling=scaling
         self.pending_information = {location: {} for location in Location}
@@ -512,7 +513,7 @@ class ScepticalReputationBehavior(NaiveBehavior):
     @staticmethod
     def difference_score(current_vector, bought_vector):
         v_norm = norm(current_vector)
-        score = norm(current_vector - bought_vector) / v_norm if v_norm > 0 else 1000
+        score = norm(current_vector - bought_vector) / v_norm if v_norm > 0.0 else 1000
         return score
 
 
@@ -548,9 +549,24 @@ class ScepticalReputationBehavior(NaiveBehavior):
         except KeyError:
             return self.base_scepticism
 
-    def weight_scepticism(self,reputation_score,metric_score,weight_method="linear"):
-        if weight_method=="linear":
-            return self.base_scepticism+reputation_score/metric_score
+
+    def weight_scepticism(self,reputation_score,metric_score):
+        print(self.weight_method)
+        try:
+            if self.weight_method=="linear":
+                if reputation_score>metric_score:
+                    threshold= self.base_scepticism-reputation_score/metric_score
+                else:
+                    threshold= self.base_scepticism+reputation_score/metric_score
+                return max(0,threshold)
+            elif self.weight_method=="ratio":
+                return self.base_scepticism*reputation_score/metric_score
+            elif self.weight_method=="exponential":
+                return self.base_scepticism*(reputation_score/metric_score)**2
+            elif self.weight_method=="logarithmic":
+                return self.base_scepticism*np.log(reputation_score/metric_score)
+        except:
+            return self.base_scepticism
 
 
     def buy_info(self, session: CommunicationSession,payment_database:PaymentDB):
@@ -679,7 +695,7 @@ class ScepticalReputationBehavior(ReputationDynamicThresholdBehavior,ScepticalBe
 '''
 
 class SaboteurScepticalReputationBehavior(ScepticalReputationBehavior):
-    def __init__(self,method,scaling,base_scepticism, rotation_angle):
+    def __init__(self,method="all_avg",scaling=1,base_scepticism=.25,weight_method="logarithmic", rotation_angle=90):
         super().__init__()
         self.color = "red"
         self.rotation_angle = rotation_angle
