@@ -33,6 +33,7 @@ class Environment:
                  ):
         random_seeder(simulation_seed)
         self.population = list()
+        self.ROBOTS_AMOUNT=0
         self.width = width
         self.height = height
         self.food = (food['x'], food['y'], food['radius'])
@@ -74,6 +75,7 @@ class Environment:
 
     def create_robots(self, agent_params, behavior_params):
         robot_id = 0
+        self.ROBOTS_AMOUNT = np.sum([behavior['population_size'] for behavior in behavior_params])
         for behavior_params in behavior_params:
             for _ in range(behavior_params['population_size']):
                 robot_x=randint(agent_params['radius'], self.width - 1 - agent_params['radius'])

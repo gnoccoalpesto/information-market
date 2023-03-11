@@ -58,6 +58,9 @@ For more informations, refer to the [Randomisation](#randomisation) section.
   - communication_radius: communication range
   - communication_stop_time: duration a robot must stop moving when communicating
   - communication_cooldown: how long a robot must wait between communications
+  - binormal_noise_sampling: determines how odomotry noise is computed. If:
+    - false: noise has a fixed value equal no noise_mu+2.33*noise_sd*robot_id_i/max(robot_id_j);
+    - true: noise is drawn from a binormal probability distribution.
   - noise_sampling_mu: odometric noise sampling distribution mu
   - noise_sampling_sigma: odometric noise sampling distribution sigma
   - noise_sd: odometric noise standard deviation (in degrees), i.e. how different the odometric noise at different time steps

@@ -14,6 +14,9 @@ import numpy as np
 from helpers.utils import get_orientation_from_vector, rotate, InsufficientFundsException, CommunicationState, norm, \
     NoLocationSensedException
 
+ROBOTS_AMOUNT=25
+SD_SCALING_FACTOR=2.33
+#MU+2.33*SD ~= 99% of the values are CONVERED
 
 class AgentAPI:
     def __init__(self, agent):
@@ -39,6 +42,7 @@ class Agent:
                  behavior_params,
                  speed,
                  radius,
+                 binormal_noise_sampling,
                  noise_sampling_mu,
                  noise_sampling_sigma,
                  noise_sd,
@@ -62,14 +66,24 @@ class Agent:
         self._time_since_last_comm = self._comm_stop_time + self._communication_cooldown + 1
         self.comm_state = CommunicationState.OPEN
 
+        self.environment = environment
+        #TODO move this in env
         self.orientation = random() * 360
-        self.noise_mu = gauss(noise_sampling_mu, noise_sampling_sigma)
-        if random() >= 0.5:
-            self.noise_mu = -self.noise_mu
-        self.noise_sd = noise_sd
+
+        if binormal_noise_sampling:
+            self.binormal_noise_sampling = True
+            self.noise_mu = gauss(noise_sampling_mu, noise_sampling_sigma)
+            if random() >= 0.5:
+                self.noise_mu = -self.noise_mu
+            self.noise_sd = noise_sd
+        else:
+            self.binormal_noise_sampling=False
+            # self.noise_mu WILL BE DIRECTLY ASSIGNED TO MOTION NOISE
+            # self.noise_mu = noise_sampling_mu
+            self.noise_mu = noise_sampling_mu+SD_SCALING_FACTOR*noise_sd*self.id/self.environment.ROBOTS_AMOUNT
+            self.noise_sd = 0
 
         self.fuel_cost = fuel_cost
-        self.environment = environment
 
         self.levi_counter = 1
         self.trace = deque(self.pos, maxlen=100)
@@ -157,8 +171,19 @@ class Agent:
 
 
     def move(self):
+        """
+        if self.binormal_noise_sampling: sample motion angle from a probability distribution
+        else: linearly incremented motion angle wrt robot_id_i/max(robot_id_j), starting from mean,
+             with slope such that last one has 99% value of a normal distribution with same mean and sd
+               
+        """
         wanted_movement = rotate(self.dr, self.orientation)
-        noise_angle = gauss(self.noise_mu, self.noise_sd)
+        if self.binormal_noise_sampling:
+            noise_angle = gauss(self.noise_mu, self.noise_sd)
+        else:
+            #COMPUTATION MOVED AT INIT TIME
+            # noise_angle = self.noise_mu+SD_SCALING_FACTOR*self.noise_sd*self.id/self.environment.ROBOTS_AMOUNT
+            noise_angle = self.noise_mu
         noisy_movement = rotate(wanted_movement, noise_angle)
         self.orientation = get_orientation_from_vector(noisy_movement)
         self.pos = self.clamp_to_map(self.pos + noisy_movement)

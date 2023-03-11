@@ -551,7 +551,8 @@ class ScepticalReputationBehavior(NaiveBehavior):
 
 
     def weight_scepticism(self,reputation_score,metric_score):
-        print(self.weight_method)
+        #TODO fix wrong initialization of behaviour, causing some to have default
+        # print(self.weight_method)
         try:
             if self.weight_method=="linear":
                 if reputation_score>metric_score:
