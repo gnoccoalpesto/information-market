@@ -28,6 +28,7 @@
     "communication_radius": 50,
     "communication_stop_time": 0,
     "communication_cooldown": 0,
+    "binormal_noise_sampling":true,
     "noise_sampling_mu": 0.05,
     "noise_sampling_sigma": 0.05,
     "noise_sd": 0.05,
@@ -76,7 +77,7 @@
     }
   },
   "data_collection": {
-    "output_directory": "/home/fcerri/data/repusceptisicm/",
+    "output_directory": "../data/repuscepticism/",
     "filename": "22c_p_allavg08_linearw_90r.csv",
     "metrics": ["items_evolution","rewards_evolution","items_collected","rewards"],
     "precise_recording_interval": 100,
