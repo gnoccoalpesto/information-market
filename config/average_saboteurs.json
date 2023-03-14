@@ -43,21 +43,21 @@
     },
     {
       "class": "NewSaboteurBehavior",
-      "population_size": 3,
+      "population_size": 11,
       "parameters": {
-        "rotation_angle": 90
+        "rotation_angle": 0
       }
     },
     {
       "class": "ScepticalBehavior",
-      "population_size": 1,
+      "population_size": 0,
       "parameters": {
         "threshold": 0.25
       }
     },
     {
       "class": "ScaboteurBehavior",
-      "population_size": 1,
+      "population_size": 0,
       "parameters": {
         "threshold": 0.25,
         "rotation_angle": 90
@@ -65,7 +65,7 @@
     },
     {
       "class": "ScepticalReputationBehavior",
-      "population_size": 1,
+      "population_size": 0,
       "parameters": {
         "method":"all_avg",
         "scaling": 0.5,
@@ -75,7 +75,7 @@
     },
     {
       "class": "SaboteurScepticalReputationBehavior",
-      "population_size": 1,
+      "population_size": 0,
       "parameters": {
         "rotation_angle": 0,
         "method":"all_avg",

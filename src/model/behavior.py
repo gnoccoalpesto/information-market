@@ -99,7 +99,7 @@ class TemplateBehaviour(Behavior):
                      item[1][self.INFORMATION_ORDERING_METRICS])
 
 
-    def test_data_validity(self,location:Location,data):
+    def test_data_validity(self,location:Location,data,bot_id):
         """
         test if data is valid; could also have behaviour specific traits
 
@@ -108,6 +108,12 @@ class TemplateBehaviour(Behavior):
         #return self.strategy.should_combine(data[self.INFORMATION_ORDERING_METRICS])
         # return data[self.INFORMATION_ORDERING_METRICS] < self.navigation_table.get_age_for_location(location)
         return True
+
+
+    def transaction_and_referencing(self,location:Location,session: CommunicationSession,seller_id):
+        other_target = session.make_transaction(neighbor_id=seller_id, location=location)
+        other_target.set_distance(other_target.get_distance() + session.get_distance_from(seller_id))
+        return other_target
 
 
     def test_data_quality(self,data):
@@ -127,11 +133,11 @@ class TemplateBehaviour(Behavior):
         new_target = self.strategy.combine(
             self.navigation_table.get_information_entry(location), 
             other_target,
-            session.get_distance_from(seller_id))
+            np.array([0, 0]))
         self.navigation_table.replace_information_entry(location, new_target)
 
 
-    def exit_decision(self):
+    def stop_buying_process(self):
         """
         decision on continuing to buy information
         """
@@ -139,30 +145,25 @@ class TemplateBehaviour(Behavior):
 
     def buy_info(self, payment_database:PaymentDB, session: CommunicationSession):
         for location in Location:
-            #METADATA AGE, REWARD
             metadata=self.get_metadata(location, payment_database, session)
-            # print(metadata)
 
-            #ORDERING WRT IMPORTANT METRIC
             sorted_metadata=self.order_metadata(metadata)
             
             for bot_id, data in sorted_metadata:
                 
-                #CHECK IF DATA IS VALID/VIABLE/USEFULL (AGE,...)
-                # if self.test_data(data[INFO_ORDERING_METRICS]):
-                #??? selt.strategy.should_combine
-                if self.test_data_validity(location,data):
+                #TODO use self.strategy.should_combine(...)
+                if self.test_data_validity(location,data,bot_id):
                     try:
-                        other_target = session.make_transaction(neighbor_id=bot_id, location=location)
+                        other_target=self.transaction_and_referencing(location,session,bot_id)
+                        
                         if self.test_data_quality(data):
-                            self.combine_data(location, other_target,session)
+                            self.combine_data(location, other_target,session,bot_id)
 
-                        if self.exit_decision(): break
+                        if self.stop_buying_process(): break
 
                     except (InsufficientFundsException, 
                             NoInformationSoldException, 
-                            NoLocationSensedException):
-                        continue
+                            NoLocationSensedException): continue
 
     def step(self, api):
         self.dr[0], self.dr[1] = 0, 0
@@ -895,7 +896,7 @@ class NewNaiveBehavior(TemplateBehaviour):
         self.INFORMATION_ORDERING_METRICS="age"
         self.strategy=strategy_factory("WeightedAverageAgeStrategy")
 
-    def test_data_validity(self, location: Location, data):
+    def test_data_validity(self, location: Location, data,seller_id):
         return data[self.INFORMATION_ORDERING_METRICS] <\
              self.navigation_table.get_age_for_location(location)
         
@@ -910,3 +911,29 @@ class NewSaboteurBehavior(NewNaiveBehavior):
         t = copy.deepcopy(self.navigation_table.get_information_entry(location))
         t.rotate(self.rotation_angle)
         return t
+
+class NewScepticalBehavior(NewNaiveBehavior):
+    def __init__(self,base_scepticism=.25):
+        super().__init__()
+        self.scepticism_threshold=base_scepticism
+        self.pending_information = {location: {} for location in Location}
+
+
+    def test_data_validity(self, location: Location, data,seller_id):
+        if data[self.INFORMATION_ORDERING_METRICS] <\
+                self.navigation_table.get_age_for_location(location) \
+                and seller_id not in self.pending_information[location]:
+            return True
+        return False
+
+    def difference_score(self, target1, target2):
+        return abs(target1 - target2)
+
+    def test_data_quality(self,location:Location, other_target):
+        if not self.navigation_table.is_information_valid_for_location(location)\
+                or self.difference_score(
+                    self.navigation_table.get_relative_position_for_location(location),
+                    other_target.get_distance())\
+                < self.scepticism_threshold:
+            return True
+        return False
