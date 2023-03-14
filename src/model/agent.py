@@ -132,8 +132,10 @@ class Agent:
         self.previous_nav = copy.deepcopy(self.behavior.navigation_table)
         if self.comm_state == CommunicationState.OPEN:
             session = CommunicationSession(self, neighbors)
+            #agents decides to query only neigh or bchain for info
             if self.behavior.required_information==RequiredInformation.LOCAL:
-                self.behavior.buy_info(session)
+                self.behavior.buy_info(None,session)
+                # self.behavior.buy_info(session)
             elif self.behavior.required_information==RequiredInformation.GLOBAL:    
                 self.behavior.buy_info(session,self.environment.payment_database)
         self.new_nav = self.behavior.navigation_table

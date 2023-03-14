@@ -75,7 +75,14 @@ class Environment:
 
     def create_robots(self, agent_params, behavior_params):
         robot_id = 0
+
+        # if agent_params['binormal_noise_sampling']:
         self.ROBOTS_AMOUNT = np.sum([behavior['population_size'] for behavior in behavior_params])
+        self.SABOTEURS_AMOUNT = np.sum([behavior['population_size'] for behavior in behavior_params
+                                     if "teur" in behavior['class']])#TODO check instead in a list of saboteurs behav
+        #     INITIALIZE BOT FOLLOWING "average" "perfect" sabo
+        #       but HAVING SAME POSITION WHEN SPAWNED
+        # else: ROBOTS 
         for behavior_params in behavior_params:
             for _ in range(behavior_params['population_size']):
                 robot_x=randint(agent_params['radius'], self.width - 1 - agent_params['radius'])

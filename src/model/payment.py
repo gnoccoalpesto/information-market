@@ -152,10 +152,16 @@ class PaymentDB:
             self.database[robot_id] = {"reward": payment_system_params["initial_reward"],
                                        "payment_system": eval(payment_system_params['class'])(
                                                 **payment_system_params['parameters']),
-                                        "age": 0,
-                                        "n_transactions": 0,
-                                        "reward_trend": 0,
-                                        "n_transactions_trend": 0,
+                                        #TODO new bchain data
+                                        # "wallet_age": 0,
+                                        # "n_transactions": 0,
+                                        # "reward_trend": 0,
+                                        # "n_transactions_trend": 0,
+                                        # LOCATIONS COULD PUT TOO MUCH STRESS BC CONTINUOUS UPDATE
+                                        #->TODO COULD USE A DATE INSTEAD
+                                        # "locations_age": {Location.FOOD: 0,
+                                        #                  Location.NEST: 0
+                                        #                 }
                                 }
 
 
@@ -180,6 +186,10 @@ class PaymentDB:
         self.database[debitor_id]["payment_system"].new_reward(total_reward, PaymentAPI(self),
                                                                debitor_id)
 
+
+    def get_total_reward(self):
+        return sum([self.database[robot_id]["reward"] for robot_id in self.database])
+        
 
     def get_reward(self, robot_id):
         return self.database[robot_id]["reward"]

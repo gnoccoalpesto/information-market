@@ -12,6 +12,8 @@ class Target:
     def __init__(self, location):
         self.location = location
         self.relative_distance = np.array([0, 0]).astype('float64')
+        #the real age, known by agent only
+        #    may be different to age stored on bchain
         self.age = 0
         self.valid = False
 
@@ -34,6 +36,7 @@ class Target:
         self.relative_distance = distance
 
     def update(self, dr):
+        #if age==date no update on age needed.
         self.age += 1
         self.relative_distance -= dr
 
