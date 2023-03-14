@@ -11,7 +11,7 @@
     "y": 300,
     "radius": 50
   },
-  "simulation_steps": 15,
+  "simulation_steps": 15000,
   "simulation_seed": 5684436,
   "number_runs": 128,
   "visualization": {
@@ -28,6 +28,7 @@
     "communication_radius": 50,
     "communication_stop_time": 0,
     "communication_cooldown": 0,
+    "binormal_noise_sampling": true,
     "noise_sampling_mu": 0.05,
     "noise_sampling_sigma": 0.05,
     "noise_sd": 0.05,
@@ -38,21 +39,6 @@
       "class": "NaiveBehavior",
       "population_size": 22,
       "parameters": {
-      }
-    },
-    {
-      "class": "ScepticalBehavior",
-      "population_size": 0,
-      "parameters": {
-        "threshold": 0.25
-      }
-    },
-
-    {
-      "class": "SaboteurBehavior",
-      "population_size": 0,
-      "parameters": {
-        "rotation_angle": 0
       }
     },
     {
@@ -78,7 +64,7 @@
     }
   },
   "data_collection": {
-    "output_directory": "../data/TEST/",
+    "output_directory": "../data/naive/",
     "filename": "22n_p_90r.csv",
     "metrics": ["items_evolution","rewards_evolution","items_collected","rewards"],
     "precise_recording_interval": 100,

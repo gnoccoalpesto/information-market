@@ -78,7 +78,7 @@
   },
   "data_collection": {
     "output_directory": "../data/repuscepticism/",
-    "filename": "22c_p_allavg11_exponentialw_90r.csv",
+    "filename": "22rs_p_allavg11_exponentialw_90r.csv",
     "metrics": ["items_evolution","rewards_evolution","items_collected","rewards"],
     "precise_recording_interval": 100,
     "transactions_log": false

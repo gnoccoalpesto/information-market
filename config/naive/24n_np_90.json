@@ -51,7 +51,7 @@
     }
   ],
   "payment_system": {
-    "class": "OutlierPenalisationPaymentSystem",
+    "class": "DelayedPaymentPaymentSystem",
     "initial_reward": 1,
     "parameters": {
       "information_share": 0.5
@@ -65,7 +65,7 @@
   },
   "data_collection": {
     "output_directory": "../data/naive/",
-    "filename": "24n_p_90r.csv",
+    "filename": "24n_np_90r.csv",
     "metrics": ["items_evolution","rewards_evolution","items_collected","rewards"],
     "precise_recording_interval": 100,
     "transactions_log": false
