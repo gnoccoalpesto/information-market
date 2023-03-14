@@ -37,16 +37,8 @@
   "behaviors": [
     {
       "class": "NaiveBehavior",
-      "population_size": 24,
+      "population_size": 25,
       "parameters": {
-      }
-    },
-    {
-      "class": "ScaboteurBehavior",
-      "population_size": 1,
-      "parameters": {
-        "rotation_angle": 90,
-        "threshold": 0.25
       }
     }
   ],
@@ -65,7 +57,7 @@
   },
   "data_collection": {
     "output_directory": "../data/naive/",
-    "filename": "24n_p_90r.csv",
+    "filename": "25n_p_0r.csv",
     "metrics": ["items_evolution","rewards_evolution","items_collected","rewards"],
     "precise_recording_interval": 100,
     "transactions_log": false

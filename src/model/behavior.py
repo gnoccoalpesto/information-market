@@ -286,7 +286,7 @@ class ScepticalBehavior(NaiveBehavior):
                         if not self.navigation_table.is_information_valid_for_location(location) or \
                                 self.difference_score(
                                     self.navigation_table.get_relative_position_for_location(location),
-                                    other_target.get_distance(bot_id))\
+                                    other_target.get_distance())\
                                 < self.threshold:
                             new_target = self.strategy.combine(self.navigation_table.get_information_entry(location),
                                                                other_target,

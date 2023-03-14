@@ -28,6 +28,7 @@
     "communication_radius": 50,
     "communication_stop_time": 0,
     "communication_cooldown": 0,
+    "binormal_noise_sampling": true,
     "noise_sampling_mu": 0.05,
     "noise_sampling_sigma": 0.05,
     "noise_sd": 0.05,
@@ -35,24 +36,11 @@
   },
   "behaviors": [
     {
-      "class": "NaiveBehavior",
-      "population_size": 0,
-      "parameters": {
-      }
-    },
-    {
       "class": "ScepticalBehavior",
       "population_size": 24,
       "parameters": {
         "threshold": 0.25
 
-      }
-    },
-    {
-      "class": "SaboteurBehavior",
-      "population_size": 0,
-      "parameters": {
-        "rotation_angle": 0
       }
     },
     {

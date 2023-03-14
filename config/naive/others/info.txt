@@ -1,0 +1,3 @@
+NOTE REGARD naive/others/
+
+when lue angle is 0, they're equivalent a 25 naive

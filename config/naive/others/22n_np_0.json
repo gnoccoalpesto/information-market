@@ -11,7 +11,7 @@
     "y": 300,
     "radius": 50
   },
-  "simulation_steps": 15000,
+  "simulation_steps": 15,
   "simulation_seed": 5684436,
   "number_runs": 128,
   "visualization": {
@@ -37,15 +37,30 @@
   "behaviors": [
     {
       "class": "NaiveBehavior",
-      "population_size": 24,
+      "population_size": 22,
       "parameters": {
       }
     },
     {
-      "class": "ScaboteurBehavior",
-      "population_size": 1,
+      "class": "ScepticalBehavior",
+      "population_size": 0,
       "parameters": {
-        "rotation_angle": 90,
+        "threshold": 0.25
+      }
+    },
+
+    {
+      "class": "SaboteurBehavior",
+      "population_size": 0,
+      "parameters": {
+        "rotation_angle": 0
+      }
+    },
+    {
+      "class": "ScaboteurBehavior",
+      "population_size": 3,
+      "parameters": {
+        "rotation_angle": 0,
         "threshold": 0.25
       }
     }
@@ -65,7 +80,7 @@
   },
   "data_collection": {
     "output_directory": "../data/naive/",
-    "filename": "24n_p_90r.csv",
+    "filename": "22n_np_0r.csv",
     "metrics": ["items_evolution","rewards_evolution","items_collected","rewards"],
     "precise_recording_interval": 100,
     "transactions_log": false
