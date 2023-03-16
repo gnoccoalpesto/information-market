@@ -36,31 +36,18 @@
   },
   "behaviors": [
     {
-      "class":"NewNaiveBehavior",
+      "class": "NewScepticalBehavior",
       "population_size": 22,
       "parameters": {
+        "scepticism_threshold": 0.25
       }
     },
     {
-      "class": "NewSaboteurBehavior",
-      "population_size": 11,
+      "class": "NewScaboteurBehavior",
+      "population_size": 3,
       "parameters": {
-        "rotation_angle": 0
-      }
-    },
-    {
-      "class": "ScepticalBehavior",
-      "population_size": 0,
-      "parameters": {
-        "threshold": 0.25
-      }
-    },
-    {
-      "class": "ScaboteurBehavior",
-      "population_size": 0,
-      "parameters": {
-        "threshold": 0.25,
-        "rotation_angle": 90
+        "scepticism_threshold": 0.25,
+        "lie_angle": 90
       }
     },
     {

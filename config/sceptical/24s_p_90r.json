@@ -12,7 +12,7 @@
     "radius": 50
   },
   "simulation_steps": 15000,
-  "number_runs": 128,
+  "number_runs": 64,
   "simulation_seed": 5684436,
   "visualization": {
     "activate": false,
@@ -66,7 +66,7 @@
     }
   },
   "data_collection": {
-    "output_directory": "../data/sceptical/",
+    "output_directory": "../data/sceptical_linearnoise/",
     "filename": "24s_p_90r.csv",
     "metrics": ["items_evolution","rewards_evolution","items_collected","rewards"],
     "precise_recording_interval": 100,

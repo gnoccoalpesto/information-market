@@ -46,12 +46,12 @@ class Agent:
                  noise_sampling_mu,
                  noise_sampling_sigma,
                  noise_sd,
+                 dishonest_noise,
                  fuel_cost,
                  communication_radius,
                  communication_cooldown,
                  communication_stop_time
                  ):
-
         self.id = robot_id
         self.pos = np.array([x, y]).astype('float64')
 
@@ -78,9 +78,7 @@ class Agent:
             self.noise_sd = noise_sd
         else:
             self.binormal_noise_sampling=False
-            # self.noise_mu WILL BE DIRECTLY ASSIGNED TO MOTION NOISE
-            # self.noise_mu = noise_sampling_mu
-            self.noise_mu = noise_sampling_mu+SD_SCALING_FACTOR*noise_sd*self.id/self.environment.ROBOTS_AMOUNT
+            self.noise_mu = noise_sampling_mu
             self.noise_sd = 0
 
         self.fuel_cost = fuel_cost
@@ -183,8 +181,6 @@ class Agent:
         if self.binormal_noise_sampling:
             noise_angle = gauss(self.noise_mu, self.noise_sd)
         else:
-            #COMPUTATION MOVED AT INIT TIME
-            # noise_angle = self.noise_mu+SD_SCALING_FACTOR*self.noise_sd*self.id/self.environment.ROBOTS_AMOUNT
             noise_angle = self.noise_mu
         noisy_movement = rotate(wanted_movement, noise_angle)
         self.orientation = get_orientation_from_vector(noisy_movement)

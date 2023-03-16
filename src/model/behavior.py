@@ -7,7 +7,7 @@ import numpy as np
 
 from model.payment import PaymentDB
 from model.communication import CommunicationSession
-from model.navigation import Location, NavigationTable
+from model.navigation import Location, NavigationTable, Target
 from model.strategy import WeightedAverageAgeStrategy, strategy_factory
 from helpers.utils import get_orientation_from_vector, norm, InsufficientFundsException, NoInformationSoldException, \
     NoLocationSensedException
@@ -116,7 +116,7 @@ class TemplateBehaviour(Behavior):
         return other_target
 
 
-    def test_data_quality(self,data):
+    def test_data_quality(self,location:Location,other_target:Target,):
         """
         test if data is convenient to buy in a behaviour and strategy specific way
 
@@ -126,7 +126,7 @@ class TemplateBehaviour(Behavior):
         return True
 
     
-    def combine_data(self,location:Location, other_target,session: CommunicationSession,seller_id):
+    def combine_data(self,location:Location, other_target:Target,session: CommunicationSession,seller_id):
         """
         combine data with other target and update navigation table
         """
@@ -156,7 +156,7 @@ class TemplateBehaviour(Behavior):
                     try:
                         other_target=self.transaction_and_referencing(location,session,bot_id)
                         
-                        if self.test_data_quality(data):
+                        if self.test_data_quality(location,other_target):
                             self.combine_data(location, other_target,session,bot_id)
 
                         if self.stop_buying_process(): break
@@ -270,7 +270,7 @@ class NaiveBehavior(Behavior):
         self.required_information = RequiredInformation.LOCAL
 
 
-    def buy_info(self, session: CommunicationSession):
+    def buy_info(self,_, session: CommunicationSession):
         for location in Location:
             metadata = session.get_metadata(location)
             metadata_sorted_by_age = sorted(metadata.items(), key=lambda item: item[1]["age"])
@@ -473,7 +473,7 @@ class ScepticalBehavior(NaiveBehavior):
         self.pending_information = {location: {} for location in Location}
         self.threshold = threshold
 
-    def buy_info(self, session: CommunicationSession):
+    def buy_info(self, _,session: CommunicationSession):
         for location in Location:
             metadata = session.get_metadata(location)
             metadata_sorted_by_age = sorted(metadata.items(), key=lambda item: item[1]["age"])
@@ -902,20 +902,24 @@ class NewNaiveBehavior(TemplateBehaviour):
         
 
 class NewSaboteurBehavior(NewNaiveBehavior):
-    def __init__(self,rotation_angle=90):
+    def __init__(self,lie_angle=90):
         super().__init__()
         self.color = "red"
-        self.rotation_angle = rotation_angle
+        self.rotation_angle = lie_angle
 
     def sell_info(self, location):
         t = copy.deepcopy(self.navigation_table.get_information_entry(location))
         t.rotate(self.rotation_angle)
         return t
 
-class NewScepticalBehavior(NewNaiveBehavior):
-    def __init__(self,base_scepticism=.25):
+
+class NewScepticalBehavior(TemplateBehaviour):
+    def __init__(self,scepticism_threshold=.25):
         super().__init__()
-        self.scepticism_threshold=base_scepticism
+        self.required_information=RequiredInformation.LOCAL
+        self.INFORMATION_ORDERING_METRICS="age"
+        self.strategy=strategy_factory("WeightedAverageAgeStrategy")
+        self.scepticism_threshold=scepticism_threshold
         self.pending_information = {location: {} for location in Location}
 
 
@@ -926,14 +930,53 @@ class NewScepticalBehavior(NewNaiveBehavior):
             return True
         return False
 
-    def difference_score(self, target1, target2):
-        return abs(target1 - target2)
+
+    @staticmethod
+    def difference_score(current_vector, bought_vector):
+        v_norm = norm(current_vector)
+        score = norm(current_vector - bought_vector) / v_norm if v_norm > 0 else 1000
+        return score
+
+    #TODO test which is better
+    # def difference_score(self,location,other_target:Target):
+    #     current_vector=self.navigation_table.get_relative_position_for_location(location)
+    #     bought_vector=other_target.get_distance()
+    #     v_norm = norm(current_vector)
+    #     score = norm(current_vector - bought_vector) / v_norm if v_norm > 0 else 1000
+    #     return score
+        
 
     def test_data_quality(self,location:Location, other_target):
+        # if not self.navigation_table.is_information_valid_for_location(location)\
+        # or self.difference_score(location,other_target)\
         if not self.navigation_table.is_information_valid_for_location(location)\
                 or self.difference_score(
                     self.navigation_table.get_relative_position_for_location(location),
                     other_target.get_distance())\
-                < self.scepticism_threshold:
+            < self.scepticism_threshold:
             return True
         return False
+
+
+    def update_pending_information(self):
+        for location in Location:
+            for target in self.pending_information[location].values():
+                target.update(self.dr)
+                target.rotate(-get_orientation_from_vector(self.dr))
+
+
+    def step(self, api):
+        super().step(api)
+        self.update_pending_information()
+
+
+class NewScaboteurBehavior(NewScepticalBehavior):
+    def __init__(self,lie_angle=90,scepticism_threshold=.25):
+        super().__init__()
+        self.color = "red"
+        self.rotation_angle = lie_angle
+
+    def sell_info(self, location):
+        t = copy.deepcopy(self.navigation_table.get_information_entry(location))
+        t.rotate(self.rotation_angle)
+        return t

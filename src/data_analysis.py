@@ -117,6 +117,34 @@ def get_file_config(filename:str):
                 skepticism, lie_angle,penalisation
 
 
+def find_best_worst_seeds(filenames,
+                        metric="",
+                        data_folder="",
+                        base_seed="",
+                        amount_to_find=0):
+    """
+    returns the AMOUNT_TO_FIND best and worst seeds, wrt given metric.
+    result computed assuminig a linear increare with the run number,
+    starting from BASE_SEED
+
+    if metric="" and data_folder="", filename in filenames is expected
+    in this shape /DATA_FOLDER/METRIC/FILENAME.csv
+    """
+    for filename in filenames:
+    #FULL FILENAME GENERATION
+        if data_folder!="" and metric!="":
+            filenames=f"{data_folder}{metric}/{filename}"
+    #LOAD FILES, EITHER EVOLUTION OR FINAL DATA
+    ## FINAL DATA GONNA BE FASTER
+        df=pd.read_csv(filename)
+    #SCAN ALL AND FIND amount_to_find MINs, POS
+    #SCAN ALL AND FIND amount_to_find MAXs, POS
+    #FIND THE SEEDS=base_seed+POS
+    #RETURN SEEDS
+    #OPTIONAL: PRINT RELATIVE DATA
+    #OPTIONAL: START VIDEO SIMULAITONS
+
+
 #------------------------------------------------------------------------------------------------
 #---------------------------------------STATISTICAL TESTS----------------------------------------
 def myttest(

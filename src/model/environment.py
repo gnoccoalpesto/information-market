@@ -17,6 +17,43 @@ def random_seeder(seed,n=None):
     if seed!="" and seed!="random" and seed is not None:
         random_seed(seed+n if n is not None else seed)
 
+def generate_static_noise_list(n_robots,n_dishonest,
+        dishonest_noise,noise_mu, noise_sigma,coverage_coeff):
+    """
+    generates a list of fixed noise to directly assign in the case of
+    noise not drawed from a binormal distribution
+    noise is generated, increasing with agent_id, s.t. last one has a value covering 
+        99% of binormal distribution values
+    :param dishonest position: informs the generator how much noise dishonests agent will have:
+        -"average": d. have average noise,
+        -"perfect": d. have lowest noise,
+        -"worst": d. have highest noise
+
+    return value is always ordered wrt robots_id, but will have different values
+    based on range, and dishonest_noise request
+    """
+    def generate_noise(mu, sigma, coverage_coeff, robot_id,total_robots):
+        return round(mu+coverage_coeff*sigma*robot_id/total_robots,4)
+    #    
+    if dishonest_noise=="average":
+        "eg 6robots, 2 d: 2,3,4,5,6,0,1"
+        rounded_n_honests=n_robots//2
+        generation_list=[_ for _ in [_ for _ in range(rounded_n_honests)]+
+                                    [_ for _ in range(rounded_n_honests+n_dishonest,n_robots)]+
+                                    [_ for _ in range(rounded_n_honests,rounded_n_honests+n_dishonest)]]
+    elif dishonest_noise=="perfect":
+        "eg 6robots, 2 d: 0,1,2,3,4,5,6"
+        generation_list=[_ for _ in [_ for _ in range(n_dishonest,n_robots)]+
+                                    [_ for _ in range(n_dishonest)]]
+    else: 
+        generation_list=[_ for _ in range(n_robots)]
+    return [generate_noise(noise_mu,
+                            noise_sigma,
+                            coverage_coeff,
+                            robot_id,
+                            n_robots) 
+                    for robot_id in generation_list ]
+
 
 class Environment:
 
@@ -78,13 +115,22 @@ class Environment:
 
         # if agent_params['binormal_noise_sampling']:
         self.ROBOTS_AMOUNT = np.sum([behavior['population_size'] for behavior in behavior_params])
-        self.SABOTEURS_AMOUNT = np.sum([behavior['population_size'] for behavior in behavior_params
-                                     if "teur" in behavior['class']])#TODO check instead in a list of saboteurs behav
-        #     INITIALIZE BOT FOLLOWING "average" "perfect" sabo
-        #       but HAVING SAME POSITION WHEN SPAWNED
-        # else: ROBOTS 
+        self.DISHONEST_AMOUNT = int(np.sum([behavior['population_size'] for behavior in behavior_params
+                                     if "teur" in behavior['class']]))#TODO check instead in a list of saboteurs behav
+        coverage_coeff=2.3#99% of normal distribution
+        if not agent_params["binormal_noise_sampling"]:
+            generated_noise=generate_static_noise_list(self.ROBOTS_AMOUNT,
+                                                         self.DISHONEST_AMOUNT,
+                                                            agent_params["dishonest_noise"],
+                                                            agent_params["noise_sampling_mu"],
+                                                            agent_params["noise_sd"],
+                                                            coverage_coeff
+                                                    )
         for behavior_params in behavior_params:
             for _ in range(behavior_params['population_size']):
+                if not agent_params["binormal_noise_sampling"]:
+                    #override with linear noise
+                    agent_params["noise_sampling_mu"] = generated_noise[robot_id]
                 robot_x=randint(agent_params['radius'], self.width - 1 - agent_params['radius'])
                 robot_y=randint(agent_params['radius'], self.height - 1 - agent_params['radius'])
                 robot = Agent(robot_id=robot_id,

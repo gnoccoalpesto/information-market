@@ -13,7 +13,7 @@
   },
   "simulation_steps": 15000,
   "simulation_seed": 5684436,
-  "number_runs": 64,
+  "number_runs": 128,
   "visualization": {
     "activate": false,
     "fps": 60
@@ -28,7 +28,7 @@
     "communication_radius": 50,
     "communication_stop_time": 0,
     "communication_cooldown": 0,
-    "binormal_noise_sampling":  false,
+    "binormal_noise_sampling": true,
     "noise_sampling_mu": 0.05,
     "noise_sampling_sigma": 0.05,
     "noise_sd": 0.05,
@@ -36,17 +36,17 @@
   },
   "behaviors": [
     {
-      "class": "NaiveBehavior",
+      "class": "NewNaiveBehavior",
       "population_size": 22,
       "parameters": {
       }
     },
     {
-      "class": "ScaboteurBehavior",
+      "class": "NewScaboteurBehavior",
       "population_size": 3,
       "parameters": {
-        "rotation_angle": 90,
-        "threshold": 0.25
+        "lie_angle": 90,
+        "scepticism_threshold":0.25
       }
     }
   ],
@@ -64,7 +64,7 @@
     }
   },
   "data_collection": {
-    "output_directory": "../data/naive_linearnoise/",
+    "output_directory": "../data/newnaive/",
     "filename": "22n_p_90r.csv",
     "metrics": ["items_evolution","rewards_evolution","items_collected","rewards"],
     "precise_recording_interval": 100,
