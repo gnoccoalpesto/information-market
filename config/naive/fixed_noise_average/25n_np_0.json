@@ -58,7 +58,7 @@
   },
   "data_collection": {
     "output_directory": "../data/naive_linearnoise/",
-    "filename": "25s_np_0r_avg002.csv",
+    "filename": "25n_np_0r_avg002.csv",
     "metrics": ["items_evolution","rewards_evolution","items_collected","rewards"],
     "precise_recording_interval": 100,
     "transactions_log": false

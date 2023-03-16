@@ -13,7 +13,7 @@
   },
   "simulation_steps": 15000,
   "simulation_seed": 5684436,
-  "number_runs": 128,
+  "number_runs": 1,
   "visualization": {
     "activate": true,
     "fps": 60
@@ -29,15 +29,60 @@
     "communication_stop_time": 0,
     "communication_cooldown": 0,
     "binormal_noise_sampling": false,
-    "noise_sampling_mu": 0.05,
+    "noise_sampling_mu": 0.0,
     "noise_sampling_sigma": 0.05,
-    "noise_sd": 0.05,
+    "noise_sd": 0.055,
+    "dishonest_noise": "average",
     "fuel_cost": 0
   },
   "behaviors": [
     {
-      "class": "SaboteurScepticalReputationBehavior",
+      "class": "NewNaiveBehavior",
+      "population_size": 0,
+      "parameters": {
+      }
+    },
+    {
+      "class": "NewScepticalBehavior",
+      "population_size": 0,
+      "parameters": {
+        "scepticism_threshold": 0.25
+      }
+    },
+    {
+      "class": "WealthWeightedBehaviour",
+      "population_size": 22,
+      "parameters": {
+      }
+    },
+    {
+      "class": "NewSaboteurBehavior",
+      "population_size": 0,
+      "parameters": {
+        "lie_angle": 90
+      }
+    },
+    {
+      "class": "NewScaboteurBehavior",
       "population_size": 3,
+      "parameters": {
+        "scepticism_threshold": 0.25,
+        "lie_angle": 90
+      }
+    },
+    {
+      "class": "ScepticalReputationBehavior",
+      "population_size": 0,
+      "parameters": {
+        "method":"all_avg",
+        "scaling": 0.5,
+        "base_scepticism":0.25,
+        "weight_method":"exponential"
+      }
+    },
+    {
+      "class": "SaboteurScepticalReputationBehavior",
+      "population_size": 0,
       "parameters": {
         "rotation_angle": 0,
         "method":"all_avg",
@@ -48,7 +93,7 @@
     },
     {
       "class": "ScepticalReputationBehavior",
-      "population_size": 22,
+      "population_size": 0,
       "parameters": {
         "method":"all_avg",
         "scaling": 0.5,

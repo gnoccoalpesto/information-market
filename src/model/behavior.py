@@ -87,30 +87,32 @@ class TemplateBehaviour(Behavior):
         self.required_information = -1
         self.INFORMATION_ORDERING_METRICS=""
 
-    def get_metadata(self,location: Location, payment_database: PaymentDB,session: CommunicationSession):
+
+    def get_ordered_metadata(self,location: Location, payment_database: PaymentDB,session: CommunicationSession):
+        #COULD JUST COMPLETELY OVERRIDE THIS
         metadata = session.get_metadata(location)
-        # for bot_id in metadata:
-        #     metadata[bot_id]["reputation"] = payment_database.get_reward(bot_id)
-        return metadata
-
-
-    def order_metadata(self, metadata):
-        return sorted(metadata.items(), key=lambda item: 
+        if self.INFORMATION_ORDERING_METRICS == "reputation":
+            for bot_id in metadata:
+                metadata[bot_id]["reputation"] = payment_database.get_reward(bot_id)
+        sorted_metadata= sorted(metadata.items(), key=lambda item: 
                      item[1][self.INFORMATION_ORDERING_METRICS])
+        return reversed(sorted_metadata) if self.INFORMATION_ORDERING_METRICS == "reputation" \
+                else sorted_metadata
 
 
     def test_data_validity(self,location:Location,data,bot_id):
         """
-        test if data is valid; could also have behaviour specific traits
-
+        test if data is valid to be bought; could also have behaviour specific traits
         TODO: should i use should combine from strategy?
         """
         #return self.strategy.should_combine(data[self.INFORMATION_ORDERING_METRICS])
-        # return data[self.INFORMATION_ORDERING_METRICS] < self.navigation_table.get_age_for_location(location)
         return True
 
 
-    def transaction_and_referencing(self,location:Location,session: CommunicationSession,seller_id):
+    def acquire_referenced_info(self,location:Location,session: CommunicationSession,seller_id):
+        """
+        buys information and references it into local ref. frame
+        """
         other_target = session.make_transaction(neighbor_id=seller_id, location=location)
         other_target.set_distance(other_target.get_distance() + session.get_distance_from(seller_id))
         return other_target
@@ -118,23 +120,32 @@ class TemplateBehaviour(Behavior):
 
     def test_data_quality(self,location:Location,other_target:Target,):
         """
-        test if data is convenient to buy in a behaviour and strategy specific way
-
+        tests if data is good enough to be combined with local data; behaviour and strategy specific
+        # return data[self.INFORMATION_ORDERING_METRICS] < self.navigation_table.get_age_for_location(location)
         TODO: should i use should combine from strategy?
         """
         # return self.strategy.should_combine(data[self.INFORMATION_ORDERING_METRICS])
         return True
 
-    
-    def combine_data(self,location:Location, other_target:Target,session: CommunicationSession,seller_id):
+    # def combine_data(self,location:Location, other_target:Target,session: CommunicationSession,seller_id):
+    def combine_data(self,location:Location,target:Target, other_target:Target,session: CommunicationSession,seller_id):
         """
         combine data with other target and update navigation table
         """
         new_target = self.strategy.combine(
-            self.navigation_table.get_information_entry(location), 
+            target, 
+            # target, 
             other_target,
             np.array([0, 0]))
         self.navigation_table.replace_information_entry(location, new_target)
+
+
+    # @abstractmethod
+    def behavior_specific_combine(self,location:Location, other_target:Target,session: CommunicationSession,seller_id):
+        """
+        combine data with other target and update navigation table
+        """
+        pass
 
 
     def stop_buying_process(self):
@@ -143,21 +154,22 @@ class TemplateBehaviour(Behavior):
         """
         return True
 
+
     def buy_info(self, payment_database:PaymentDB, session: CommunicationSession):
         for location in Location:
-            metadata=self.get_metadata(location, payment_database, session)
-
-            sorted_metadata=self.order_metadata(metadata)
+            sorted_metadata=self.get_ordered_metadata(location, payment_database, session)
             
             for bot_id, data in sorted_metadata:
-                
-                #TODO use self.strategy.should_combine(...)
                 if self.test_data_validity(location,data,bot_id):
                     try:
-                        other_target=self.transaction_and_referencing(location,session,bot_id)
+                        target=self.navigation_table.get_information_entry(location)
+                        other_target=self.acquire_referenced_info(location,session,bot_id)
                         
                         if self.test_data_quality(location,other_target):
-                            self.combine_data(location, other_target,session,bot_id)
+                            self.combine_data(location,target, other_target,session,bot_id)
+
+                        else:
+                            self.behavior_specific_combine(location, other_target,session,bot_id)
 
                         if self.stop_buying_process(): break
 
@@ -473,6 +485,7 @@ class ScepticalBehavior(NaiveBehavior):
         self.pending_information = {location: {} for location in Location}
         self.threshold = threshold
 
+
     def buy_info(self, _,session: CommunicationSession):
         for location in Location:
             metadata = session.get_metadata(location)
@@ -598,7 +611,6 @@ class ReputationWealthBehaviour(NaiveBehavior):
 
                         if not self.navigation_table.is_information_valid_for_location(location) or \
                                 self.verify_reputation(payment_database,session, bot_id):
-                            # print("sold")####    ####     ####     #####
                             new_target = self.strategy.combine(self.navigation_table.get_information_entry(location),
                                                                other_target,
                                                                np.array([0, 0]))
@@ -669,7 +681,6 @@ class ReputationDynamicThresholdBehavior(ReputationTresholdBehaviour):
         neigh_avg: selects only above certain percentage of average wealth, considering neighbors
         neigh_min: selects only above a certain percentage of minimum wealth (poorest bots), of neighbors
         """
-        # print("trying")####    ####     ####     #####
         extension, metric=re.split("_",self.method)
         reputation_dict = {"all":{
                                 "max":payment_database.get_highest_reward,
@@ -827,68 +838,10 @@ class SaboteurScepticalReputationBehavior(ScepticalReputationBehavior):
         return t
 
 
-
-class WealthWeightedBehaviour(NaiveBehavior):
-
-
-    def __init__(self):
-        super().__init__()
-        self.required_information=RequiredInformation.GLOBAL
-
-
-    def get_wealth_score(self,payment_database:PaymentDB,bot_id):
-        return payment_database.get_reward(bot_id)
-
-
-    def get_wealth_weight(self,payment_database:PaymentDB,bot_id):
-        wealth_score=self.get_wealth_score(payment_database,bot_id)
-        return wealth_score/payment_database.get_total_reward()
-
-
-    def buy_info(self, session: CommunicationSession, payment_database:PaymentDB):
-        for location in Location:
-            metadata = session.get_metadata(location)
-            metadata_sorted_by_age = sorted(metadata.items(), key=lambda item: item[1]["age"])
-            for bot_id, data in metadata_sorted_by_age:
-                if data["age"] < self.navigation_table.get_age_for_location(location) and bot_id not in \
-                        self.pending_information[location]:
-                    try:
-                        other_target = session.make_transaction(neighbor_id=bot_id, location=location)
-                        other_target.set_distance(other_target.get_distance() + session.get_distance_from(
-                            bot_id))
-                        if not self.navigation_table.is_information_valid_for_location(location) or \
-                                self.difference_score(
-                                    self.navigation_table.get_relative_position_for_location(location),
-                                    other_target.get_distance())\
-                                < self.get_wealth_weight(payment_database,bot_id):
-                            new_target = self.strategy.combine(self.navigation_table.get_information_entry(location),
-                                                               other_target,
-                                                               np.array([0, 0]))
-                            self.navigation_table.replace_information_entry(location, new_target)
-                            self.pending_information[location].clear()
-                        else:
-                            for target in self.pending_information[location].values():
-                                if self.difference_score(target.get_distance(),
-                                                         other_target.get_distance()) \
-                                        < self.get_wealth_weight(payment_database,bot_id):
-                                    new_target = self.strategy.combine(target,
-                                                                       other_target,
-                                                                       np.array([0, 0]))
-                                    self.navigation_table.replace_information_entry(location, new_target)
-                                    self.pending_information[location].clear()
-                                    break
-                            else:
-                                self.pending_information[location][bot_id] = other_target
-                    except InsufficientFundsException:
-                        pass
-                    except NoInformationSoldException:
-                        pass
-
-
-
 ######################################################
 # BASED ON NEW TEMPLATE
 
+#TESTED
 class NewNaiveBehavior(TemplateBehaviour):
     def __init__(self):
         super().__init__()
@@ -913,14 +866,15 @@ class NewSaboteurBehavior(NewNaiveBehavior):
         return t
 
 
+#TODO
 class NewScepticalBehavior(TemplateBehaviour):
     def __init__(self,scepticism_threshold=.25):
         super().__init__()
         self.required_information=RequiredInformation.LOCAL
         self.INFORMATION_ORDERING_METRICS="age"
         self.strategy=strategy_factory("WeightedAverageAgeStrategy")
-        self.scepticism_threshold=scepticism_threshold
         self.pending_information = {location: {} for location in Location}
+        self.scepticism_threshold=scepticism_threshold
 
 
     def test_data_validity(self, location: Location, data,seller_id):
@@ -947,8 +901,9 @@ class NewScepticalBehavior(TemplateBehaviour):
         
 
     def test_data_quality(self,location:Location, other_target):
-        # if not self.navigation_table.is_information_valid_for_location(location)\
-        # or self.difference_score(location,other_target)\
+    # def test_data_quality(self,location:Location,target:Target, other_target:Target):
+        #requires numpy array as "target"
+        #navigation_table.get_relative_position_for_location(location)->numpay.ndarray
         if not self.navigation_table.is_information_valid_for_location(location)\
                 or self.difference_score(
                     self.navigation_table.get_relative_position_for_location(location),
@@ -956,6 +911,22 @@ class NewScepticalBehavior(TemplateBehaviour):
             < self.scepticism_threshold:
             return True
         return False
+
+
+    def combine_data(self, location: Location,target:Target, other_target: Target, session: CommunicationSession, seller_id):
+        super().combine_data(location,target, other_target, session, seller_id)
+        self.pending_information[location].clear()
+
+
+    def behavior_specific_combine(self, location: Location, other_target: Target, session: CommunicationSession, seller_id):
+        for target in self.pending_information[location].values():
+            if self.difference_score(target.get_distance(),
+                                        other_target.get_distance()) \
+                    < self.threshold:
+                self.combine_data(location,target, other_target, session, seller_id)
+                break
+            else:
+                self.pending_information[location][seller_id] = other_target
 
 
     def update_pending_information(self):
@@ -970,6 +941,10 @@ class NewScepticalBehavior(TemplateBehaviour):
         self.update_pending_information()
 
 
+    def stop_buying_process(self):
+        return False
+
+
 class NewScaboteurBehavior(NewScepticalBehavior):
     def __init__(self,lie_angle=90,scepticism_threshold=.25):
         super().__init__()
@@ -980,3 +955,40 @@ class NewScaboteurBehavior(NewScepticalBehavior):
         t = copy.deepcopy(self.navigation_table.get_information_entry(location))
         t.rotate(self.rotation_angle)
         return t
+
+
+class WealthWeightedBehaviour(TemplateBehaviour):
+    def __init__(self):
+        super().__init__()
+        self.required_information=RequiredInformation.GLOBAL
+        self.INFORMATION_ORDERING_METRICS="reputation"
+        self.strategy=strategy_factory("RunningWeightedAverageReputationStrategy")
+
+
+    # def get_ordered_metadata(self,location: Location, payment_database: PaymentDB,session: CommunicationSession):
+    #     metadata = session.get_metadata(location)
+    #     for bot_id in metadata:
+    #         metadata[bot_id]["reputation"] = payment_database.get_reward(bot_id)
+    #     sorted_metadata= sorted(metadata.items(), key=lambda item: 
+    #                  item[1][self.INFORMATION_ORDERING_METRICS])
+    #     return reversed(sorted_metadata)
+
+
+    # def get_wealth_score(self,payment_database:PaymentDB,bot_id):
+    #     return payment_database.get_reward(bot_id)
+
+
+    # def get_wealth_weight(self,payment_database:PaymentDB,bot_id):
+    #     wealth_score=self.get_wealth_score(payment_database,bot_id)
+    #     return wealth_score/payment_database.get_total_reward()
+
+
+    def test_data_validity(self, location: Location, data,seller_id):
+        """
+        MAY AS WELL USE BOTH AGE AND REPUTATION:
+        -REPUTATION TO UNDERSTAND IS DATA IS VALID
+        -AGE FOR ORDERING AND PRECEDENCE?
+        """
+        #data["age"] < self.navigation_table.get_age_for_location(location)
+        return data[self.INFORMATION_ORDERING_METRICS] <\
+             self.navigation_table.get_age_for_location(location)                    

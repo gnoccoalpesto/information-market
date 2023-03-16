@@ -32,6 +32,7 @@
     "noise_sampling_mu": 0.05,
     "noise_sampling_sigma": 0.05,
     "noise_sd": 0.05,
+    "dishonest_noise":"",
     "fuel_cost": 0
   },
   "behaviors": [

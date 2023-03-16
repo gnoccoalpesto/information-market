@@ -116,7 +116,7 @@ class FullWeightedAverageReputationStrategy(InformationStrategy):
 
 
 class RunningWeightedAverageReputationStrategy(InformationStrategy):
-    def should_combine(self, my_target: Target, other_target: Target):
+    def should_combine(self, _ , other_target: Target):
         if other_target.is_valid():
             return True
         return False

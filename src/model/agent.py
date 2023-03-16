@@ -14,9 +14,6 @@ import numpy as np
 from helpers.utils import get_orientation_from_vector, rotate, InsufficientFundsException, CommunicationState, norm, \
     NoLocationSensedException
 
-ROBOTS_AMOUNT=25
-SD_SCALING_FACTOR=2.33
-#MU+2.33*SD ~= 99% of the values are CONVERED
 
 class AgentAPI:
     def __init__(self, agent):
@@ -30,9 +27,12 @@ class AgentAPI:
         self.get_levi_turn_angle = agent.get_levi_turn_angle
 
 
+"""
+NOTE: random numbers are discarded in case of non binormal noise drawing to preserve the same sequence
+of the binormal case, for spawn and following requests
+"""
 class Agent:
     colors = {State.EXPLORING: "gray35", State.SEEKING_FOOD: "orange", State.SEEKING_NEST: "green"}
-
 
     def __init__(self,
                  robot_id,
@@ -46,7 +46,6 @@ class Agent:
                  noise_sampling_mu,
                  noise_sampling_sigma,
                  noise_sd,
-                 dishonest_noise,
                  fuel_cost,
                  communication_radius,
                  communication_cooldown,
@@ -67,7 +66,7 @@ class Agent:
         self.comm_state = CommunicationState.OPEN
 
         self.environment = environment
-        #TODO move this in env
+        #TODO move this in env, CHECK if correct rand sequence for same spawn
         self.orientation = random() * 360
 
         if binormal_noise_sampling:
@@ -77,6 +76,7 @@ class Agent:
                 self.noise_mu = -self.noise_mu
             self.noise_sd = noise_sd
         else:
+            gauss(0,0);random()#discard r.n. from the sequence
             self.binormal_noise_sampling=False
             self.noise_mu = noise_sampling_mu
             self.noise_sd = 0
@@ -130,12 +130,13 @@ class Agent:
         self.previous_nav = copy.deepcopy(self.behavior.navigation_table)
         if self.comm_state == CommunicationState.OPEN:
             session = CommunicationSession(self, neighbors)
+            #TODO IS THIS WORTH THE EFFICIENCY GAIN?
             #agents decides to query only neigh or bchain for info
             if self.behavior.required_information==RequiredInformation.LOCAL:
                 self.behavior.buy_info(None,session)
                 # self.behavior.buy_info(session)
             elif self.behavior.required_information==RequiredInformation.GLOBAL:    
-                self.behavior.buy_info(session,self.environment.payment_database)
+                self.behavior.buy_info(self.environment.payment_database,session)
         self.new_nav = self.behavior.navigation_table
         self.behavior.navigation_table = self.previous_nav
 
@@ -181,6 +182,7 @@ class Agent:
         if self.binormal_noise_sampling:
             noise_angle = gauss(self.noise_mu, self.noise_sd)
         else:
+            gauss(0,0)  # discard this r.n.
             noise_angle = self.noise_mu
         noisy_movement = rotate(wanted_movement, noise_angle)
         self.orientation = get_orientation_from_vector(noisy_movement)

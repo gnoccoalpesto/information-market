@@ -131,6 +131,7 @@ class Environment:
                 if not agent_params["binormal_noise_sampling"]:
                     #override with linear noise
                     agent_params["noise_sampling_mu"] = generated_noise[robot_id]
+                agent_params.pop('dishonest_noise', None)
                 robot_x=randint(agent_params['radius'], self.width - 1 - agent_params['radius'])
                 robot_y=randint(agent_params['radius'], self.height - 1 - agent_params['radius'])
                 robot = Agent(robot_id=robot_id,

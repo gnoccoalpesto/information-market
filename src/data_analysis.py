@@ -379,6 +379,7 @@ def multi_boxplot(
     n_boxes=len(filenames[0])// by
     fig, axs = plt.subplots(by, n_boxes, sharey=True)
     fig.suptitle(title,fontweight="bold")
+    #for all lie angles available
     # filename_naive,
     for idx,(filename_scept,f_1,f_2,f_3,f_4,f_5,f_6,f_7,f_8,f_9) in enumerate(zip(
                                                                             filenames[0],
@@ -560,69 +561,73 @@ def multi_boxplot(
     plt.show()
 
 
-# def iterative_boxplot(
-#                     data_folder="../data/reputation/",\
-#                     metric="items_evolution",
-#                     ):
-#     BASE_BOX_WIDTH=3
-#     BASE_BOX_HEIGHT=7
-#     filenames=[
-#                 [
-#                 "22n_p_0r.csv",
-#                 "22n_p_90r.csv",
-#                 ],
-#                 [
-#                 "22c_np_03tr_0r.csv",
-#                 "22c_np_03tr_90r.csv",
-#                 ],
-#                 [
-#                 "22c_np_05tr_0r.csv",
-#                 "22c_np_05tr_90r.csv",
-#                 ],
-#                 [
-#                 "22c_np_08tr_0r.csv",
-#                 "22c_np_08tr_90r.csv",
-#                 ]
-#             ]
-#     labels=["naive","reputation 0.3","reputation 0.5","reputation 0.8",]
-#     columns_labels=["items collected", "lie angle"]
-#     n_boxes=len(filenames[0])
-#     fig, axs = plt.subplots(1, n_boxes, sharey=True)
-#     for idx in range(len(filenames[0])):#for all lie angles
-#         data=pd.DataFrame([])
-#         for f in filenames:#for all idx-th elements of nested level
-#             filename=f"{data_folder}{metric}/{f[idx]}"
-#             df = pd.read_csv(filename,converters={'items_list': pd.eval})
-#             labels=df.columns.to_list()
-#             selected_runs=df[labels[0]].unique()
-#             file_data=[]
-#             for run in selected_runs:
-#                 file_run_row=df.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
-#                 file_last_row=file_run_row.iloc[-1]
-#                 file_data.append([file_last_row.sum()])
-#             list_file_flat = pd.DataFrame(file_data)
-#             # ttest_pv=stats.ttest_ind(list_file_flat,list_pen_flat)[1][0]
-#             list_file= pd.DataFrame(np.full(list_file_flat.shape, labels[0]))
-#             list_file_flat = pd.concat([list_file_flat, list_file], axis=1)
-#             data = pd.concat([data,list_file_flat])
-#         data.columns = columns_labels
-#         if idx==0:
-#             sns.boxplot(data=data,y=data.columns[0],x=columns_labels[1],hue=columns_labels[1],linewidth=1, dodge=False, ax=axs[idx]).set(
-#                  xlabel=None,ylabel=None,xticklabels=[],xticks=[])
-#             axs[idx].set_ylabel("totat items collected")
-#         else:
-#             sns.boxplot(data=data,y=data.columns[0],x=columns_labels[1],linewidth=1, dodge=False, ax=axs[idx]).set(
-#                 xlabel=None, ylabel=None,xticklabels=[],xticks=[])
-#         lie_angle=idx*10
-#         ttest_th=0.05
-#         params=f"{lie_angle}"#,\nT-test (thr={ttest_th})\np-value: \n{np.round(ttest_pv,5)}"
-#         axs[idx].set_xlabel(params)
-#     fig.set_size_inches(BASE_BOX_WIDTH*n_boxes,BASE_BOX_HEIGHT+1)
-#     fig.suptitle("COMPARING PENALISATION (WITH AND WITHOUT)\nAT DIFFERENT LIE ANGLES\n"\
-#     "FOR 24 SCEPTICALS AND 1 SCABOTEUR\nFOR LAST 5000 STEPS OF THE EXPERIMENT, SEEDED",fontweight="bold")
-#     plt.ylim(bottom=0)
-#     sns.despine(fig, axs[idx], trim=False)
-#     plt.show()
+#TODO
+def iterative_boxplot(
+                    data_folder="../data/reputation/",\
+                    metric="items_evolution",
+                    ):
+    BASE_BOX_WIDTH=3
+    BASE_BOX_HEIGHT=7
+    filenames=[
+                [
+                "22n_p_0r.csv",
+                "22n_p_90r.csv",
+                ],
+                [
+                "22c_np_03tr_0r.csv",
+                "22c_np_03tr_90r.csv",
+                ],
+                [
+                "22c_np_05tr_0r.csv",
+                "22c_np_05tr_90r.csv",
+                ],
+                [
+                "22c_np_08tr_0r.csv",
+                "22c_np_08tr_90r.csv",
+                ]
+            ]
+    labels=["naive","reputation 0.3","reputation 0.5","reputation 0.8",]
+    columns_labels=["items collected", "lie angle"]
+    n_boxes=len(filenames[0])
+    fig, axs = plt.subplots(1, n_boxes, sharey=True)
+    for idx in range(len(filenames[0])):#for all lie angles
+        datalist=[]#TODO 1
+        # data=pd.DataFrame([])
+        for f in filenames:#for all idx-th elements of nested level
+            filename=f"{data_folder}{metric}/{f[idx]}"
+            df = pd.read_csv(filename,converters={'items_list': pd.eval})
+            labels=df.columns.to_list()
+            selected_runs=df[labels[0]].unique()
+            file_data=[]
+            for run in selected_runs:
+                file_run_row=df.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
+                file_last_row=file_run_row.iloc[-1]
+                file_data.append([file_last_row.sum()])
+            list_file_flat = pd.DataFrame(file_data)
+            # ttest_pv=stats.ttest_ind(list_file_flat,list_pen_flat)[1][0]
+            list_file= pd.DataFrame(np.full(list_file_flat.shape, labels[0]))
+            list_file_flat = pd.concat([list_file_flat, list_file], axis=1)
+            datalist.append(list_file_flat)#TODO 1
+            # data = pd.concat([data,list_file_flat])
+        data=pd.DataFrame(datalist)#TODO 1
+        data.columns = columns_labels
+        if idx==0:
+            sns.boxplot(data=data,y=data.columns[0],x=columns_labels[1],hue=columns_labels[1],linewidth=1, dodge=False, ax=axs[idx]).set(
+                 xlabel=None,ylabel=None,xticklabels=[],xticks=[])
+            axs[idx].set_ylabel("totat items collected")
+        else:
+            sns.boxplot(data=data,y=data.columns[0],x=columns_labels[1],linewidth=1, dodge=False, ax=axs[idx]).set(
+                xlabel=None, ylabel=None,xticklabels=[],xticks=[])
+        lie_angle=idx*10
+        ttest_th=0.05
+        params=f"{lie_angle}"#,\nT-test (thr={ttest_th})\np-value: \n{np.round(ttest_pv,5)}"
+        axs[idx].set_xlabel(params)
+    fig.set_size_inches(BASE_BOX_WIDTH*n_boxes,BASE_BOX_HEIGHT+1)
+    fig.suptitle("COMPARING PENALISATION (WITH AND WITHOUT)\nAT DIFFERENT LIE ANGLES\n"\
+    "FOR 24 SCEPTICALS AND 1 SCABOTEUR\nFOR LAST 5000 STEPS OF THE EXPERIMENT, SEEDED",fontweight="bold")
+    plt.ylim(bottom=0)
+    sns.despine(fig, axs[idx], trim=False)
+    plt.show()
 
 
 def plot_evolution( filename=[],
