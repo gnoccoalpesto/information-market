@@ -1,4 +1,5 @@
 import time
+import datetime
 import pandas as pd
 from multiprocessing import Pool
 from pathlib import Path
@@ -10,6 +11,10 @@ import argparse
 from controllers.main_controller import MainController, Configuration
 from controllers.view_controller import ViewController
 
+
+VERBOSE:bool = False
+RECORD_DATA:bool = True
+CONFIG_LOG:bool = True
 
 ### UTILITIES ######################################################################
 # #TODO
@@ -35,7 +40,6 @@ def check_filename_existence(output_directory,metric,filename):
 def generate_filename(config:Configuration,):
     filename = config.value_of("data_collection")["filename"]
     #TODO INCREMENTAL NAME GENERATION: if "+" in param name->add before
-    #BUG wrong name generation, with passed name
     # if filename is None or filename == "":# or "+" in filename:
     #     # if "+" in filename:
     #     #     prefix=REMOVE + FROM NAME
@@ -66,7 +70,6 @@ def generate_filename(config:Configuration,):
 
 def main():
     try:
-        configs=[]
         filenames=[]
         for p in argv[1:]:
             if isfile(p):
@@ -79,24 +82,26 @@ def main():
                                                         config.value_of("visualization")['fps'])
                     exit(0)
                 else:
-                    configs.append(config)
                     filenames.append(p)
-                    # run_processes(config)
             else:
                 filenames.extend([join(p, f) for f in listdir(p) if isfile(join(p, f))])
-                for f in filenames:
-                    config = Configuration(config_file=f)
-                    configs.append(config)
-                    # run_processes(config)
+
         print(f"Running {len(filenames)} config"
                 f"{'s' if len(filenames)>1 else ''}: ",end="\t")
-        print(*filenames, sep="\n\t\t\t")
-        for c in configs:
+        print(*filenames, sep="\n\t\t\t");print("\n\n")
+        if not RECORD_DATA:
+            print("##\t"*10+"\nWARNING: data recording is disabled."
+                " Set RECORD_DATA to True to enable it.\n"+"##\t"*10+"\n")
+
+        for i,f in enumerate(filenames):
+            c = Configuration(config_file=f)
+            if CONFIG_LOG: log_config(c,f)   
+            print(f"Running config {i+1}/{len(filenames)}: {f}")   
             run_processes(c)
+
     except IndexError:
-        print("ERROR: no config file specified, running default config.")
+        print("ERROR: no config file specified. Exiting...")
         exit(1)
-    exit(0)
 
         
 def run_processes(config: Configuration):
@@ -110,7 +115,7 @@ def run_processes(config: Configuration):
     start = time.time()
     with Pool() as pool:
         controllers = pool.starmap(run, [(config, i) for i in range(nb_runs)])
-        record_data(config, controllers)
+        if RECORD_DATA: record_data(config, controllers)
     print(f'######\tFinished {nb_runs} runs in {time.time()-start: .02f} seconds.\n')
 
 
@@ -131,10 +136,8 @@ def record_data(config:Configuration, controllers):
     output_directory = config.value_of("data_collection")["output_directory"]
     filename=generate_filename(config)
     for metric in config.value_of("data_collection")["metrics"]:
-    #TODO reintroduce append option, butwhat about seed?
-    #TODO more parametric, use dict of functions and pass args
-        # match metric:
-        # case "rewards":
+    #TODO reintroduce append option, remember SEED
+    #TODO rework with situation template
         if metric=="rewards":
             rewards_df = pd.DataFrame([controller.get_rewards() for controller in controllers])
             Path(join(output_directory, "rewards")).mkdir(parents=True, exist_ok=True)
@@ -142,19 +145,16 @@ def record_data(config:Configuration, controllers):
             # if seed!='' and seed!='random':
             current_filename=check_filename_existence(output_directory,metric,filename)
             rewards_df.to_csv(join(output_directory, "rewards", current_filename), index=False, header=False)
-        # case "items_collected":
         elif metric=="items_collected":
             items_collected_df = pd.DataFrame([controller.get_items_collected() for controller in controllers])
             Path(join(output_directory, "items_collected")).mkdir(parents=True, exist_ok=True)
             current_filename=check_filename_existence(output_directory,metric,filename)
             items_collected_df.to_csv(join(output_directory, "items_collected", current_filename), index=False, header=False)
-        # case "drifts":
         elif metric=="drifts":
             drifts_df = pd.DataFrame([controller.get_drifts() for controller in controllers])
             Path(join(output_directory, "drifts")).mkdir(parents=True, exist_ok=True)
             current_filename=check_filename_existence(output_directory,metric,filename)
             drifts_df.to_csv(join(output_directory, "drifts", current_filename), index=False, header=False)
-        # case "rewards_evolution":
         elif metric=="rewards_evolution":
             dataframes = []
             for i, controller in enumerate(controllers):
@@ -165,7 +165,6 @@ def record_data(config:Configuration, controllers):
             Path(join(output_directory, "rewards_evolution")).mkdir(parents=True, exist_ok=True)
             current_filename=check_filename_existence(output_directory,metric,filename)
             pd.concat(dataframes).to_csv(join(output_directory, "rewards_evolution", current_filename))
-        # case "items_evolution":
         elif metric=="items_evolution":
             dataframes = []
             for i, controller in enumerate(controllers):
@@ -176,7 +175,6 @@ def record_data(config:Configuration, controllers):
             Path(join(output_directory, "items_evolution")).mkdir(parents=True, exist_ok=True)
             current_filename=check_filename_existence(output_directory,metric,filename)
             pd.concat(dataframes).to_csv(join(output_directory, "items_evolution", current_filename))
-        # case _:
         else:
             print(f"[WARNING] Could not record metric: '{metric}'. Metric name is not valid.")
 
@@ -191,6 +189,17 @@ def record_data(config:Configuration, controllers):
         current_filename=check_filename_existence(output_directory,metric,filename)
         pd.concat(transaction_logs).to_csv(join(output_directory, "transactions", current_filename))
             
+
+def log_config(c,f):
+    """
+    log file of config runs in the selected output folder
+    """
+    output_directory = c.value_of("data_collection")["output_directory"]
+    log_message=f"{datetime.datetime.now()}: {f}"
+    Path(output_directory).mkdir(parents=True, exist_ok=True)
+    with open(f"{output_directory}config_log.txt", "a+") as f:
+        f.write(log_message+"\n")
+
 
 if __name__ == '__main__':
     main()

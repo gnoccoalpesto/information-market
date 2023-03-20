@@ -12,10 +12,10 @@
     "radius": 50
   },
   "simulation_steps": 15000,
-  "simulation_seed": 5684436,
+  "simulation_seed": 5684463,
   "number_runs": 64,
   "visualization": {
-    "activate": false,
+    "activate": true,
     "fps": 60
   },
   "random_walk": {
@@ -59,7 +59,7 @@
   },
   "data_collection": {
     "output_directory": "../data/sceptical_linearnoise/",
-    "filename": "25s_p_0r_avg002.csv",
+    "filename": "25s_p_0r_avg005.csv",
     "metrics": ["items_evolution","rewards_evolution","items_collected","rewards"],
     "precise_recording_interval": 100,
     "transactions_log": false

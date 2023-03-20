@@ -80,7 +80,7 @@ class FullWeightedAverageReputationStrategy(InformationStrategy):
         print(self.purchased_targets)
 
 
-    def should_combine(self, my_target: Target, other_target: Target,seller_id):
+    def should_combine(self, _, other_target: Target,seller_id):
         #combines if other_target is valid and younger than the one stored in memory
         if other_target.is_valid() and\
             self.purchased_targets[other_target.location][seller_id].get_age() > other_target.get_age():
@@ -121,14 +121,12 @@ class RunningWeightedAverageReputationStrategy(InformationStrategy):
             return True
         return False
 
-    def combine(self, my_target: Target, other_target: Target, my_id, seller_id,payment_database:PaymentDB) -> Target:
+    def combine(self, my_target: Target, other_target: Target, my_reputation, seller_reputation) -> Target:
         new_target = copy.deepcopy(other_target)
-        my_reputation=payment_database.get_reward(my_id)
-        sellers_reputation=payment_database.get_reward(seller_id)
-        new_distance=(my_target.get_distance()*my_reputation+other_target.get_distance()*sellers_reputation)/\
-                        (my_reputation+sellers_reputation)
-        new_age=(my_target.get_age()*my_reputation+other_target.get_age()*sellers_reputation)/\
-                        (my_reputation+sellers_reputation)
+        new_distance=(my_target.get_distance()*my_reputation+other_target.get_distance()*seller_reputation)/\
+                        (my_reputation+seller_reputation)
+        new_age=(my_target.get_age()*my_reputation+other_target.get_age()*seller_reputation)/\
+                        (my_reputation+seller_reputation)
         new_target.set_distance(new_distance)
         new_target.set_age(new_age)
         return new_target

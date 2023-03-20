@@ -31,7 +31,7 @@
     "binormal_noise_sampling":  false,
     "noise_sampling_mu": 0.05,
     "noise_sampling_sigma": 0.05,
-    "noise_sd": 0.02,
+    "noise_sd": 0.05,
     "dishonest_noise":"average",
     "fuel_cost": 0
   },
@@ -67,7 +67,7 @@
   },
   "data_collection": {
     "output_directory": "../data/sceptical_linearnoise/",
-    "filename": "22s_np_90r_avg002.csv",
+    "filename": "22s_np_90r_avg005.csv",
     "metrics": ["items_evolution","rewards_evolution","items_collected","rewards"],
     "precise_recording_interval": 100,
     "transactions_log": false

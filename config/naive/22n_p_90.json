@@ -28,7 +28,7 @@
     "communication_radius": 50,
     "communication_stop_time": 0,
     "communication_cooldown": 0,
-    "binormal_noise_sampling":  false,
+    "binormal_noise_sampling":  true,
     "noise_sampling_mu": 0.05,
     "noise_sampling_sigma": 0.05,
     "noise_sd": 0.05,
