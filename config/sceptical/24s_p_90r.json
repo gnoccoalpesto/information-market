@@ -12,7 +12,7 @@
     "radius": 50
   },
   "simulation_steps": 15000,
-  "number_runs": 128,
+  "number_runs": 64,
   "simulation_seed": 5684436,
   "visualization": {
     "activate": false,
@@ -32,6 +32,7 @@
     "noise_sampling_mu": 0.05,
     "noise_sampling_sigma": 0.05,
     "noise_sd": 0.05,
+    "dishonest_noise":"perfect",
     "fuel_cost": 0
   },
   "behaviors": [
@@ -66,8 +67,8 @@
     }
   },
   "data_collection": {
-    "output_directory": "../data/sceptical/",
-    "filename": "24s_p_90r.csv",
+    "output_directory": "../data/sceptical_linearnoise/",
+    "filename": "24s_p_90r_perf005.csv",
     "metrics": ["items_evolution","rewards_evolution","items_collected","rewards"],
     "precise_recording_interval": 100,
     "transactions_log": false

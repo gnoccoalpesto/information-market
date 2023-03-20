@@ -10,11 +10,17 @@ class CommunicationSession:
         self._client = client
         self._neighbors = {n.id: n for n in neighbors if n.comm_state == CommunicationState.OPEN}
 
-    def get_metadata(self, location):
-        metadata = {n_id: {
-            "age": n.get_info_from_behavior(location).get_age(),
-        } for n_id, n in self._neighbors.items() if
-            n.get_info_from_behavior(location) is not None and n.get_info_from_behavior(location).is_valid()}
+    def get_metadata(self, location):#,payment_database):
+        #TODO also, should this be retrieved from bchain to avoid lying?
+        #TODO should differentiate if using local or global information, passing bchain?
+        metadata = {n_id:{"age": n.get_info_from_behavior(location).get_age(),
+                            # "reward": payment_database.get_reward(n_id),#(n_id, location), if different rewards
+                        }
+                        for n_id, n in self._neighbors.items() 
+                        if n.get_info_from_behavior(location) is not None 
+                            and n.get_info_from_behavior(location).is_valid()
+                            #TODO validity on blockchain
+                    }
         return metadata
 
     def make_transaction(self, neighbor_id, location) -> Target:

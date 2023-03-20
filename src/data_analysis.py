@@ -1,5 +1,6 @@
 import re
 import os
+from os.path import join, isfile
 import argparse
 
 import pandas as pd
@@ -203,8 +204,104 @@ def myanovatest(
     print(f"F-statistic: {anova_test.statistic},\np-value: {anova_test.pvalue}\n")
 
 
+def find_best_worst_seeds(filenames=[],
+                        metric="",
+                        data_folder="",
+                        base_seed="",
+                        amount_to_find=1):
+    """
+    returns the AMOUNT_TO_FIND best and worst seeds, wrt given metric.
+    result computed assuminig a linear increare with the run number,
+    starting from BASE_SEED
+
+    if metric="" and data_folder="", filename in filenames is expected
+    in this shape /DATA_FOLDER/METRIC/FILENAME.csv
+    """
+    if amount_to_find<1:amount_to_find=1
+    data_folder=f"{data_folder}{metric}/" if data_folder!="" else ""
+    if not filenames:
+        filenames.extend([join(data_folder, f) 
+            for f in os.listdir(data_folder) if isfile(join(data_folder, f))])
+    else:
+        filenames=[f"{data_folder}{f}" for f in filenames]
+
+    for filename in filenames:
+        bests=[]
+        worsts=[]
+        df=pd.read_csv(filename,header=None)
+        df['items_sum']=df.apply(np.sum, axis=1)
+        average_sum=df["items_sum"].mean()
+
+        print(f"\nfile: {filename.split('/')[-1]}")
+        print(f"average sum: {average_sum} over {len(df)} runs")
+
+        for i in range(amount_to_find):
+            i_max=df["items_sum"].max()
+            i_id_max=df["items_sum"].idxmax()
+            i_min=df["items_sum"].min()
+            i_id_min=df["items_sum"].idxmin()
+            bests.append((base_seed+i_id_max, i_max))
+            worsts.append((base_seed+i_id_min, i_min))
+            df.drop(i_id_max, inplace=True)
+            df.drop(i_id_min, inplace=True)
+            
+        for i, best in enumerate(bests):
+            print(f"{1+i} best seed: {best[0]} (run {best[0]-base_seed}), value: {best[1]}")
+        for i, worst in enumerate(worsts):
+            print(f"{1+i} worst seed: {worst[0]} (run {worst[0]-base_seed}), value: {worst[1]}")
+
+
 #------------------------------------------------------------------------------------------------
 #---------------------------------------PLOTTING-------------------------------------------------
+def noise_vs_items(
+                    filenames=[],
+                    data_folder="../data/reputation/",
+                    metric="items_evolution",
+                    saboteurs_noise="",
+                    experiments_labels=[],
+                    title="",
+                    by=1
+                ):
+    '''
+    :param filenames: list of filenames to compare,
+                    if empty all the files in the folder are fetched
+    :param saboteurs_noise: the mode the noise was generated. Accepted values:
+                            "binormal","b": agents have random noise. Otherwise is fixed and
+                            "average","a": saboteurs have average noise among all,
+                            "perfect","p": saboteurs have lowest noise among all.
+    '''
+    BASE_BOX_WIDTH=3
+    BASE_BOX_HEIGHT=7
+    n_boxes=len(filenames)// by
+    fig, axs = plt.subplots(by, n_boxes, sharey=True)
+    fig.set_size_inches(BASE_BOX_WIDTH*n_boxes,BASE_BOX_HEIGHT)
+    #READ FILE, ONLY FINAL DATA IS NEEDED
+    data_folder+=f"{metric}/"
+    for i,f in enumerate(filenames):
+        if not data_folder=="" and not data_folder==None:
+            f=f"{data_folder}{f}"
+        df=pd.read_csv(f, header=None)
+        if len(filenames)>1:
+            if i==0:
+                sns.boxplot(df,ax=axs[i]).set(xlabel="agent id", ylabel="items collected")
+            else:
+                sns.boxplot(df,ax=axs[i]).set(xlabel="agent id")
+        else:   
+            sns.boxplot(df,ax=axs).set(xlabel="agent id", ylabel="items collected")
+        plt.suptitle(f"{title}")
+        if len(filenames)>1:
+            axs[i].set_xlabel(experiments_labels[i])
+        else:
+            axs.set_xlabel(experiments_labels) 
+    sns.despine(offset=0, trim=True)
+    for ax in axs:
+        ax.tick_params(labelrotation=45)
+    # plt.ylim(0)
+    plt.show()
+
+
+
+
 def myboxplots(
                 filenames=[],
                 # comparison_method="s",
@@ -351,6 +448,7 @@ def multi_boxplot(
     n_boxes=len(filenames[0])// by
     fig, axs = plt.subplots(by, n_boxes, sharey=True)
     fig.suptitle(title,fontweight="bold")
+    #for all lie angles available
     # filename_naive,
     for idx,(filename_scept,f_1,f_2,f_3,f_4,f_5,f_6,f_7,f_8,f_9) in enumerate(zip(
                                                                             filenames[0],
@@ -532,69 +630,73 @@ def multi_boxplot(
     plt.show()
 
 
-# def iterative_boxplot(
-#                     data_folder="../data/reputation/",\
-#                     metric="items_evolution",
-#                     ):
-#     BASE_BOX_WIDTH=3
-#     BASE_BOX_HEIGHT=7
-#     filenames=[
-#                 [
-#                 "22n_p_0r.csv",
-#                 "22n_p_90r.csv",
-#                 ],
-#                 [
-#                 "22c_np_03tr_0r.csv",
-#                 "22c_np_03tr_90r.csv",
-#                 ],
-#                 [
-#                 "22c_np_05tr_0r.csv",
-#                 "22c_np_05tr_90r.csv",
-#                 ],
-#                 [
-#                 "22c_np_08tr_0r.csv",
-#                 "22c_np_08tr_90r.csv",
-#                 ]
-#             ]
-#     labels=["naive","reputation 0.3","reputation 0.5","reputation 0.8",]
-#     columns_labels=["items collected", "lie angle"]
-#     n_boxes=len(filenames[0])
-#     fig, axs = plt.subplots(1, n_boxes, sharey=True)
-#     for idx in range(len(filenames[0])):#for all lie angles
-#         data=pd.DataFrame([])
-#         for f in filenames:#for all idx-th elements of nested level
-#             filename=f"{data_folder}{metric}/{f[idx]}"
-#             df = pd.read_csv(filename,converters={'items_list': pd.eval})
-#             labels=df.columns.to_list()
-#             selected_runs=df[labels[0]].unique()
-#             file_data=[]
-#             for run in selected_runs:
-#                 file_run_row=df.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
-#                 file_last_row=file_run_row.iloc[-1]
-#                 file_data.append([file_last_row.sum()])
-#             list_file_flat = pd.DataFrame(file_data)
-#             # ttest_pv=stats.ttest_ind(list_file_flat,list_pen_flat)[1][0]
-#             list_file= pd.DataFrame(np.full(list_file_flat.shape, labels[0]))
-#             list_file_flat = pd.concat([list_file_flat, list_file], axis=1)
-#             data = pd.concat([data,list_file_flat])
-#         data.columns = columns_labels
-#         if idx==0:
-#             sns.boxplot(data=data,y=data.columns[0],x=columns_labels[1],hue=columns_labels[1],linewidth=1, dodge=False, ax=axs[idx]).set(
-#                  xlabel=None,ylabel=None,xticklabels=[],xticks=[])
-#             axs[idx].set_ylabel("totat items collected")
-#         else:
-#             sns.boxplot(data=data,y=data.columns[0],x=columns_labels[1],linewidth=1, dodge=False, ax=axs[idx]).set(
-#                 xlabel=None, ylabel=None,xticklabels=[],xticks=[])
-#         lie_angle=idx*10
-#         ttest_th=0.05
-#         params=f"{lie_angle}"#,\nT-test (thr={ttest_th})\np-value: \n{np.round(ttest_pv,5)}"
-#         axs[idx].set_xlabel(params)
-#     fig.set_size_inches(BASE_BOX_WIDTH*n_boxes,BASE_BOX_HEIGHT+1)
-#     fig.suptitle("COMPARING PENALISATION (WITH AND WITHOUT)\nAT DIFFERENT LIE ANGLES\n"\
-#     "FOR 24 SCEPTICALS AND 1 SCABOTEUR\nFOR LAST 5000 STEPS OF THE EXPERIMENT, SEEDED",fontweight="bold")
-#     plt.ylim(bottom=0)
-#     sns.despine(fig, axs[idx], trim=False)
-#     plt.show()
+#TODO
+def iterative_boxplot(
+                    data_folder="../data/reputation/",\
+                    metric="items_evolution",
+                    ):
+    BASE_BOX_WIDTH=3
+    BASE_BOX_HEIGHT=7
+    filenames=[
+                [
+                "22n_p_0r.csv",
+                "22n_p_90r.csv",
+                ],
+                [
+                "22c_np_03tr_0r.csv",
+                "22c_np_03tr_90r.csv",
+                ],
+                [
+                "22c_np_05tr_0r.csv",
+                "22c_np_05tr_90r.csv",
+                ],
+                [
+                "22c_np_08tr_0r.csv",
+                "22c_np_08tr_90r.csv",
+                ]
+            ]
+    labels=["naive","reputation 0.3","reputation 0.5","reputation 0.8",]
+    columns_labels=["items collected", "lie angle"]
+    n_boxes=len(filenames[0])
+    fig, axs = plt.subplots(1, n_boxes, sharey=True)
+    for idx in range(len(filenames[0])):#for all lie angles
+        datalist=[]#TODO 1
+        # data=pd.DataFrame([])
+        for f in filenames:#for all idx-th elements of nested level
+            filename=f"{data_folder}{metric}/{f[idx]}"
+            df = pd.read_csv(filename,converters={'items_list': pd.eval})
+            labels=df.columns.to_list()
+            selected_runs=df[labels[0]].unique()
+            file_data=[]
+            for run in selected_runs:
+                file_run_row=df.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
+                file_last_row=file_run_row.iloc[-1]
+                file_data.append([file_last_row.sum()])
+            list_file_flat = pd.DataFrame(file_data)
+            # ttest_pv=stats.ttest_ind(list_file_flat,list_pen_flat)[1][0]
+            list_file= pd.DataFrame(np.full(list_file_flat.shape, labels[0]))
+            list_file_flat = pd.concat([list_file_flat, list_file], axis=1)
+            datalist.append(list_file_flat)#TODO 1
+            # data = pd.concat([data,list_file_flat])
+        data=pd.DataFrame(datalist)#TODO 1
+        data.columns = columns_labels
+        if idx==0:
+            sns.boxplot(data=data,y=data.columns[0],x=columns_labels[1],hue=columns_labels[1],linewidth=1, dodge=False, ax=axs[idx]).set(
+                 xlabel=None,ylabel=None,xticklabels=[],xticks=[])
+            axs[idx].set_ylabel("totat items collected")
+        else:
+            sns.boxplot(data=data,y=data.columns[0],x=columns_labels[1],linewidth=1, dodge=False, ax=axs[idx]).set(
+                xlabel=None, ylabel=None,xticklabels=[],xticks=[])
+        lie_angle=idx*10
+        ttest_th=0.05
+        params=f"{lie_angle}"#,\nT-test (thr={ttest_th})\np-value: \n{np.round(ttest_pv,5)}"
+        axs[idx].set_xlabel(params)
+    fig.set_size_inches(BASE_BOX_WIDTH*n_boxes,BASE_BOX_HEIGHT+1)
+    fig.suptitle("COMPARING PENALISATION (WITH AND WITHOUT)\nAT DIFFERENT LIE ANGLES\n"\
+    "FOR 24 SCEPTICALS AND 1 SCABOTEUR\nFOR LAST 5000 STEPS OF THE EXPERIMENT, SEEDED",fontweight="bold")
+    plt.ylim(bottom=0)
+    sns.despine(fig, axs[idx], trim=False)
+    plt.show()
 
 
 def plot_evolution( filename=[],
@@ -1802,9 +1904,45 @@ if __name__ == '__main__':
             "t: *400 of min",
             ]
 
-    title="COMPARISON 22 AGENTS, 3 SABOTEURS, penalisation\n"\
-        "whole experiment, seeded\n"\
-            "different protection schemes"
+    behaviour="ranking"
+    #######################
+    labels=["0 lie angle\nbinormal noise","0 lie angle\nnon b. noise\naverage saboteurs","0 lie angle\nnon b. noise\nperfect saboteurs"]
+    
+    filenames=["25rk_np_05rt.csv","25ww_np_0r_avg002.csv"]#,"25s_np_0r_perf002.csv"]
+    title=f"{behaviour} behaviour\n25 honests, no penalisation\n different noise models, low level"
+
+    # title=f"{behaviour} behaviour\n25 honests, penalisation\n different noise models, low level"
+    # filenames=["25rk_p_05rt.csv","25rk_p_05rt_002sd.csv"]#,"25s_p_0r_perf002.csv"]
+
+    # title=f"{behaviour} behaviour\n25 honests, no penalisation\n different noise models, standard level"
+    # filenames=["25ww_np_0r.csv","25ww_np_0r_avg005.csv"]#,"25s_np_0r_perf005.csv"]
+
+    # title=f"{behaviour} behaviour\n25 honests, penalisation\n different noise models, standard level"
+    # filenames=["25rk_p_05rt.csv","25rk_p_05rt_005sd.csv"]#,"25s_p_0r_perf005.csv"]
+
+    ########################
+    # labels=["0 lie angle\nbinormal noise","90 lie angle\nnon b. noise\naverage saboteurs","90 lie angle\nnon b. noise\nperfect saboteurs"]
+    
+    # filenames=["25ww_np_0r.csv","22ww_np_90r_avg002.csv"]#,"22s_np_90r_perf002.csv"]
+    # title=f"{behaviour} behaviour\n22 honests, no penalisation\n different noise models, low level\n 3 saboteurs, ids:{22,23,24}"
+
+    # title=f"{behaviour} behaviour\n22 honests, penalisation\n different noise models, low level\n 3 saboteurs, ids:{22,23,24}"
+    # filenames=["25tw_p_allavg08.csv","22tw_p_allavg08_90r_002avg.csv","22tw_p_allavg08_90r_002perf.csv"]
+
+    # title=f"{behaviour} behaviour\n22 honests, no penalisation\n different noise models, standard level\n 3 saboteurs, ids:{22,23,24}"
+    # filenames=["25ww_np_0r.csv","22ww_np_90r_avg005.csv"]#,"22s_np_90r_perf005.csv"]
+
+    # title=f"{behaviour} behaviour\n22 honests, penalisation\n different noise models, standard level\n 3 saboteurs, ids:{22,23,24}"
+    # filenames=["25rk_p_05rt.csv","22rk_p_05rt_005sd_avg.csv","22rk_p_05rt_005sd_perf.csv"]
+
+    # COMPARISON OF SCEPTICAL AND DIFFERENT LIE ANGLES
+    # labels=["SCEPTICAL 90 lie angle\nbinormal noise",f"{behaviour}, 0 lie angle\nbinormal noise",f"{behaviour}, 90 lie angle\nbinormal noise"]
+    # title=f"behaviour comparison\n22 honests, penalisation\n 3 saboteurs, ids:{22,23,24}"
+    # data_folder=f"../data/{behaviour}/"
+    # metric="items_collected"
+    # filenames=["../data/sceptical/","25tw_p_allavg.csv","22tw_p_allavg_90r.csv"]
+    # filenames=[data_folder+metric+"/"+filename for filename in filenames[1:]]
+    
             
     # metric,mode=parse_args()
     # myboxplots()
@@ -1815,9 +1953,24 @@ if __name__ == '__main__':
     # evolution_boxplot0()
     # after_transitory_phase()
     # boxplot_evo_pen_lie()
-    multi_boxplot(filenames=filenames,
-                data_folder="../data/reputation_global/",
-                metric="items_evolution",
-                experiments_labels=labels,
-                title=title,) 
-    pass
+    # multi_boxplot(filenames=filenames,
+    #             data_folder="../data/reputation_global/",
+    #             metric="items_evolution",
+    #             experiments_labels=labels,
+    #             title=title,) 
+    noise_vs_items(filenames,
+                    data_folder="",
+                    metric="",
+                    experiments_labels=labels,
+                    title=title,
+                    
+    )                
+
+    # find_best_worst_seeds(filenames=[
+                                    
+    #                                 ],
+    #                     data_folder="../data/sceptical/",
+    #                     metric="items_collected",
+    #                     base_seed=5684436,
+    #                     amount_to_find=3,
+    #                 )

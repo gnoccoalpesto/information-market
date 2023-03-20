@@ -152,10 +152,16 @@ class PaymentDB:
             self.database[robot_id] = {"reward": payment_system_params["initial_reward"],
                                        "payment_system": eval(payment_system_params['class'])(
                                                 **payment_system_params['parameters']),
-                                        "age": 0,
-                                        "n_transactions": 0,
-                                        "reward_trend": 0,
-                                        "n_transactions_trend": 0,
+                                        #TODO new bchain data
+                                        # "wallet_age": 0,
+                                        # "n_transactions": 0,
+                                        # "reward_trend": 0,
+                                        # "n_transactions_trend": 0,
+                                        # LOCATIONS COULD PUT TOO MUCH STRESS BC CONTINUOUS UPDATE
+                                        #->TODO COULD USE A DATE INSTEAD
+                                        # "locations_age": {Location.FOOD: 0,
+                                        #                  Location.NEST: 0
+                                        #                 }
                                 }
 
 
@@ -181,6 +187,10 @@ class PaymentDB:
                                                                debitor_id)
 
 
+    def get_total_reward(self):
+        return sum([self.database[robot_id]["reward"] for robot_id in self.database])
+        
+
     def get_reward(self, robot_id):
         return self.database[robot_id]["reward"]
 
@@ -196,7 +206,19 @@ class PaymentDB:
     def get_average_reward(self):
         return np.average([self.database[robot_id]["reward"] for robot_id in self.database])
 
+
+    def get_sorted_database(self):
+        """
+        returns blockchain (dict), sorted by highest reward first
+        """
+        return dict(sorted(self.database.items(), key=lambda x: x[1]["reward"], reverse=True))
         
+    
+    def get_wallet_ranking(self,robot_id):
+        sorted_database = self.get_sorted_database()
+        return list(sorted_database.keys()).index(robot_id)
+
+
     def apply_cost(self, robot_id, cost):
         if cost < 0:
             raise ValueError("Cost must be positive")
