@@ -1130,10 +1130,10 @@ class SaboteurWealthThresholdBehavior(WealthThresholdBehavior):
 
 
 class NewScepticalReputationBehavior(NewScepticalBehavior):
-    def __init__(self,scepticism_threshold=.25,comparison_method="all_avg",scaling=.3,weight_method="linear"):
+    def __init__(self,scepticism_threshold=.25,comparison_method="all_avg",scaling=.3,weight_method="ratio"):
         super().__init__(scepticism_threshold)
         self.required_information=RequiredInformation.GLOBAL
-        self.INFORMATION_ORDERING_METRICS="reputation"
+        self.INFORMATION_ORDERING_METRICS="age"
         self.strategy=strategy_factory("WeightedAverageAgeStrategy")
         self.SCALING=scaling
         self.C_METHOD=comparison_method
@@ -1160,24 +1160,24 @@ class NewScepticalReputationBehavior(NewScepticalBehavior):
         #TODO fix wrong initialization of behaviour, causing some to have default
         # print(self.weight_method)
         try:
-            if self.W_METHOD=="linear":
-                if reputation_score>metric_score:
-                    threshold= self.scepticism_threshold-reputation_score/metric_score
-                else:
-                    threshold= self.scepticism_threshold+reputation_score/metric_score
-                return max(0,threshold)
-            elif self.W_METHOD=="ratio":
-                return self.scepticism_threshold*reputation_score/metric_score
+            if self.W_METHOD=="ratio":
+                return self.scepticism_threshold*reputation_score/(metric_score*self.SCALING)
+            # elif self.W_METHOD=="linear":
+            #     if reputation_score>metric_score:
+            #         threshold= self.scepticism_threshold+reputation_score/metric_score
+            #     else:
+            #         threshold= self.scepticism_threshold-reputation_score/metric_score
+            #     return max(0,threshold)
             elif self.W_METHOD=="exponential":
-                return self.scepticism_threshold*(reputation_score/metric_score)**2
+                return self.scepticism_threshold*(reputation_score/(metric_score*self.SCALING))**2
             elif self.W_METHOD=="logarithmic":
-                return self.scepticism_threshold*np.log(reputation_score/metric_score)
+                return self.scepticism_threshold*np.log(reputation_score/(metric_score*self.SCALING))
         except:
             return self.scepticism_threshold
 
 
 class NewSaboteurScepticalReputationBehavior(NewScepticalReputationBehavior):
-    def __init__(self,scepticism_threshold=.25,comparison_method="all_avg",scaling=.3,weight_method="linear",lie_angle=90):
+    def __init__(self,scepticism_threshold=.25,comparison_method="all_avg",scaling=.3,weight_method="ratio",lie_angle=90):
         super().__init__(scepticism_threshold,comparison_method,scaling,weight_method)
         self.color = "red"
         self.lie_angle = lie_angle

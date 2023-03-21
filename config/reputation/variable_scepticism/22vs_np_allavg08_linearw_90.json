@@ -46,9 +46,9 @@
       "class": "NewScepticalReputationBehavior",
       "population_size": 22,
       "parameters": {
-        "method":"all_avg",
+        "comparison_method":"all_avg",
         "scaling": 0.8,
-        "base_scepticism":0.25,
+        "scepticism_threshold":0.25,
         "weight_method":"linear"
       }
     },
@@ -56,10 +56,10 @@
       "class": "NewSaboteurScepticalReputationBehavior",
       "population_size": 3,
       "parameters": {
-        "rotation_angle": 90,
-        "method":"all_avg",
+        "lie_angle": 90,
+        "comparison_method":"all_avg",
         "scaling": 0.8,
-        "base_scepticism":0.25,
+        "scepticism_threshold":0.25,
         "weight_method":"linear"
       }
     }
