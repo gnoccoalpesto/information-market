@@ -1,0 +1,95 @@
+LUDERIC DRIVE
+https://drive.google.com/drive/folders/16iAl7eeitXAf_gAv4wz5sreHP5u6hpPb
+
+
+================================================================
+================================================================
+___  ___        _    ___ 
+ |  |   |      | \  |   |
+ |  |   |      |  \ |   | 
+ |  |   |      |  / |   |
+ |  |___|      |_/  |___| 
+
+=========
+SIMULATOR=======================================================
+
+-NAME GENERATOR
+
+-info_market.py argparse
+
+
+========
+RESULTS=========================================================
+
+
+-REFACTOR DATA VISUALIZATION:
+--parametric fun for creating the dataset/vector of data to analse
+
+
+-GAP WITHvsWITHOUT ----------------------------------
+--STABLE: items throughput (items/tick==slope)
+--TRANSITORY: number of SOLD MESSAGES (at the beginning), enough?
+---use transactions logs to compute the distribution of sold messages wrt steps
+
+
+-GENERALLY:
+--add a symbol to indicate statistical test between compared make_boxplots
+https://www.graphpad.com/support/faq/what-is-the-meaning-of--or--or--in-reports-of-statistical-significance-from-prism-or-instat/
+
+
+
+==========
+REPUTATION======================================================
+
+-read WEALTH
+
+-create new BEHAVIOR
+
+
+{{
+SKEPTICISM: AGENT-WISE protection
+
+REPUTATION: SYSTEM-WISE protection
+--could select from a Prob.distrib of a number of observations
+}}
+
+-TEST WEALTH AS REPUTATION
+--wealth is a centralized system (on the blockchain)
+---could try other centralized systems
+--TEST (static population)
+---varying threshold (teta) function of reputation
+---no threshold
+
+-local info/gossip? (to reduce data on blockchain)
+--WHAT TO DO WITH NEWCOMERS? maybe use a more decentralid approach
+while using a centralized one for the first robots
+
+-GAME THEORY: can it be modeled this way?
+--inverted: i know equilibia (cooperation) -> find payoff matrix
+
+-papers: centralized/decentralized approach
+
+-fairness
+
+-musolesi
+
+GAMETHEORY ALSO FOR TASK ALLOCATION?
+
+
+===============
+TASK ALLOCATION=================================================
+-use cost of motion
+- introduce both cost w/, w/out resource loaded
+-use stopping time (com stop time):stop cost
+!do not use request cooldown
+!offer-demand laws (intersectin point of linear characteristic) must regulate the sys
+!!robots must enroll themselves in the task they know are better suited for
+
+
+
+======================================
+PATH PLANNING FOR COMPLEX ENVIRONMENTS===========================
+-complex environment (walls, obstacles, etc)
+!as for now is simple vectorial start-> end
+-introduce waypoint navigation
+-?how to take into account and recover from errors

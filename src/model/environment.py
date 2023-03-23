@@ -18,12 +18,12 @@ def random_seeder(seed,n=None):
         random_seed(seed+n if n is not None else seed)
 
 def generate_static_noise_list(n_robots,n_dishonest,
-        dishonest_noise,noise_mu, noise_sigma,coverage_coeff):
+        dishonest_noise,noise_mu, noise_sigma,coverage_coeff=2.3,random_switch=False):
     """
     generates a list of fixed noise to directly assign in the case of
     noise not drawed from a binormal distribution
     noise is generated, increasing with agent_id, s.t. last one has a value covering 
-        99% of binormal distribution values
+        99% (coverage_coeff==2.3) of the previous binormal distribution values
     :param dishonest position: informs the generator how much noise dishonests agent will have:
         -"average": d. have average noise,
         -"perfect": d. have lowest noise,
@@ -32,8 +32,11 @@ def generate_static_noise_list(n_robots,n_dishonest,
     return value is always ordered wrt robots_id, but will have different values
     based on range, and dishonest_noise request
     """
-    def generate_noise(mu, sigma, coverage_coeff, robot_id,total_robots):
-        return round(mu+coverage_coeff*sigma*robot_id/total_robots,4)
+    def generate_noise(mu, sigma, coverage_coeff, robot_id,total_robots,random_switch):
+        sampled=round(mu+coverage_coeff*sigma*robot_id/total_robots,4)
+        if random_switch:
+            if random()<0.5:sampled=-sampled
+        return sampled
     #    
     if dishonest_noise=="average":
         "eg 6robots, 2 d: 2,3,4,5,6,0,1"
@@ -117,14 +120,12 @@ class Environment:
         self.ROBOTS_AMOUNT = np.sum([behavior['population_size'] for behavior in behavior_params])
         self.DISHONEST_AMOUNT = int(np.sum([behavior['population_size'] for behavior in behavior_params
                                      if "teur" in behavior['class']]))#TODO check instead in a list of saboteurs behav
-        coverage_coeff=2.3#99% of normal distribution
         if not agent_params["binormal_noise_sampling"]:
             generated_noise=generate_static_noise_list(self.ROBOTS_AMOUNT,
                                                          self.DISHONEST_AMOUNT,
                                                             agent_params["dishonest_noise"],
                                                             agent_params["noise_sampling_mu"],
-                                                            agent_params["noise_sd"],
-                                                            coverage_coeff
+                                                            agent_params["noise_sd"]
                                                     )
         for behavior_params in behavior_params:
             for _ in range(behavior_params['population_size']):

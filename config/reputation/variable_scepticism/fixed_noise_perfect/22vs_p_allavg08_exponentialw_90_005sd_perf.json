@@ -28,11 +28,11 @@
     "communication_radius": 50,
     "communication_stop_time": 0,
     "communication_cooldown": 0,
-    "binormal_noise_sampling": false,
+    "binormal_noise_sampling":false,
     "noise_sampling_mu": 0.05,
     "noise_sampling_sigma": 0.05,
     "noise_sd": 0.05,
-    "dishonest_noise": "average",
+    "dishonest_noise": "perfect",
     "fuel_cost": 0
   },
   "behaviors": [
@@ -43,25 +43,29 @@
       }
     },
     {
-      "class": "WealthThresholdBehavior",
+      "class": "NewScepticalReputationBehavior",
       "population_size": 22,
       "parameters": {
         "comparison_method":"all_avg",
-        "scaling": 0.8
+        "scaling": 0.8,
+        "scepticism_threshold":0.25,
+        "weight_method":"exponential"
       }
     },
     {
-      "class": "SaboteurWealthThresholdBehavior",
+      "class": "NewSaboteurScepticalReputationBehavior",
       "population_size": 3,
       "parameters": {
         "lie_angle": 90,
         "comparison_method":"all_avg",
-        "scaling": 0.8
+        "scaling": 0.8,
+        "scepticism_threshold":0.25,
+        "weight_method":"exponential"
       }
     }
   ],
   "payment_system": {
-    "class": "DelayedPaymentPaymentSystem",
+    "class": "OutlierPenalisationPaymentSystem",
     "initial_reward": 1,
     "parameters": {
       "information_share": 0.5
@@ -74,8 +78,8 @@
     }
   },
   "data_collection": {
-    "output_directory": "../data/threshold_wealth/",
-    "filename": "22tw_np_allavg08_90r_005avg.csv",
+    "output_directory": "../data/variable_scepticism/",
+    "filename": "22rs_p_allavg08_exponentialw_90r_005sd_perf.csv",
     "metrics": ["items_evolution","rewards_evolution","items_collected","rewards"],
     "precise_recording_interval": 100,
     "transactions_log": false

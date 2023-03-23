@@ -54,7 +54,7 @@
       "class": "SaboteurWealthThresholdBehavior",
       "population_size": 3,
       "parameters": {
-        "lie_angle": 90,
+        "lie_angle": 0,
         "comparison_method":"all_avg",
         "scaling": 0.8
       }
@@ -75,7 +75,7 @@
   },
   "data_collection": {
     "output_directory": "../data/threshold_wealth/",
-    "filename": "22tw_np_allavg08_90r_005avg.csv",
+    "filename": "25tw_np_allavg08_005avg.csv",
     "metrics": ["items_evolution","rewards_evolution","items_collected","rewards"],
     "precise_recording_interval": 100,
     "transactions_log": false

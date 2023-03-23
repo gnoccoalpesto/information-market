@@ -31,7 +31,7 @@
     "binormal_noise_sampling": false,
     "noise_sampling_mu": 0.05,
     "noise_sampling_sigma": 0.05,
-    "noise_sd": 0.05,
+    "noise_sd": 0.02,
     "dishonest_noise": "average",
     "fuel_cost": 0
   },
@@ -75,7 +75,7 @@
   },
   "data_collection": {
     "output_directory": "../data/threshold_wealth/",
-    "filename": "22tw_np_allavg08_90r_005avg.csv",
+    "filename": "22tw_np_allavg08_90r_002avg.csv",
     "metrics": ["items_evolution","rewards_evolution","items_collected","rewards"],
     "precise_recording_interval": 100,
     "transactions_log": false

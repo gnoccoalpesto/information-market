@@ -1,0 +1,174 @@
+================================================================
+================================================================
+ _    ___           ___
+| \  |   |  |\  |  |
+|  \ |   |  | \ |  |___ 
+|  / |   |  |  \|  |
+|_/  |___|  |   \  |___   
+
+
+
+
+=========
+SIMULATOR=======================================================
+
+-FIX BUG 25--------------OKOKOKOKOKOKOKOKOKOKOKOKOKOKOKOKOKOKOK
+
+-SIMULATION (VISUAL) CONTROLS, README-------------OKOKOKOKOKOKOK
+
+-PRECISE RECORDING OF ITEMS TOO------------------OKOKOKOKOKOKOK
+--READ PRECISE RECORDING USING PANDAS------------------------OK
+
+-RND SEED to recreate PARITCULAR RUN---------------------------
+--seed is added to filename
+--uses random.seed(SEED)
+--seed once, in environment
+--increses by the number of a particular run, starting from a based
+
+
+
+========
+RESULTS=========================================================
+
+-STATISTICAL TESTS TO VERYFY 24vs25, w vs w.o-------OKOKOKOKOKOK
+---->>>BOOK REFERENCE probability-random-variables-and-stochastic-processes--papoulis--pillai--2002
+
+--T-TEST (student)
+testing (no) indepence between two distributions
+threshld=.05,
+H0: no significant mean difference between the groups
+if not pvalue < threshld: can't reject H0 -> DEPENDENT
+--24vs25
+---24n vs 25n no pen t-statistic: 0.009873462737552111
+                    two-tailed p-value: 0.9921241165035417....OK
+---24n vs 2n pen    t-statistic: 1.2121000136848668
+                    two-tailed p-value: 0.2257462531902903....OK
+---25s vs 24s no pen t-statistic: 0.017072622319665203
+                    two-tailed p-value: 0.9863819172024308....OK
+---25s vs 24s no pen t-statistic: 0.9371860499126132
+                    two-tailed p-value: 0.34887796226657275...OK
+--with vs without penalisation
+--- 25n np/p        t-statistic: 17.80775689233145
+                    two-tailed p-value: 0.0..................OK
+--- 24n np/p        t-statistic: 19.865495492052023
+                    two-tailed p-value: 0.0..................OK
+--- 25s np/p        t-statistic: 14.064746834967652
+                    two-tailed p-value: 0.0..................OK
+--- 24s np/p        t-statistic: 13.50679847230787
+                    two-tailed p-value: 0.0..................OK
+
+--- 24 NvsS no pen  t-test: 25.044542532612322,
+                    p-value: 9.153413441487886e-104..................OK
+--- 24 NvsS pen     t-test: 17.424976173653757,
+                    p-value: 8.94633596730185e-60..................OK
+
+--ANOVA (kruskal-wallis)
+---also all OK for ANOVA
+
+
+-PLOTS--------------------------------------OKOKOKOKOKOKOKOKOKOKOKK
+   "similar" results are clearly visible
+--24vs25
+---24n vs 25n no pen :similar
+---24n vs 25n pen    :similar
+---25s vs 24s no pen    :similar
+---25s vs 24s no pen    :similar
+--with vs without penalisation
+--- 25n np/p        :dissimilar
+--- 24n np/p        :dissimilar
+--- 25s np/p        :dissimilar
+--- 24s np/p        :dissimilar
+--24n w w.o, 24s w w.o  :full comparison
+
+{{ NOTE: reading the items_list in evolution
+row example: 0,0,"[0 0 0 ...]"
+
+firts approach
+df=pd.read_csv(FILENAME)#1
+df=pd.read_csv(FILENAME,converters={"items_list":pd.eval})#2
+labels=df.columns.to_list()
+selected_runs=df[labels[0]].unique()
+run_data=[]
+for run in selected_runs:
+            run_pen_data=[]
+   #1...
+            run_pen_df=pen_df.loc[lambda df: df[labels[0]] == run]
+            steps=run_pen_df[labels[1]].unique()
+            for step in steps:
+                step_df=run_pen_df.loc[lambda df: df[labels[1]] == step].iloc[:,-1]
+                step_df=np.asarray([float(_) for _ in step_df.values[0][1:-1].split(", ")])
+                run_pen_data.append(np.sum(step_df))
+            run_data.append(run_pen_data)  
+        data_df=pd.DataFrame(data=np.array(run_data),
+                            columns=steps,
+                            index=selected_runs)
+        data_df=data_df.transpose()
+        data_df.index.name=labels[1]
+        data_df.columns.name=labels[0]
+   #...1
+            
+   #2...
+            run_pen_df=pen_df.loc[lambda df: df[labels[0]] == run].iloc[:,-1].to_numpy()
+            for step in range(len(run_pen_df)):
+                step_df=np.sum(run_pen_df[step])
+                run_pen_data.append(step_df)
+            run_data.extend(run_pen_data)#could also just extend run_data
+        pen_df=pd.concat([pen_df,pd.DataFrame(run_data, columns=['items_sum'])],axis=1)
+        runs_np=pen_df[labels[0]]#.to_numpy()
+        ticks_np=pen_df[labels[1]]#.to_numpy()
+        sums_np=pen_df['items_sum']#.to_numpy()
+        run_labels=['run'+str(run) for run in runs_np]
+   #...2
+    
+
+}}
+
+
+-STABLE PART OF EXPERIMENT (considered steps 7500-15000)--OKOKOKOK
+
+--stable part: collected items appear similar with and without pen
+---linear increment
+
+--comparison no pen/pen for lie angle 0-90 shows:
+---24scepticals: similar Performance
+
+--NOISE seems to be a minor cause
+---DENOISING makes stable part start EARLIER
+---stronger effect over non pen
+
+--INITIAL WEALTH seems to be a MAJOR cause
+---enough mesasges at the beginning?
+->need to show that this does not advantag the bad guys
+---POOR agents (STARTING *.33):
+----small inpact no pen
+----huge impact pen
+---RICH agents (START *1.7):
+----same as poor on nopen
+----IMPROVEMENT FOR PEN
+
+-TRANSITORY INITIAL PART OF EXPERIMENT (considered steps 0-7500)
+
+
+
+------------> APPARENTLY INITIAL MONEY IS THE ISSUE
+
+--STACKING AMOUNT
+---confirms above
+
+==========
+REPUTATION======================================================
+
+
+
+
+================
+TASK ALLOCATION=================================================
+
+
+
+
+======================================
+PATH PLANNING FOR COMPLEX ENVIRONMENTS===========================
+
+
+

@@ -1,6 +1,3 @@
 data/**/*.txt
 data/**/*.csv
 **/__pycache__/*
-TODO.txt
-DO.txt
-DONE.txt

@@ -2,6 +2,8 @@ import re
 import os
 from os.path import join, isfile
 import argparse
+from random import gauss, random
+import time
 
 import pandas as pd
 import numpy as np
@@ -12,6 +14,7 @@ import scipy.stats as stats
 
 from model.market import exponential_model, logistics_model
 from model.navigation import Location
+from model.environment import generate_static_noise_list
 
 palette = {
     "naive": "tab:blue",
@@ -33,30 +36,6 @@ name_conversion = {
     "sceptical": "sceptical"
 }
 
-DATA_DIR="../data/"
-
-comparisons=["scaboteur_rotation"
-]
-
-metrics=[
-    "rewards",
-    "items_collected"
-]
-
-filenames = [
-            "25sceptical_3000th_0scaboteur_0rotation_nopenalisation.txt",
-            "24sceptical_3000th_1scaboteur_0rotation_nopenalisation.txt",
-            # "22sceptical_3000th_3scaboteur_0rotation_nopenalisation.txt",#SAME AS 24 ABOVE
-            "25sceptical_3000th_0scaboteur_0rotation_penalisation.txt",
-            "24sceptical_3000th_1scaboteur_0rotation_penalisation.txt",
-            # "22sceptical_3000th_3scaboteur_0rotation_penalisation.txt",#same as 24 above
-            "25sceptical_025th_0scaboteur_0rotation_nopenalisation.txt",
-            "24sceptical_025th_1scaboteur_0rotation_nopenalisation.txt",
-            "25sceptical_025th_0scaboteur_0rotation_penalisation.txt",
-            "24sceptical_025th_1scaboteur_0rotation_penalisation.txt",
-            # "22sceptical_025th_3scaboteur_0rotation_nopenalisation.txt",#SAME AS 24 ABOVE
-            # "22sceptical_025th_3scaboteur_0rotation_penalisation.txt"
-]
 
 #------------------------------------------------------------------------------------------------
 #---------------------------------------UTILITIES------------------------------------------------Ù
@@ -253,6 +232,64 @@ def find_best_worst_seeds(filenames=[],
 
 #------------------------------------------------------------------------------------------------
 #---------------------------------------PLOTTING-------------------------------------------------
+def binormal_noise_sampling(mu_sampling=.05,sigma_sampling=.05,sigma_noise=.05):
+    # mu_noise=gauss(mu_sampling,sigma_sampling)
+    # if random()<.5:
+    #     mu_noise=-mu_noise
+    mu_noise=.5*(gauss(mu_sampling,sigma_sampling)+gauss(-mu_sampling,sigma_sampling))
+    return gauss(mu_noise,sigma_noise)
+
+def new_distribution(mu_sampling=.05,sigma_sampling=.05,sigma_noise=.05):
+    pass
+
+
+
+def luderic_noise(mu_sampling=.05,sigma_sampling=.05,sigma_noise=.05):
+    sampled_min=mu_sampling
+    sampled_max=mu_sampling
+    average=0
+    deviation=0
+    count=0
+    while True:
+        count+=1
+        sampled=binormal_noise_sampling(mu_sampling,sigma_sampling,sigma_noise)
+        if sampled<sampled_min:
+            sampled_min=sampled
+        if sampled>sampled_max:
+            sampled_max=sampled
+        average=(average*(count-1)+sampled)/count
+        deviation=(deviation*(count-1)+(sampled-average)**2)/count
+        print(f"min: {sampled_min}\tmax: {sampled_max}\naverage: {average}\tdeviation: {deviation}")
+        # if sampled_min<average-3*deviation or sampled_max>average+3*deviation:
+        #     break
+        # time.sleep(0.002)
+        
+
+
+
+def noise_level(
+                number_agents=25,
+                number_saboteurs=3,
+                noise_average=0.05,
+                noise_std=0.05,
+                saboteurs_noise="", # binormal:"", "average", "perfect"
+                coverage_coeff=2.3
+            ):
+    noise_list=generate_static_noise_list(number_agents, number_saboteurs, saboteurs_noise, noise_average, noise_std, coverage_coeff)
+    # img=plt.figure()
+    img, ax = plt.subplots()
+    plt.bar(range(len(noise_list)), noise_list)
+    plt.xticks(range(len(noise_list)))
+    
+    # ax.tick_params(labelrotation=45)
+    plt.xlabel("agent id")
+    plt.ylabel("noise level")
+    plt.xticks(rotation=45) 
+    plt.suptitle(f"fixed noise levels for each agent,\n {number_saboteurs} saboteurs (ids: {[i for i in range(number_agents-number_saboteurs,number_agents)]}),"
+    f" with {saboteurs_noise} noise level\n {'standard' if noise_std==.05 else 'low'} noise standard deviation")
+    plt.show()
+
+
 def noise_vs_items(
                     filenames=[],
                     data_folder="../data/reputation/",
@@ -296,6 +333,10 @@ def noise_vs_items(
     sns.despine(offset=0, trim=True)
     for ax in axs:
         ax.tick_params(labelrotation=45)
+
+        # plt.xticks(rotation=45) 
+        
+
     # plt.ylim(0)
     plt.show()
 
@@ -438,7 +479,8 @@ def multi_boxplot(
                 title="",
                 by=1
                 ):
-    #TODO import NON EVO data reading from above
+    #TODO if metrics=="items_evolution": use this method (or test active text conversion)
+    #       else: use the method from above
     '''
     this function uses as input not headed, numeric rows, csv files
     '''
@@ -631,32 +673,29 @@ def multi_boxplot(
 
 
 #TODO
-def iterative_boxplot(
+def new_iterative_boxplot(
+                    filenames,
                     data_folder="../data/reputation/",\
                     metric="items_evolution",
+                    columns_labels=["run","items_list"],
+                    ):
+    pass
+    #IMG PARAMETERS AND INIT
+    #CREATE BOXPLOT
+    ## TEST METRICS FOR METHOD TO USE
+    ## CYCLE FOR ALL ELEMENTS
+    ###CREATE BEHAVIOUR DF
+    ###ADD TO DATAFRAME
+    #SHOW PARAMS AND SHOW
+
+def iterative_boxplot(
+                    filenames,
+                    data_folder="../data/reputation/",\
+                    metric="items_evolution",
+                    columns_labels=["run","items_list"],
                     ):
     BASE_BOX_WIDTH=3
     BASE_BOX_HEIGHT=7
-    filenames=[
-                [
-                "22n_p_0r.csv",
-                "22n_p_90r.csv",
-                ],
-                [
-                "22c_np_03tr_0r.csv",
-                "22c_np_03tr_90r.csv",
-                ],
-                [
-                "22c_np_05tr_0r.csv",
-                "22c_np_05tr_90r.csv",
-                ],
-                [
-                "22c_np_08tr_0r.csv",
-                "22c_np_08tr_90r.csv",
-                ]
-            ]
-    labels=["naive","reputation 0.3","reputation 0.5","reputation 0.8",]
-    columns_labels=["items collected", "lie angle"]
     n_boxes=len(filenames[0])
     fig, axs = plt.subplots(1, n_boxes, sharey=True)
     for idx in range(len(filenames[0])):#for all lie angles
@@ -1904,36 +1943,38 @@ if __name__ == '__main__':
             "t: *400 of min",
             ]
 
-    behaviour="ranking"
-    #######################
-    labels=["0 lie angle\nbinormal noise","0 lie angle\nnon b. noise\naverage saboteurs","0 lie angle\nnon b. noise\nperfect saboteurs"]
+    # LINEAR NOISE ANALYSIS ############################################################################################################À
+    # behaviour="variable_scepticism"
+    # method="ratio"
+    # #######################
+    # labels=["0 lie angle\nbinormal noise","0 lie angle\nnon b. noise\naverage saboteurs","0 lie angle\nnon b. noise\nperfect saboteurs"]
     
-    filenames=["25rk_np_05rt.csv","25ww_np_0r_avg002.csv"]#,"25s_np_0r_perf002.csv"]
-    title=f"{behaviour} behaviour\n25 honests, no penalisation\n different noise models, low level"
+    # filenames=["25rs_np_allavg05_ratiow_0r.csv","25rs_np_allavg05_ratiow_0r_002sd_avg.csv","25rs_np_allavg05_ratiow_0r_002sd_perf.csv"]
+    # title=f"{behaviour}({method} comparison) behaviour\n25 honests, no penalisation\n different noise models, low level"
 
-    # title=f"{behaviour} behaviour\n25 honests, penalisation\n different noise models, low level"
-    # filenames=["25rk_p_05rt.csv","25rk_p_05rt_002sd.csv"]#,"25s_p_0r_perf002.csv"]
+    # title=f"{behaviour}({method} comparison) behaviour\n25 honests, penalisation\n different noise models, low level"
+    # filenames=["25rs_p_allavg05_ratiow_0r.csv","25rs_p_allavg05_ratiow_0r_002sd_avg.csv","25rs_p_allavg05_ratiow_0r_002sd_perf.csv"]
 
-    # title=f"{behaviour} behaviour\n25 honests, no penalisation\n different noise models, standard level"
-    # filenames=["25ww_np_0r.csv","25ww_np_0r_avg005.csv"]#,"25s_np_0r_perf005.csv"]
+    # title=f"{behaviour}({method} comparison) behaviour\n25 honests, no penalisation\n different noise models, standard level"
+    # filenames=["25rs_np_allavg05_ratiow_0r.csv","25rs_np_allavg05_ratiow_0r_005sd_avg.csv","25rs_np_allavg05_ratiow_0r_005sd_perf.csv"]
 
-    # title=f"{behaviour} behaviour\n25 honests, penalisation\n different noise models, standard level"
-    # filenames=["25rk_p_05rt.csv","25rk_p_05rt_005sd.csv"]#,"25s_p_0r_perf005.csv"]
+    # title=f"{behaviour}({method} comparison) behaviour\n25 honests, penalisation\n different noise models, standard level"
+    # filenames=["25rs_p_allavg05_ratiow_0r.csv","25rs_p_allavg05_ratiow_0r_005sd_avg.csv","25rs_p_allavg05_ratiow_0r_005sd_perf.csv"]
 
     ########################
     # labels=["0 lie angle\nbinormal noise","90 lie angle\nnon b. noise\naverage saboteurs","90 lie angle\nnon b. noise\nperfect saboteurs"]
     
-    # filenames=["25ww_np_0r.csv","22ww_np_90r_avg002.csv"]#,"22s_np_90r_perf002.csv"]
-    # title=f"{behaviour} behaviour\n22 honests, no penalisation\n different noise models, low level\n 3 saboteurs, ids:{22,23,24}"
+    # filenames=["22rs_np_allavg08_ratiow_90r.csv","22rs_np_allavg08_ratiow_90r_002sd_avg.csv","22rs_np_allavg08_ratiow_90r_002sd_perf.csv"]
+    # title=f"{behaviour}({method} comparison) behaviour\n22 honests, no penalisation\n different noise models, low level\n 3 saboteurs, ids:{22,23,24}"
 
-    # title=f"{behaviour} behaviour\n22 honests, penalisation\n different noise models, low level\n 3 saboteurs, ids:{22,23,24}"
-    # filenames=["25tw_p_allavg08.csv","22tw_p_allavg08_90r_002avg.csv","22tw_p_allavg08_90r_002perf.csv"]
+    # title=f"{behaviour}({method} comparison) behaviour\n22 honests, penalisation\n different noise models, low level\n 3 saboteurs, ids:{22,23,24}"
+    # filenames=["22rs_p_allavg08_ratiow_90r.csv","22rs_p_allavg08_ratiow_90r_002sd_avg.csv","22rs_p_allavg08_ratiow_90r_002sd_perf.csv"]
 
-    # title=f"{behaviour} behaviour\n22 honests, no penalisation\n different noise models, standard level\n 3 saboteurs, ids:{22,23,24}"
-    # filenames=["25ww_np_0r.csv","22ww_np_90r_avg005.csv"]#,"22s_np_90r_perf005.csv"]
+    # title=f"{behaviour}({method} comparison) behaviour\n22 honests, no penalisation\n different noise models, standard level\n 3 saboteurs, ids:{22,23,24}"
+    # filenames=["22rs_np_allavg08_ratiow_90r.csv","22rs_np_allavg08_ratiow_90r_005sd_avg.csv","22rs_np_allavg08_ratiow_90r_005sd_perf.csv"]
 
-    # title=f"{behaviour} behaviour\n22 honests, penalisation\n different noise models, standard level\n 3 saboteurs, ids:{22,23,24}"
-    # filenames=["25rk_p_05rt.csv","22rk_p_05rt_005sd_avg.csv","22rk_p_05rt_005sd_perf.csv"]
+    # title=f"{behaviour}({method} comparison) behaviour\n22 honests, penalisation\n different noise models, standard level\n 3 saboteurs, ids:{22,23,24}"
+    # filenames=["22rs_p_allavg08_ratiow_90r.csv","22rs_p_allavg08_ratiow_90r_005sd_avg.csv","22rs_p_allavg08_ratiow_90r_005sd_perf.csv"]
 
     # COMPARISON OF SCEPTICAL AND DIFFERENT LIE ANGLES
     # labels=["SCEPTICAL 90 lie angle\nbinormal noise",f"{behaviour}, 0 lie angle\nbinormal noise",f"{behaviour}, 90 lie angle\nbinormal noise"]
@@ -1942,7 +1983,13 @@ if __name__ == '__main__':
     # metric="items_collected"
     # filenames=["../data/sceptical/","25tw_p_allavg.csv","22tw_p_allavg_90r.csv"]
     # filenames=[data_folder+metric+"/"+filename for filename in filenames[1:]]
+
+    #INNER COMPATISON
+    # labels=["0 lie angle\nbinormal noise","90 lie angle\nbinormal noise"]
+    # title=f"{behaviour}({method} comparison) behaviour\n22 honests, penalisation\n 3 saboteurs, ids:{22,23,24}"
+    # filenames=["25rs_p_allavg05_ratiow_0r.csv","22rs_p_allavg08_ratiow_90r.csv"]
     
+    ###############################################################################################################################################
             
     # metric,mode=parse_args()
     # myboxplots()
@@ -1958,13 +2005,13 @@ if __name__ == '__main__':
     #             metric="items_evolution",
     #             experiments_labels=labels,
     #             title=title,) 
-    noise_vs_items(filenames,
-                    data_folder="",
-                    metric="",
-                    experiments_labels=labels,
-                    title=title,
+    # noise_vs_items(filenames,
+    #                 data_folder=f"../data/{behaviour}/",
+    #                 metric=f"items_collected/{method}",
+    #                 experiments_labels=labels,
+    #                 title=title,
                     
-    )                
+    # )                
 
     # find_best_worst_seeds(filenames=[
                                     
@@ -1974,3 +2021,25 @@ if __name__ == '__main__':
     #                     base_seed=5684436,
     #                     amount_to_find=3,
     #                 )
+    # noise_level(saboteurs_noise="perfect")
+    # noise_level(saboteurs_noise="average")
+
+    filenames=[
+        "",
+        ""
+        "",
+        "",
+        "",
+        "",
+    ]
+    labels=["naive","sceptical","ranking (50%)","weight weighted naive","threshold (.8 average)","variable scepticism"]
+    title="comparison different behaviours"
+    # iterative_boxplot(filenames=filenames,
+    #                 data_folder=f"",
+    #                 metric="items_collected",
+    #                 experiments_labels=labels,
+    #                 title=title,
+    #                 )
+
+    # binormal_noise_sampling()
+    luderic_noise()
