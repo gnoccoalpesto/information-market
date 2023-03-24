@@ -1,0 +1,172 @@
+{
+  "width": WIDTH,
+  "height": HEIGHT,
+  "food": {
+    "x": FOOD_X,
+    "y": FOOD_Y,
+    "radius": FOOD_RADIUS,
+  },
+  "nest": {
+    "x": NEST_X,
+    "y": NEST_Y,
+    "radius": NEST_RADIUS,
+  },
+  "simulation_steps": SIMULATION_STEPS,
+  "simulation_seed": SIMULATION_SEED,
+  "number_runs": NUMBER_RUNS,
+  "visualization": {
+    "activate": VISUALISATION_ACTIVATE,
+    "fps": VISUALISATION_FPS
+  },
+  "random_walk": {
+    "random_walk_factor": RANDOM_WALK_FACTOR,
+    "levi_factor": RANDOM_WALK_LEVI_FACTOR
+  },
+  "agent": {
+    "radius": AGENT_RADIUS,
+    "speed": AGENT_SPEED,
+    "communication_radius": AGENT_COMMUNICATION_RADIUS,
+    "communication_stop_time": AGENT_COMMUNICATION_STOP_TIME,
+    "communication_cooldown": AGENT_COMMUNICATION_COOLDOWN,
+    "binormal_noise_sampling": AGENT_BINORMAL_NOISE_SAMPLING,
+    "noise_sampling_mu": AGENT_NOISE_SAMPLING_MU,
+    "noise_sampling_sigma": AGENT_NOISE_SAMPLING_SIGMA,
+    "noise_sd": AGENT_NOISE_SAMPLING_SIGMA,
+    "dishonest_noise": "AGENT_DISHONEST_NOISE",
+    "fuel_cost": AGENT_FUEL_COST,
+  },
+  "behaviors": [
+    {
+      "class": "NewNaiveBehavior",
+      "population_size": 0,
+      "parameters": {
+      }
+    },
+    {
+      "class": "NewScepticalBehavior",
+      "population_size": 0,
+      "parameters": {
+        "scepticism_threshold": 0.25
+      }
+    },
+    {
+      "class": "WealthWeightedBehavior",
+      "population_size": 0,
+      "parameters": {
+      }
+    },
+    {
+      "class": "ReputationRankingBehavior",
+      "population_size": 0,
+      "parameters": {
+        "ranking_threshold": 0.3
+      }
+    },
+    {
+      "class": "ScepticalReputationBehavior",
+      "population_size": 0,
+      "parameters": {
+        "method":"all_avg",
+        "scaling": 0.5,
+        "base_scepticism":0.25,
+        "weight_method":"exponential"
+      }
+    },
+    {
+      "class": "WealthThresholdBehavior",
+      "population_size": 22,
+      "parameters": {
+        "comparison_method":"all_max",
+        "scaling": 0.5
+      }
+    },
+    {
+      "class": "NewScepticalReputationBehavior",
+      "population_size": 22,
+      "parameters": {
+        "comparison_method":"all_avg",
+        "scaling": 0.5,
+        "scepticism_threshold":0.25,
+        "weight_method":"exponential"
+      }
+    },
+    {
+      "class": "NewSaboteurBehavior",
+      "population_size": 0,
+      "parameters": {
+        "lie_angle": 90
+      }
+    },
+    {
+      "class": "NewScaboteurBehavior",
+      "population_size": 3,
+      "parameters": {
+        "scepticism_threshold": 0.25,
+        "lie_angle": 90
+      }
+    },
+    {
+      "class": "SaboteurScepticalReputationBehavior",
+      "population_size": 0,
+      "parameters": {
+        "rotation_angle": 0,
+        "method":"all_avg",
+        "scaling": 0.5,
+        "base_scepticism":0.25,
+        "weight_method":"exponential"
+      }
+    },
+    {
+      "class": "SaboteurWealthWeightedBehavior",
+      "population_size": 0,
+      "parameters": {
+      }
+    },
+    {
+      "class": "SaboteurReputationRankingBehavior",
+      "population_size": 0,
+      "parameters": {
+        "ranking_threshold": 0.3,
+        "lie_angle": 90
+      }
+    },
+    {
+      "class": "SaboteurWealthThresholdBehavior",
+      "population_size": 22,
+      "parameters": {
+        "comparison_method":"all_max",
+        "scaling": 0.5
+      }
+    },
+    {
+      "class": "NewSaboteurScepticalReputationBehavior",
+      "population_size": 0,
+      "parameters": {
+        "comparison_method":"all_avg",
+        "scaling": 0.5,
+        "scepticism_threshold":0.25,
+        "weight_method":"exponential"
+      }
+    }
+  ],
+  "payment_system": {
+    "class": "PAYMENT_SYSTEM_CLASS",
+    "initial_reward": PAYMENT_SYSTEM_INITIAL_REWARD,
+    "parameters": {
+      "information_share": PAYMENT_SYSTEM_INFORAMTION_SHARE
+    }
+  },
+  "market": {
+    "class": "MARKET_CLASS",
+    "parameters": {
+      "reward": MARKET_REWARD,
+    }
+  },
+  "data_collection": {
+    "output_directory": "DATA_OUTPUT_DIRECTORY",
+    "filename": "DATA_FILENAME",
+    "metrics": ["items_evolution","rewards_evolution","items_collected","rewards"],
+    "precise_recording_interval": DATA_PRECISE_RECORDING_INTERVAL,
+    "transactions_log": DATA_TRANSACTIONS_LOG,
+      }
+}

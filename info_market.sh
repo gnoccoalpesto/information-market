@@ -1,0 +1,221 @@
+#!/bin/bash
+
+PROJECT_HOME="${HOME}/ing/tesi/information-market/"
+CONFIG_DIR="${PROJECT_HOME}config/"
+EXEC_FILE="${PROJECT_HOME}src/info_market.py"
+# PLOT_DIRECTORY="${PROJECT_HOME}/plots/"
+# PYPATH="${PROJECT_HOME}/"
+DATA_DIR="${PROJECT_HOME}data/"
+CONFIG_FILE_TEMPLATE="${CONFIG_DIR}config_template"
+# CONF_FILE_SUMMARY="${DATA_DIR_SUMMARY}summary.config"
+# SUMMARY_TEMPLATE="${PROJECT_HOME}/configuration/configuration.summary.template.config"
+# TEMPLATE_SETTINGS="${PROJECT_HOME}/configuration/configuration.template.config"
+
+
+#GENERAL PARAMETERS ####################################################
+
+#environment
+WIDTH=1200
+HEIGHT=600
+
+#food
+FOOD_X=200
+FOOD_Y=300
+FOOD_RADIUS=50
+
+#nest
+NEST_X=1000
+NEST_Y=300
+NEST_RADIUS=50
+
+#simulation
+SIMULATION_STEPS=15000
+SIMULATION_SEED=5684436
+
+#visualisation
+VISUALISATION_FPS=60
+
+#random walk
+RANDOM_WALK_FACTOR=0.9
+RANDOM_WALK_LEVI_FACTOR=1.4
+
+#agent
+AGENT_RADIUS=8
+AGENT_SPEED=2.5
+AGENT_COMMUNICATION_RADIUS=50
+AGENT_COMMUNICATION_STOP_TIME=0
+AGENT_COMMUNICATION_COOLDOWN=0
+AGENT_FUEL_COST=0
+
+#payment system
+PAYMENT_SYSTEM_INITIAL_REWARD=1
+PAYMENT_SYSTEM_INFORAMTION_SHARE=0.5
+
+#market
+MARKET_CLASS="FixedPriceMarket"
+MARKET_REWARD=1
+
+#data collection
+DATA_PRECISE_RECORDING_INTERVAL=100
+
+
+#EXPERIMENT PARAMS #########################################################################
+
+#simulation
+NUMBER_RUNS=64
+
+#visualisation
+VISUALISATION_ACTIVATE=false
+
+#agent
+AGENT_BINORMAL_NOISE_SAMPLING_LIST=(true)
+AGENT_NOISE_SAMPLING_MU_LIST=(0.05)
+AGENT_NOISE_SAMPLING_SIGMA_LIST=(0.05)
+AGENT_NOISE_SD_LIST=(0.05)
+AGENT_DISHONEST_NOISE_LIST=("perfect")
+
+#behaviours
+BEHAVIORS_LIST=("b1" "b2")
+NUMBER_OF_ROBOTS=25
+HONEST_POPULATION_LIST=(25 22)
+LIE_ANGLES=(0 90)
+#count=$((FIRSTV-SECONDV))
+
+"behaviors": [
+    {
+      "class": "BEHAVIOUR_CLASS",
+      "population_size": 0,
+      "parameters": {
+      }
+    }
+  ]
+
+declare -A BEHAVIORS_PARAMETERS
+	BEHAVIORS_PARAMETERS[b1]={"p1":2,"p2":"a",...}
+	BEHAVIORS_PARAMETERS[b2]={"p1":2,"p2":"a",...}
+
+declare -A BEHAVIOR_NAME
+	BEHAVIOR_NAME[b1]="b1"
+	BEHAVIOR_NAME[b2]="b2"
+
+declare -A SUB_DIR_BEHAVIOR
+	SUB_DIR_BEHAVIOR[b1]="b1/"
+	SUB_DIR_BEHAVIOR[b2]="b2/"
+
+declare -A DATA_FILENAME_ADDITIONAL_INFO
+	DATA_FILENAME_ADDITIONAL_INFO[b1]="add1"
+	DATA_FILENAME_ADDITIONAL_INFO[b2]="add2"
+
+declare -A PAYMENT_SYSTEM_NAME
+	PAYMENT_SYSTEM_NAME[OutlierPenalisationPaymentSystem]="p"
+	PAYMENT_SYSTEM_NAME[DelayedPaymentPaymentSystem]="np"
+
+#payment system
+# PAYMENT_SYSTEM_CLASS=("OutlierPenalisationPaymentSystem")
+# PAYMENT_SYSTEM_CLASS=("DelayedPaymentPaymentSystem")
+PAYMENT_SYSTEM_CLASS_LIST=("OutlierPenalisationPaymentSystem" "DelayedPaymentPaymentSystem")
+
+#data collection
+DATA_TRANSACTIONS_LOG=false
+
+
+#SUMMARY #########################################################################
+
+#Create the summary that will be used for plotting
+# sed -e "s|STANDARD_DEVIATION_VALUES|${DEVIATION_VALUES_SUMMARY}|" \
+# 	-e "s|DIFFICULTY_VALUES|${DIFFICULTY_VALUES_SUMMARY}|" \
+# 	-e "s|NUMBER_OF_OPINIONS|${NUMBER_OF_OPINIONS_LIST}|" \
+# 	-e "s|NUMBER_OF_AGENTS|${NUMBER_OF_AGENTS_SUMMARY}|" \
+# 	-e "s|NUMBER_OF_STEPS|${NUM_STEP}|" \
+# 	-e "s|NUMBER_OF_SIMULATIONS|${NUM_SIMULATION}|" \
+# 	-e "s|COLORS|${COLORS}|" \
+# 	-e "s|COMPOSITION_LIST|${COMPOSITION_LIST}|" \
+# 	-e "s|NUMBER_OF_COLUMNS|${NUMBER_OF_COLUMNS}|" \
+# 	-e "s|NUMBER_OF_ROWS|${NUMBER_OF_ROWS}|" \
+# 	-e "s|PLOT_DIRECTORY|${PLOT_DIRECTORY}|" \
+# 	-e "s|PLOT_SINGLE_RESULTS|${PLOT_SINGLE_RESULTS}|" \
+# 	-e "s|TEST_NAME_LIST|${TEST_NAME_LIST}|" \
+# 		${SUMMARY_TEMPLATE} > ${CONF_FILE_SUMMARY}
+
+
+#CONFIG FILE GENERATION ##	#######################################################################
+
+for AGENT_BINORMAL_NOISE_SAMPLING in ${AGENT_BINORMAL_NOISE_SAMPLING_LIST[*]} ; do
+	for AGENT_NOISE_SAMPLING_MU in ${AGENT_NOISE_SAMPLING_MU_LIST[*]} ; do
+		for AGENT_NOISE_SAMPLING_SIGMA in ${AGENT_NOISE_SAMPLING_SIGMA_LIST[*]} ; do
+			for AGENT_NOISE_SD in ${AGENT_NOISE_SD_LIST[*]} ; do
+				for AGENT_DISHONEST_NOISE in ${AGENT_DISHONEST_NOISE_LIST[*]} ; do
+					for BEHAVIOR in ${BEHAVIORS_LIST[*]} ; do
+					# for BEHAVIORS in ${!BEHAVIORS_PARAMETERS[@]}; do #retrieved as dict keys
+						for HONEST_POPULATION in ${HONEST_POPULATION_LIST[*]} ; do
+							DISHONEST_POPULATION=$((NUMBER_OF_ROBOTS-HONEST_POPULATION))
+							for PAYMENT_SYSTEM_CLASS in ${PAYMENT_SYSTEM_CLASS_LIST[*]} ; do
+								for LIE_ANGLE in ${LIE_ANGLES[*]} ; do
+
+									BEHAVIOR_PARAMS=${BEHAVIORS_PARAMETERS[${BEHAVIOR}]}
+									FILENAME_ADDITIONAL_INFO=${DATA_FILENAME_ADDITIONAL_INFO[${BEHAVIORS}]}
+									SUB_DIR=${SUB_DIR_BEHAVIOR[${BEHAVIOR}]}
+
+									DATA_OUTPUT_DIRECTORY="${DATA_DIR}${SUB_DIR}"
+									CONFIG_OUTPUT_DIRECTORY="${CONFIG_DIR}${SUB_DIR}"
+									FILENAME="${HONEST_POPULATION}${BEHAVIOR_NAME[${BEHAVIOR}]}_${PAYMENT_SYSTEM_NAME[${PAYMENT_SYSTEM_CLASS}]}_${LIE_ANGLE}r_${FILENAME_ADDITIONAL_INFO}"
+									DATA_FILENAME="${FILENAME}_${DATA_FILENAME_ADDITIONAL_INFO[${BEHAVIOR}]}.csv"
+									CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}c_${FILENAME}.json"
+
+									mkdir -p ${CONFIG_OUTPUT_DIRECTORY}
+
+									sed -e "s|WIDTH|${WIDTH}|" \
+										-e "s|HEIGHT|${HEIGHT}|" \
+										-e "s|FOOD_X|${FOOD_X}|" \
+										-e "s|FOOD_Y|${FOOD_Y}|" \
+										-e "s|FOOD_RADIUS|${FOOD_RADIUS}|" \
+										-e "s|NEST_X|${NEST_X}|" \
+										-e "s|NEST_Y|${NEST_Y}|" \
+										-e "s|NEST_RADIUS|${NEST_RADIUS}|" \
+										-e "s|SIMULATION_STEPS|${SIMULATION_STEPS}|" \
+										-e "s|SIMULATION_SEED|${SIMULATION_SEED}|" \
+										-e "s|NUMBER_RUNS|${NUMBER_RUNS}|" \
+										-e "s|VISUALISATION_ACTIVATE|${VISUALISATION_ACTIVATE}|" \
+										-e "s|VISUALISATION_FPS|${VISUALISATION_FPS}|" \
+										-e "s|RANDOM_WALK_FACTOR|${RANDOM_WALK_FACTOR}|" \
+										-e "s|RANDOM_WALK_LEVI_FACTOR|${RANDOM_WALK_LEVI_FACTOR}|" \
+										-e "s|AGENT_RADIUS|${AGENT_RADIUS}|" \
+										-e "s|AGENT_SPEED|${AGENT_SPEED}|" \
+										-e "s|AGENT_COMMUNICATION_RADIUS|${AGENT_COMMUNICATION_RADIUS}|" \
+										-e "s|AGENT_COMMUNICATION_STOP_TIME|${AGENT_COMMUNICATION_STOP_TIME}|" \
+										-e "s|AGENT_COMMUNICATION_COOLDOWN|${AGENT_COMMUNICATION_COOLDOWN}|" \
+										-e "s|AGENT_BINORMAL_NOISE_SAMPLING|${AGENT_BINORMAL_NOISE_SAMPLING}|" \
+										-e "s|AGENT_NOISE_SAMPLING_MU|${AGENT_NOISE_SAMPLING_MU}|" \
+										-e "s|AGENT_NOISE_SAMPLING_SIGMA|${AGENT_NOISE_SAMPLING_SIGMA}|" \
+										-e "s|AGENT_NOISE_SD|${AGENT_NOISE_SD}|" \
+										-e "s|AGENT_DISHONEST_NOISE|${AGENT_DISHONEST_NOISE}|" \
+										-e "s|AGENT_FUEL_COST|${AGENT_FUEL_COST}|" \
+										-e "s|PAYMENT_SYSTEM_CLASS|${PAYMENT_SYSTEM_CLASS}|" \
+										-e "s|PAYMENT_SYSTEM_INITIAL_REWARD|${PAYMENT_SYSTEM_INITIAL_REWARD}|" \
+										-e "s|PAYMENT_SYSTEM_INFORAMTION_SHARE|${PAYMENT_SYSTEM_INFORAMTION_SHARE}|" \
+										-e "s|MARKET_CLASS|${MARKET_CLASS}|" \
+										-e "s|MARKET_REWARD|${MARKET_REWARD}|" \
+										-e "s|DATA_OUTPUT_DIRECTORY|${DATA_OUTPUT_DIRECTORY}|" \
+										-e "s|DATA_FILENAME|${DATA_FILENAME}|" \
+										-e "s|DATA_PRECISE_RECORDING_INTERVAL|${DATA_PRECISE_RECORDING_INTERVAL}|" \
+										-e "s|DATA_TRANSACTIONS_LOG|${DATA_TRANSACTIONS_LOG}|" \
+											${CONFIG_FILE_TEMPLATE} > ${CONFIG_FILENAME}
+
+									# export PYTHONPATH=${PYPATH}
+									# COMMAND="python ${EXEC_FILE} ${CONF_FILE}"
+									# #COMMAND="./run_job.sh ${EXEC_FILE} ${CONF_FILE}"
+									# #COMMAND="sbatch run_job.sh ${EXEC_FILE} ${CONF_FILE}"
+									# echo "${COMMAND}"
+									# while ! ${COMMAND}
+									# do
+									# 	sleep 2
+									# done
+								done
+							done
+						done
+					done
+				done
+			done
+		done
+	done
+done
