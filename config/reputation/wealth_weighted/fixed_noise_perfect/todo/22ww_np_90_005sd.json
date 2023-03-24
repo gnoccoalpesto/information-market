@@ -65,7 +65,7 @@
   },
   "data_collection": {
     "output_directory": "../data/reputation_wealth_weighted/",
-    "filename": "22ww_np_90r_perf005.csv",
+    "filename": "22ww_np_90r_005sd_perf.csv",
     "metrics": ["items_evolution","rewards_evolution","items_collected","rewards"],
     "precise_recording_interval": 100,
     "transactions_log": false

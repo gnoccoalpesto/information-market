@@ -13,7 +13,7 @@
   },
   "simulation_steps": 15000,
   "simulation_seed": 5684436,
-  "number_runs": 64,
+  "number_runs": 32,
   "visualization": {
     "activate": false,
     "fps": 60
@@ -31,7 +31,7 @@
     "binormal_noise_sampling":  false,
     "noise_sampling_mu": 0.05,
     "noise_sampling_sigma": 0.05,
-    "noise_sd": 0.02,
+    "noise_sd": 0.05,
     "dishonest_noise":"perfect",
     "fuel_cost": 0
   },
@@ -57,8 +57,8 @@
     }
   },
   "data_collection": {
-    "output_directory": "../data/naive_linearnoise/",
-    "filename": "25s_np_0r_perf002.csv",
+    "output_directory": "../data/naive/",
+    "filename": "25s_np_0r_005sd_perf.csv",
     "metrics": ["items_evolution","rewards_evolution","items_collected","rewards"],
     "precise_recording_interval": 100,
     "transactions_log": false

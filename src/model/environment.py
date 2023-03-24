@@ -17,8 +17,9 @@ def random_seeder(seed,n=None):
     if seed!="" and seed!="random" and seed is not None:
         random_seed(seed+n if n is not None else seed)
 
-def generate_static_noise_list(n_robots,n_dishonest,
-        dishonest_noise,noise_mu, noise_sigma,coverage_coeff=2.3,random_switch=False):
+def generate_static_noise_list(n_robots,n_dishonest,dishonest_noise,
+                                noise_mu, noise_sigma,coverage_coeff=2.3,
+                                random_switch=False,random_seed=None):
     """
     generates a list of fixed noise to directly assign in the case of
     noise not drawed from a binormal distribution
@@ -37,7 +38,7 @@ def generate_static_noise_list(n_robots,n_dishonest,
         if random_switch:
             if random()<0.5:sampled=-sampled
         return sampled
-    #    
+    #
     if dishonest_noise=="average":
         "eg 6robots, 2 d: 2,3,4,5,6,0,1"
         rounded_n_honests=n_robots//2
@@ -48,13 +49,16 @@ def generate_static_noise_list(n_robots,n_dishonest,
         "eg 6robots, 2 d: 0,1,2,3,4,5,6"
         generation_list=[_ for _ in [_ for _ in range(n_dishonest,n_robots)]+
                                     [_ for _ in range(n_dishonest)]]
-    else: 
-        generation_list=[_ for _ in range(n_robots)]
+    # else: 
+    #     generation_list=[_ for _ in range(n_robots)]
+    noise_mu=noise_sigma/coverage_coeff
+    random_seeder(random_seed)
     return [generate_noise(noise_mu,
                             noise_sigma,
                             coverage_coeff,
                             robot_id,
-                            n_robots) 
+                            n_robots,
+                            random_switch) 
                     for robot_id in generation_list ]
 
 
@@ -71,7 +75,6 @@ class Environment:
                  market_params,
                  simulation_seed=None
                  ):
-        random_seeder(simulation_seed)
         self.population = list()
         self.ROBOTS_AMOUNT=0
         self.width = width
@@ -80,6 +83,7 @@ class Environment:
         self.nest = (nest['x'], nest['y'], nest['radius'])
         self.locations = {Location.FOOD: self.food, Location.NEST: self.nest}
         self.foraging_spawns = self.create_spawn_dicts()
+        self.SIMULATION_SEED=simulation_seed
         self.create_robots(agent_params, behavior_params)
         self.best_bot_id = self.get_best_bot_id()
         self.payment_database = PaymentDB([bot.id for bot in self.population], payment_system_params)
@@ -125,8 +129,12 @@ class Environment:
                                                          self.DISHONEST_AMOUNT,
                                                             agent_params["dishonest_noise"],
                                                             agent_params["noise_sampling_mu"],
-                                                            agent_params["noise_sd"]
+                                                            agent_params["noise_sd"],
+                                                            # coverage_coeff=5,
+                                                            random_switch=True,
+                                                            random_seed=self.SIMULATION_SEED*20
                                                     )
+        random_seeder(self.SIMULATION_SEED)#no need to waste samples if not random_switch             
         for behavior_params in behavior_params:
             for _ in range(behavior_params['population_size']):
                 if not agent_params["binormal_noise_sampling"]:

@@ -10,6 +10,7 @@ import argparse
 
 from controllers.main_controller import MainController, Configuration
 from controllers.view_controller import ViewController
+# import data_analysis
 
 
 VERBOSE:bool = False
@@ -76,6 +77,15 @@ def main():
                 config = Configuration(config_file=p)
                 if config.value_of("visualization")['activate']:
                     main_controller = MainController(config)
+                    # data_analysis.noise_level(
+                    #                             main_controller.environment.ROBOTS_AMOUNT,
+                    #                             main_controller.environment.DISHONEST_AMOUNT,
+                    #                             config.value_of("agent")['noise_sampling_mu'],
+                    #                             config.value_of("agent")['noise_sd'],
+                    #                             "average",
+                    #                             random_switch=True,
+                    #                             random_seed=main_controller.environment.SIMULATION_SEED,
+                    #                         )
                     view_controller = ViewController(main_controller,
                                                         config.value_of("width"),
                                                         config.value_of("height"),

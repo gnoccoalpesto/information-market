@@ -273,21 +273,26 @@ def noise_level(
                 noise_average=0.05,
                 noise_std=0.05,
                 saboteurs_noise="", # binormal:"", "average", "perfect"
-                coverage_coeff=2.3
+                coverage_coeff=2.3,
+                random_switch=False,
+                random_seed=None
             ):
-    noise_list=generate_static_noise_list(number_agents, number_saboteurs, saboteurs_noise, noise_average, noise_std, coverage_coeff)
+    noise_list=generate_static_noise_list(number_agents, number_saboteurs, saboteurs_noise,
+                                         noise_average, noise_std, coverage_coeff,random_switch,random_seed)
     # img=plt.figure()
-    img, ax = plt.subplots()
+    fig, ax = plt.subplots()
+    fig.set_size_inches(8,6)
     plt.bar(range(len(noise_list)), noise_list)
     plt.xticks(range(len(noise_list)))
-    
     # ax.tick_params(labelrotation=45)
     plt.xlabel("agent id")
     plt.ylabel("noise level")
     plt.xticks(rotation=45) 
     plt.suptitle(f"fixed noise levels for each agent,\n {number_saboteurs} saboteurs (ids: {[i for i in range(number_agents-number_saboteurs,number_agents)]}),"
     f" with {saboteurs_noise} noise level\n {'standard' if noise_std==.05 else 'low'} noise standard deviation")
+    # plt.ion()
     plt.show()
+    # plt.pause(0.001)
 
 
 def noise_vs_items(
@@ -2021,8 +2026,6 @@ if __name__ == '__main__':
     #                     base_seed=5684436,
     #                     amount_to_find=3,
     #                 )
-    # noise_level(saboteurs_noise="perfect")
-    # noise_level(saboteurs_noise="average")
 
     filenames=[
         "",
@@ -2042,4 +2045,6 @@ if __name__ == '__main__':
     #                 )
 
     # binormal_noise_sampling()
-    luderic_noise()
+    # luderic_noise()
+    noise_level(saboteurs_noise="average",random_switch=True,random_seed=5684436*20)
+    noise_level(saboteurs_noise="perfect",random_switch=True,random_seed=5684436*20)

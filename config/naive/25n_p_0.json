@@ -13,7 +13,7 @@
   },
   "simulation_steps": 15000,
   "simulation_seed": 5684436,
-  "number_runs": 64,
+  "number_runs": 32,
   "visualization": {
     "activate": false,
     "fps": 60

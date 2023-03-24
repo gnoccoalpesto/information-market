@@ -15,7 +15,7 @@
   "simulation_seed": 5684436,
   "number_runs": 64,
   "visualization": {
-    "activate": false,
+    "activate": true,
     "fps": 60
   },
   "random_walk": {
@@ -28,14 +28,20 @@
     "communication_radius": 50,
     "communication_stop_time": 0,
     "communication_cooldown": 0,
-    "binormal_noise_sampling": true,
+    "binormal_noise_sampling": false,
     "noise_sampling_mu": 0.0,
     "noise_sampling_sigma": 0.05,
     "noise_sd": 0.02,
-    "dishonest_noise": "perfect",
+    "dishonest_noise": "average",
     "fuel_cost": 0
   },
   "behaviors": [
+    {
+      "class": "NaiveBehavior",
+      "population_size": 22,
+      "parameters": {
+      }
+    },
     {
       "class": "NewNaiveBehavior",
       "population_size": 0,
@@ -74,7 +80,7 @@
     },
     {
       "class": "WealthThresholdBehavior",
-      "population_size": 22,
+      "population_size": 0,
       "parameters": {
         "comparison_method":"all_max",
         "scaling": 0.5
@@ -82,7 +88,7 @@
     },
     {
       "class": "NewScepticalReputationBehavior",
-      "population_size": 22,
+      "population_size": 0,
       "parameters": {
         "comparison_method":"all_avg",
         "scaling": 0.5,
@@ -132,7 +138,7 @@
     },
     {
       "class": "SaboteurWealthThresholdBehavior",
-      "population_size": 22,
+      "population_size": 0,
       "parameters": {
         "comparison_method":"all_max",
         "scaling": 0.5

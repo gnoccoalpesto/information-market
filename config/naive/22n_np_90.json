@@ -13,9 +13,9 @@
   },
   "simulation_steps": 15000,
   "simulation_seed": 5684436,
-  "number_runs": 64,
+  "number_runs": 32,
   "visualization": {
-    "activate": true,
+    "activate": false,
     "fps": 60
   },
   "random_walk": {
@@ -52,14 +52,14 @@
 
     {
       "class": "SaboteurBehavior",
-      "population_size": 0,
+      "population_size": 3,
       "parameters": {
-        "rotation_angle": 0
+        "rotation_angle": 90
       }
     },
     {
       "class": "ScaboteurBehavior",
-      "population_size": 3,
+      "population_size": 0,
       "parameters": {
         "rotation_angle": 90,
         "threshold": 0.25
