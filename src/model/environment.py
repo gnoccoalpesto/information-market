@@ -51,6 +51,7 @@ def generate_static_noise_list(n_robots,n_dishonest,dishonest_noise,
                                     [_ for _ in range(n_dishonest)]]
     # else: 
     #     generation_list=[_ for _ in range(n_robots)]
+    # sample_mu=noise_mu
     noise_mu=noise_sigma/coverage_coeff
     random_seeder(random_seed)
     return [generate_noise(noise_mu,
@@ -59,7 +60,7 @@ def generate_static_noise_list(n_robots,n_dishonest,dishonest_noise,
                             robot_id,
                             n_robots,
                             random_switch) 
-                    for robot_id in generation_list ]
+                for robot_id in generation_list ]
 
 
 class Environment:

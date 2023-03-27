@@ -25,10 +25,23 @@ SIMULATOR=======================================================
 --seed once, in environment
 --increses by the number of a particular run, starting from a based
 
+-pass single config files and/or single folders, will read all files
+--will ignore files in subfolders
+--will stop at the first one having visual output
+--error if none of the above is passed
 
+-branch working on MAJORANA
+--gui removed
 
-========
-RESULTS=========================================================
+-DOUBLE MODE OF NOISE ASSIGNATION----------------OKOKOKOKOKOK
+--drawing from a binormal distribution
+--fixed, increasing with robot_id/ROBOT_AMOUNT
+---perfect dishonests
+---average dishonests
+--initialization respects the classical order, where dishonests have
+   the largest ids (conserves spawn position for a given seed)
+============
+PENALISATION=========================================================
 
 -STATISTICAL TESTS TO VERYFY 24vs25, w vs w.o-------OKOKOKOKOKOK
 ---->>>BOOK REFERENCE probability-random-variables-and-stochastic-processes--papoulis--pillai--2002
@@ -66,6 +79,12 @@ if not pvalue < threshld: can't reject H0 -> DEPENDENT
 ---also all OK for ANOVA
 
 
+--NAIVES AND SKEPTICALS WITH FIXED NOISE
+---WITH AND WITHOUT PENALISATION
+---FOR PERFECT OR AVERAGE DISHONESTS
+
+
+
 -PLOTS--------------------------------------OKOKOKOKOKOKOKOKOKOKOKK
    "similar" results are clearly visible
 --24vs25
@@ -79,49 +98,6 @@ if not pvalue < threshld: can't reject H0 -> DEPENDENT
 --- 25s np/p        :dissimilar
 --- 24s np/p        :dissimilar
 --24n w w.o, 24s w w.o  :full comparison
-
-{{ NOTE: reading the items_list in evolution
-row example: 0,0,"[0 0 0 ...]"
-
-firts approach
-df=pd.read_csv(FILENAME)#1
-df=pd.read_csv(FILENAME,converters={"items_list":pd.eval})#2
-labels=df.columns.to_list()
-selected_runs=df[labels[0]].unique()
-run_data=[]
-for run in selected_runs:
-            run_pen_data=[]
-   #1...
-            run_pen_df=pen_df.loc[lambda df: df[labels[0]] == run]
-            steps=run_pen_df[labels[1]].unique()
-            for step in steps:
-                step_df=run_pen_df.loc[lambda df: df[labels[1]] == step].iloc[:,-1]
-                step_df=np.asarray([float(_) for _ in step_df.values[0][1:-1].split(", ")])
-                run_pen_data.append(np.sum(step_df))
-            run_data.append(run_pen_data)  
-        data_df=pd.DataFrame(data=np.array(run_data),
-                            columns=steps,
-                            index=selected_runs)
-        data_df=data_df.transpose()
-        data_df.index.name=labels[1]
-        data_df.columns.name=labels[0]
-   #...1
-            
-   #2...
-            run_pen_df=pen_df.loc[lambda df: df[labels[0]] == run].iloc[:,-1].to_numpy()
-            for step in range(len(run_pen_df)):
-                step_df=np.sum(run_pen_df[step])
-                run_pen_data.append(step_df)
-            run_data.extend(run_pen_data)#could also just extend run_data
-        pen_df=pd.concat([pen_df,pd.DataFrame(run_data, columns=['items_sum'])],axis=1)
-        runs_np=pen_df[labels[0]]#.to_numpy()
-        ticks_np=pen_df[labels[1]]#.to_numpy()
-        sums_np=pen_df['items_sum']#.to_numpy()
-        run_labels=['run'+str(run) for run in runs_np]
-   #...2
-    
-
-}}
 
 
 -STABLE PART OF EXPERIMENT (considered steps 7500-15000)--OKOKOKOK
@@ -146,17 +122,46 @@ for run in selected_runs:
 ----same as poor on nopen
 ----IMPROVEMENT FOR PEN
 
--TRANSITORY INITIAL PART OF EXPERIMENT (considered steps 0-7500)
-
-
-
 ------------> APPARENTLY INITIAL MONEY IS THE ISSUE
+
 
 --STACKING AMOUNT
 ---confirms above
 
+
+=========
+BEHAVIOR=========================================================
+
+-NEW BEH TEMPLATE
+--tests OK
+--FASTER THAN MY PREVIOUS BEHAVIOURS
+
+
 ==========
 REPUTATION======================================================
+
+-WEALTH AS REPUTATION:
+
+--STATIC THRESHOLD
+---tested 30%,50%,80%,110%,130%,160% of initial wealth
+---AWFUL results with penalisation
+---BAD results without penalisation
+
+--DYNAMIC THRESHOLD
+--- LOCAL INFO: AWFUL
+--->remember that EACH agent has a copy of blockchain (hence, not slower adn safer)
+
+--- GLOBAL INFO:
+----REALLY GOOD performance using .5-1.1 *avg_wealth
+----WORSE with max, AWFUL min
+---still SOME RUNS ARE REALLY BAD
+
+--WEATLH WEIGHTED NAIVE:
+---NEW wealth weighted STRATEGY
+
+--RANKING REPUTATION:
+---based on threshold of ranking wrt max colelcted items
+
 
 
 

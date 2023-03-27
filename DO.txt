@@ -13,52 +13,147 @@ ___  ___        _    ___
 =========
 SIMULATOR=======================================================
 
--NAME GENERATOR
+- FIX wrong INIT OF BEHAVIOURS, causing some to have DEFAULT
 
--info_market.py argparse
+-NEW DATA ON BCHAIN:
+->EVERY DATA IS NOW TRACKED, NOT POSSIBLE TO LIE ON AGE,...
+--AGE OF WALLET
+--AGE OF LOCATIONS
+--...
+--->NEED TO USE A DIFFERENT METHOD FOR AGE: DATE
+---STILL, LOCATIONS VALUES ARE STORED LOCALLY (NON VISIBLE TO BCHAIN)
+---more data was it more secure to deal with an agent
+
+(SYNCH WITH SOME BCHAIN CLOCK)
+
+#   #   #   #   #   #
+
+-CLEAN FILENAME READING (REMOVE CONFIGS=[])
+--RUN DIRECTLY
 
 
-========
-RESULTS=========================================================
+-SIMULATION STATISTICS WINDOW
 
 
--REFACTOR DATA VISUALIZATION:
---parametric fun for creating the dataset/vector of data to analse
+-CONFIG OVERRIDE with ARGPARSE
+--visual sim
+--output folder
+--transactions_log
+?-how the -X flags works with argv?
 
 
--GAP WITHvsWITHOUT ----------------------------------
---STABLE: items throughput (items/tick==slope)
---TRANSITORY: number of SOLD MESSAGES (at the beginning), enough?
----use transactions logs to compute the distribution of sold messages wrt steps
+-AUTO NAME GENERATOR
+--MORE OPTIONS: DICT FOR ALL POSSIBLE COMBINATION
+--INCREMENTAL NAME GENERATION: if "+" in param name->add before
+---ADD IN README RESTRICTED SYMBOL
 
 
--GENERALLY:
+
+
+=============
+DATA ANALYSIS=======================================================
+
+-plot WEALTH vs NOISE OF EACH ROBOTS
+
+-extract seeds of BEST/WORSE X runs from results and show thems
+    with GUI
+
+#   #   #   #   #   #
+
+-ITERATIVE BOX PLOTS
+--instead of recursive DataFrama, 
+    COULD TRY DataFrame(list()), RECURSIVE LIST
+
+-CORRELATION SYMBOL
 --add a symbol to indicate statistical test between compared make_boxplots
-https://www.graphpad.com/support/faq/what-is-the-meaning-of--or--or--in-reports-of-statistical-significance-from-prism-or-instat/
+Symbol      Meaning
+ns          P > 0.05 (not significant)
+*           P ≤ 0.05
+**          P ≤ 0.01
+***         P ≤ 0.001
+****        P ≤ 0.0001 (For the last two choices only)
+---easy: in x_label
+---best: above the boxplot
 
+
+-FASTER ANALYSIS OF ITEMS LISTS:
+--could select all last elements for each run using iloc on the specific label
+-->JUST USE THE ITEMS_COLLECTED FILE
+
+
+-TEST: 
+--SHORTER boxplot PAIRING
+---HOW CAN I ADD LABELS WITHOUT EXPLICITLY PASSING FIELD NAME?
+list1 = pd.DataFrame(list1).assign(n_agents=labels[0])#do i need list1.to_numpy().flatten()?
+list2 = pd.DataFrame(list2).assign(n_agents=labels[1])#<- how to remove n_agents=?
+data=pd.concat([list1,list2])
+---should melt be used? data_final=pd.melt(data_final, id_vars=, value_vars=)
+
+--ITEMS LIST PARSING for shapes "[1, 2, ...]"
+    run_data=[]; run_x=[]; run_labels=[]
+    for run in selected_runs:
+        run_pen_data=[]
+        run_pen_df=pen_df.loc[lambda df: df[labels[0]] == run]
+        steps=run_pen_df[labels[1]].unique()
+        for step in steps:
+            step_df=run_pen_df.loc[lambda df: df[labels[1]] == step].iloc[:,-1]
+            step_df=np.asarray([float(_) for _ in step_df.values[0][1:-1].split(", ")])
+            run_pen_data.append(np.sum(step_df))
+        run_data=np.concatenate([run_data,run_pen_data])
+        run_x=np.concatenate([run_x,np.asarray([int(_) for _ in steps])])
+        run_labels=run_labels+['nopen' for _ in run_pen_data]
+    sns.boxplot(run_data)
 
 
 ==========
 REPUTATION======================================================
-
--read WEALTH
-
--create new BEHAVIOR
-
-
-{{
+{{{{{
 SKEPTICISM: AGENT-WISE protection
 
 REPUTATION: SYSTEM-WISE protection
 --could select from a Prob.distrib of a number of observations
-}}
+---wealth is a centralized system (on the blockchain); other?
+}}}}}
 
--TEST WEALTH AS REPUTATION
---wealth is a centralized system (on the blockchain)
----could try other centralized systems
---TEST (static population)
----varying threshold (teta) function of reputation
----no threshold
+
+-REPUTATION: WEALTH
+
+--FILTER  BASED on SCALED AVERAGE
+---wealth >scaling avg_wealth
+---50%, 60%, 80%
+---or could use AVG-scaledVAR 
+
+--FILTER on LAST 10 REDISTRIBUTIONS OF WEALTH -> SLOPE
+---remember to IGNORE STACKING
+---metrics could be INCOME-STACKING>=<0
+
+--VARIABLE SKEPTICISM: TETA
+---weighted on REPUTATION
+---the POORER-> NARROWER THRESHOLD (smaller)
+
+--VARIABLE SKEPTICISM: WAITING TIME
+---age of info used in COMBINING STRATEGY
+--> combine with WEALTH
+
+
+
+#   #   #   #
+--AGE of ROBOT: the OLDER, THE HARDER
+---avoids penalisation for NEWCOMERS, when system is well established already
+
+--VARYING BEHAVIOUR
+---start as SCEPTICAL
+---change in STABLE PART
+--->bencharmk for stable PART
+
+--use both LOCAL and GLOBAL info
+---compare the wealth across the two neighbourhoods
+
+
+--DYNAMIC THRESHOLD w WEALTH
+--varying(increasing) with time
+
+
 
 -local info/gossip? (to reduce data on blockchain)
 --WHAT TO DO WITH NEWCOMERS? maybe use a more decentralid approach
@@ -93,3 +188,15 @@ PATH PLANNING FOR COMPLEX ENVIRONMENTS===========================
 !as for now is simple vectorial start-> end
 -introduce waypoint navigation
 -?how to take into account and recover from errors
+
+
+
+=============
+PENALISATION=========================================================
+
+-GAP WITHvsWITHOUT ----------------------------------
+--STABLE: items throughput (items/tick==slope)
+--TRANSITORY: number of SOLD MESSAGES (at the beginning), enough?
+---use transactions logs to compute the distribution of sold messages wrt steps
+
+

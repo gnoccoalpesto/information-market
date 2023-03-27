@@ -7,13 +7,14 @@ from os.path import join, exists, isfile
 from os import listdir
 from sys import argv
 import argparse
+# from json.decoder import JSONDecodeError
 
 from controllers.main_controller import MainController, Configuration
 from controllers.view_controller import ViewController
 # import data_analysis
 
 
-VERBOSE:bool = False
+# VERBOSE:bool = True
 RECORD_DATA:bool = True
 CONFIG_LOG:bool = True
 
@@ -103,21 +104,28 @@ def main():
             print("##\t"*10+"\nWARNING: data recording is disabled."
                 " Set RECORD_DATA to True to enable it.\n"+"##\t"*10+"\n")
 
-        for i,f in enumerate(filenames):
-            c = Configuration(config_file=f)
-            if CONFIG_LOG: log_config(c,f)   
-            print(f"Running config {i+1}/{len(filenames)}: {f}")   
-            run_processes(c)
-
     except IndexError:
         print("ERROR: no config file specified. Exiting...")
         exit(1)
+        
+    for i,f in enumerate(filenames):
+        c = Configuration(config_file=f)
+        print(f"Running config {i+1}/{len(filenames)}: {f}")
+        if CONFIG_LOG: log_config(c,f)   
+        try:   
+            run_processes(c)
+        except Exception as e:
+        #TODO not working with JSONDecodeError
+            with open(join(".", "error.log"), "a+") as fe:
+                fe.write(f"{datetime.datetime.now()}, file {f} : \n"+str(e))
+            print(f"ERROR: {e}")
+            continue
 
         
 def run_processes(config: Configuration):
     nb_runs = config.value_of("number_runs")
     simulation_seed = config.value_of("simulation_seed")
-    print(f"running {nb_runs} runs with starting simulation seed {simulation_seed if simulation_seed!='' else 'random'}")
+    print(f"running {nb_runs} runs with {'programmed'if simulation_seed!='' and simulation_seed!='random' else 'random'} simulation seed ")
     #TODO efficient way to create filename, check if file exists in the folders of interest, and pass
     #     the incrementing seed to the main controller
     #ISSUES: 1) what if result ofr some metric exists, but not for others?
@@ -125,7 +133,9 @@ def run_processes(config: Configuration):
     start = time.time()
     with Pool() as pool:
         controllers = pool.starmap(run, [(config, i) for i in range(nb_runs)])
-        if RECORD_DATA: record_data(config, controllers)
+        if RECORD_DATA: 
+            record_data(config, controllers)
+            if CONFIG_LOG: log_config(config,generate_filename(config),output_log=True)
     print(f'######\tFinished {nb_runs} runs in {time.time()-start: .02f} seconds.\n')
 
 
@@ -200,12 +210,17 @@ def record_data(config:Configuration, controllers):
         pd.concat(transaction_logs).to_csv(join(output_directory, "transactions", current_filename))
             
 
-def log_config(c,f):
+def log_config(c,f,output_log=False):
     """
     log file of config runs in the selected output folder
     """
     output_directory = c.value_of("data_collection")["output_directory"]
-    log_message=f"{datetime.datetime.now()}: {f}"
+    if not output_log:
+        log_message=f"{datetime.datetime.now()}: {f}"
+    else:
+        log_message=f"OUTPUT FILENAME: {f}"
+    #TODO check FOLDER EXISTS
+    # if not os.path.exists(output_directory):
     Path(output_directory).mkdir(parents=True, exist_ok=True)
     with open(f"{output_directory}config_log.txt", "a+") as f:
         f.write(log_message+"\n")

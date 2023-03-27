@@ -11,11 +11,11 @@
     "y": 300,
     "radius": 50
   },
-  "simulation_steps": 15000,
+  "simulation_steps": 15,
   "simulation_seed": 5684436,
   "number_runs": 64,
   "visualization": {
-    "activate": true,
+    "activate": false,
     "fps": 60
   },
   "random_walk": {
