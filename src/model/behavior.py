@@ -645,14 +645,14 @@ class ReputationTresholdBehaviour(ReputationWealthBehaviour):
 
     @abstractmethod
     #TODO
-    # def get_treshold_value(self, session: CommunicationSession):
-    def get_treshold_value(self):
+    # def get_threshold_value(self, session: CommunicationSession):
+    def get_threshold_value(self):
         pass
 
     def verify_reputation(self,payment_database:PaymentDB, session: CommunicationSession, bot_id):
         # return self.get_reputation_score(session, bot_id) >\
         return self.get_reputation_score(payment_database, bot_id) >\
-                 self.get_treshold_value(payment_database, session)
+                 self.get_threshold_value(payment_database, session)
 
 
 class ReputationStaticThresholdBehavior(ReputationTresholdBehaviour):
@@ -660,7 +660,7 @@ class ReputationStaticThresholdBehavior(ReputationTresholdBehaviour):
         super(ReputationStaticThresholdBehavior, self).__init__()
         self.reputation_threshold=threshold
 
-    def get_treshold_value(self, payment_database:PaymentDB,session: CommunicationSession):
+    def get_threshold_value(self, payment_database:PaymentDB,session: CommunicationSession):
             return self.reputation_threshold
 
 
@@ -677,12 +677,12 @@ class SaboteurReputationStaticThresholdBehavior(ReputationStaticThresholdBehavio
 
 
 class ReputationDynamicThresholdBehavior(ReputationTresholdBehaviour):
-    def __init__(self,method="all_max",scaling=1):
+    def __init__(self,comparison_method="all_max",scaling=1):
         super(ReputationDynamicThresholdBehavior, self).__init__()
-        self.method=method
+        self.comparison_method=comparison_method
         self.scaling=scaling
 
-    def get_treshold_value(self, payment_database:PaymentDB,session: CommunicationSession):
+    def get_threshold_value(self, payment_database:PaymentDB,session: CommunicationSession):
         """
         all_max: selects only above a certain percentage of maximum wealth (wealthiest bots), of all robots
         all_avg:selects only above certain percentage of average wealth, considering all robots
@@ -694,7 +694,7 @@ class ReputationDynamicThresholdBehavior(ReputationTresholdBehaviour):
         neigh_avg: selects only above certain percentage of average wealth, considering neighbors
         neigh_min: selects only above a certain percentage of minimum wealth (poorest bots), of neighbors
         """
-        extension, metric=re.split("_",self.method)
+        extension, metric=re.split("_",self.comparison_method)
         reputation_dict = {"all":{
                                 "max":payment_database.get_highest_reward,
                                  "avg":payment_database.get_average_reward,
@@ -715,8 +715,8 @@ class ReputationDynamicThresholdBehavior(ReputationTresholdBehaviour):
 
 
 class SaboteurReputationDynamicThresholdBehavior(ReputationDynamicThresholdBehavior):
-    def __init__(self, method="all_max",scaling=1,rotation_angle=90):
-        super().__init__()
+    def __init__(self,comparison_method="all_max",scaling=1,rotation_angle=90):
+        super().__init__(comparison_method,scaling)
         self.color = "red"
         self.rotation_angle = rotation_angle
 
@@ -730,11 +730,11 @@ class SaboteurReputationDynamicThresholdBehavior(ReputationDynamicThresholdBehav
 # SKEPTICISM + REPUTATION WITH WEALTH BEHAVIOURS
 
 class ScepticalReputationBehavior(NaiveBehavior):
-    def __init__(self,method="all_avg",scaling=1,base_scepticism=.25,weight_method="linear"):
+    def __init__(self,comparison_method="all_avg",scaling=1,scepticism_threshold=.25,weight_method="linear"):
         super(ScepticalReputationBehavior, self).__init__()
-        self.base_scepticism=base_scepticism
+        self.scepticism_threshold=scepticism_threshold
         self.weight_method=weight_method
-        self.method=method
+        self.comparison_method=comparison_method
         self.scaling=scaling
         self.pending_information = {location: {} for location in Location}
         self.required_information=RequiredInformation.GLOBAL
@@ -764,7 +764,7 @@ class ScepticalReputationBehavior(NaiveBehavior):
 
     def get_skepticism_threshold(self,payment_database:PaymentDB,bot_id):
         reputation_score=self.get_reputation_score(payment_database,bot_id)
-        extension, metric=re.split("_",self.method)
+        extension, metric=re.split("_",self.comparison_method)
 
         reputation_dict = {"all":{
                             "max":payment_database.get_highest_reward,
@@ -776,7 +776,7 @@ class ScepticalReputationBehavior(NaiveBehavior):
             # return self.weighted_sceticism(reputation_score,reputation_dict[extension][metric])
             return self.weight_scepticism(reputation_score,reputation_dict[extension][metric]())
         except KeyError:
-            return self.base_scepticism
+            return self.scepticism_threshold
 
 
     def weight_scepticism(self,reputation_score,metric_score):
@@ -785,18 +785,18 @@ class ScepticalReputationBehavior(NaiveBehavior):
         try:
             if self.weight_method=="linear":
                 if reputation_score>metric_score:
-                    threshold= self.base_scepticism-reputation_score/metric_score
+                    threshold= self.scepticism_threshold-reputation_score/metric_score
                 else:
-                    threshold= self.base_scepticism+reputation_score/metric_score
+                    threshold= self.scepticism_threshold+reputation_score/metric_score
                 return max(0,threshold)
             elif self.weight_method=="ratio":
-                return self.base_scepticism*reputation_score/metric_score
+                return self.scepticism_threshold*reputation_score/metric_score
             elif self.weight_method=="exponential":
-                return self.base_scepticism*(reputation_score/metric_score)**2
+                return self.scepticism_threshold*(reputation_score/metric_score)**2
             elif self.weight_method=="logarithmic":
-                return self.base_scepticism*np.log(reputation_score/metric_score)
+                return self.scepticism_threshold*np.log(reputation_score/metric_score)
         except:
-            return self.base_scepticism
+            return self.scepticism_threshold
 
 
     def buy_info(self, session: CommunicationSession,payment_database:PaymentDB):
@@ -840,8 +840,8 @@ class ScepticalReputationBehavior(NaiveBehavior):
 
 
 class SaboteurScepticalReputationBehavior(ScepticalReputationBehavior):
-    def __init__(self,method="all_avg",scaling=1,base_scepticism=.25,weight_method="logarithmic", rotation_angle=90):
-        super().__init__()
+    def __init__(self,comparison_method="all_avg",scaling=1,scepticism_threshold=.25,weight_method="logarithmic", rotation_angle=90):
+        super().__init__(comparison_method,scaling,scepticism_threshold,weight_method)
         self.color = "red"
         self.rotation_angle = rotation_angle
 
