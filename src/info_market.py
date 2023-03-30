@@ -117,7 +117,7 @@ def main():
         except Exception as e:
         #TODO not working with JSONDecodeError
             with open(join(".", "error.log"), "a+") as fe:
-                fe.write(f"{datetime.datetime.now()}, file {f} : \n"+str(e))
+                fe.write(f"{datetime.datetime.now()}, file {f} : \n"+str(e)+"\n\n")
             print(f"ERROR: {e}")
             continue
 

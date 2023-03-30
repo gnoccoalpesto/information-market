@@ -42,10 +42,8 @@ class Agent:
                  behavior_params,
                  speed,
                  radius,
-                 binormal_noise_sampling,
-                 noise_sampling_mu,
-                 noise_sampling_sigma,
-                 noise_sd,
+                 noise,
+                 noise2,
                  fuel_cost,
                  communication_radius,
                  communication_cooldown,
@@ -69,17 +67,18 @@ class Agent:
         #TODO move this in env, CHECK if correct rand sequence for same spawn
         self.orientation = random() * 360
 
-        if binormal_noise_sampling:
-            self.binormal_noise_sampling = True
+        if noise["class"] == "BimodalNoise":
+            self.bimodal_noise = True
+            noise_sampling_mu = noise["parameters"]["noise_sampling_mu"]
+            noise_sampling_sigma = noise["parameters"]["noise_sampling_sigma"]
             self.noise_mu = gauss(noise_sampling_mu, noise_sampling_sigma)
             if random() >= 0.5:
                 self.noise_mu = -self.noise_mu
-            self.noise_sd = noise_sd
+            self.noise_sd = noise["parameters"]["noise_sd"]
         else:
             gauss(0,0);random()#discard r.n. from the sequence
-            self.binormal_noise_sampling=False
-            self.noise_mu = noise_sampling_mu
-            self.noise_sd = 0
+            self.bimodal_noise=False
+            self.noise_mu = noise["parameters"]["noise_mu"]
 
         self.fuel_cost = fuel_cost
 
@@ -173,13 +172,13 @@ class Agent:
 
     def move(self):
         """
-        if self.binormal_noise_sampling: sample motion angle from a probability distribution
+        if self.bimodal_noise: sample motion angle from a probability distribution
         else: linearly incremented motion angle wrt robot_id_i/max(robot_id_j), starting from mean,
              with slope such that last one has 99% value of a normal distribution with same mean and sd
                
         """
         wanted_movement = rotate(self.dr, self.orientation)
-        if self.binormal_noise_sampling:
+        if self.bimodal_noise:
             noise_angle = gauss(self.noise_mu, self.noise_sd)
         else:
             gauss(0,0)  # discard this r.n.

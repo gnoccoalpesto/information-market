@@ -15,7 +15,7 @@ import scipy.stats as stats
 
 from model.market import exponential_model, logistics_model
 from model.navigation import Location
-from model.environment import generate_static_noise_list
+from model.environment import generate_static_noise_list,generate_static_noise_list
 
 palette = {
     "naive": "tab:blue",
@@ -237,25 +237,35 @@ def noise_level(
                 number_agents=25,
                 number_saboteurs=3,
                 noise_average=0.05,
-                noise_std=0.05,
+                noise_range=0.05,
                 saboteurs_noise="", # bimodal:"", "average", "perfect"
-                coverage_coeff=2.3,
                 random_switch=False,
                 random_seed=None
             ):
     noise_list=generate_static_noise_list(number_agents, number_saboteurs, saboteurs_noise,
-                                         noise_average, noise_std, coverage_coeff,random_switch,random_seed)
+                                         noise_average, noise_range,random_switch,random_seed)
     # img=plt.figure()
     fig, ax = plt.subplots()
-    fig.set_size_inches(8,6)
+    fig.set_size_inches(8,8)
     plt.bar(range(len(noise_list)), noise_list)
     plt.xticks(range(len(noise_list)))
     # ax.tick_params(labelrotation=45)
     plt.xlabel("agent id")
     plt.ylabel("noise level")
-    plt.xticks(rotation=45) 
-    plt.suptitle(f"fixed noise levels for each agent,\n {number_saboteurs} saboteurs (ids: {[i for i in range(number_agents-number_saboteurs,number_agents)]}),"
-    f" with {saboteurs_noise} noise level")
+    plt.xticks(rotation=45)
+    noise_list=abs(np.array(noise_list))
+    values_below005=((0 < noise_list) & (noise_list<= 0.05)).sum()
+    values_between005and01=((0.05 < noise_list) & (noise_list<= 0.1)).sum()
+    values_between01and015=((0.1 < noise_list) & (noise_list<= 0.15)).sum()
+    values_between015and02=((0.15 < noise_list) & (noise_list<= 0.2)).sum()
+    # print("values below 0.05: ",((0 < noise_list) & (noise_list<= 0.05)).sum())
+    # print("values between 0.05 and 0.1: ",((0.05 < noise_list) & (noise_list<= 0.1)).sum())
+    # print("values between 0.1 and 0.15: ",((0.1 < noise_list) & (noise_list<= 0.15)).sum())
+    # print("values between 0.15 and 0.2: ",((0.15 < noise_list) & (noise_list<= 0.2)).sum())
+    plt.suptitle(f"agents' assigned noise distribution mean:{noise_average}, range:{noise_range},\n"
+    f"{number_saboteurs} {saboteurs_noise} noise level saboteurs (ids: {[i for i in range(number_agents-number_saboteurs,number_agents)]})\n"
+    f"values in [0,0.05]: {values_below005}, [0.05,0.1]: {values_between005and01}, [0.1,0.15]: {values_between01and015}, [0.15,0.2]: {values_between015and02}\n"
+    "(original distribution N(0.05,0.05): [0,0.05]: 12, [0.05,0.1]: 9, [0.1,0.15]: 3, [0.15,0.2]: 1)")
     # plt.ion()
     plt.show()
     # plt.pause(0.001)
@@ -2000,5 +2010,5 @@ if __name__ == '__main__':
     #                 title=title,
     #                 )
 
-    noise_level(saboteurs_noise="average",random_switch=True,random_seed=5684436*20)
-    noise_level(saboteurs_noise="perfect",random_switch=True,random_seed=5684436*20)
+    noise_level(saboteurs_noise="average",noise_average=0.051,noise_range=0.14,random_switch=True,random_seed=5684436*20)
+    noise_level(saboteurs_noise="perfect",noise_average=0.051,noise_range=0.14,random_switch=True,random_seed=5684436*20)
