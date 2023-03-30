@@ -18,7 +18,7 @@ def random_seeder(seed,n=None):
         random_seed(seed+n if n is not None else seed)
 
 def generate_static_noise_list(n_robots,n_dishonest,dishonest_noise,
-                                noise_mu, noise_sigma,coverage_coeff=2.3,
+                                noise_mu, noise_range,
                                 random_switch=False,random_seed=None):
     """
     generates a list of fixed noise to directly assign in the case of
@@ -33,38 +33,51 @@ def generate_static_noise_list(n_robots,n_dishonest,dishonest_noise,
     return value is always ordered wrt robots_id, but will have different values
     based on range, and dishonest_noise request
     """
-    def generate_noise(mu, sigma, coverage_coeff, robot_id,total_robots,random_switch):
-        sampled=round(mu+coverage_coeff*sigma*robot_id/total_robots,4)
+    def generate_noise(mu, range, robot_id,total_robots,random_switch):
+        central_id=total_robots//2
+        if robot_id<=central_id:
+            sampled=round(mu-range*(central_id-robot_id)/total_robots,4)
+        else:
+            sampled=round(mu+range*(robot_id-central_id)/total_robots,4)
         if random_switch:
             if random()<0.5:sampled=-sampled
         return sampled
-    #
+    
     if dishonest_noise=="average":
         "eg 6robots, 2 d: 2,3,4,5,6,0,1"
-        rounded_n_honests=n_robots//2
+        rounded_n_honests=n_robots//2-2
         generation_list=[_ for _ in [_ for _ in range(rounded_n_honests)]+
                                     [_ for _ in range(rounded_n_honests+n_dishonest,n_robots)]+
                                     [_ for _ in range(rounded_n_honests,rounded_n_honests+n_dishonest)]]
     elif dishonest_noise=="perfect":
+        #heuristic for perfect saboteur in conditions around nominal
+        ids_negative_value_dict={"0.1":int(200*(0.05-noise_mu)),
+                                "0.15":n_robots//7,
+                                "0.2":n_robots//5}
+        try:    
+            ids_negative_value=ids_negative_value_dict[str(noise_range)]
+        except KeyError:
+            if noise_range>0.1 and noise_range<0.15:
+                ids_negative_value=int((ids_negative_value_dict["0.15"]+ids_negative_value_dict["0.1"])//2)
+            elif noise_range>0.15 and noise_range<0.2:
+                ids_negative_value=int((ids_negative_value_dict["0.2"]+ids_negative_value_dict["0.15"])//2)
+            elif noise_range>0.2:
+                ids_negative_value=n_robots//3
+
         "eg 6robots, 2 d: 0,1,2,3,4,5,6"
-        generation_list=[_ for _ in [_ for _ in range(n_dishonest,n_robots)]+
-                                    [_ for _ in range(n_dishonest)]]
-    # else: 
-    #     generation_list=[_ for _ in range(n_robots)]
-    # sample_mu=noise_mu
-    noise_mu=noise_sigma/coverage_coeff
+        generation_list=[_ for _ in [_ for _ in range(ids_negative_value)]+
+                                    [_ for _ in range(ids_negative_value+n_dishonest,n_robots)]+
+                                    [_ for _ in range(ids_negative_value,ids_negative_value+n_dishonest)]]
     random_seeder(random_seed)
     return [generate_noise(noise_mu,
-                            noise_sigma,
-                            coverage_coeff,
+                            noise_range,
                             robot_id,
                             n_robots,
                             random_switch) 
                 for robot_id in generation_list ]
-
+    
 
 class Environment:
-
     def __init__(self,
                  width,
                  height, 
@@ -120,28 +133,27 @@ class Environment:
 
     def create_robots(self, agent_params, behavior_params):
         robot_id = 0
-
         # if agent_params['binormal_noise_sampling']:
         self.ROBOTS_AMOUNT = np.sum([behavior['population_size'] for behavior in behavior_params])
         self.DISHONEST_AMOUNT = int(np.sum([behavior['population_size'] for behavior in behavior_params
                                      if "teur" in behavior['class']]))#TODO check instead in a list of saboteurs behav
-        if not agent_params["binormal_noise_sampling"]:
-            generated_noise=generate_static_noise_list(self.ROBOTS_AMOUNT,
+        if agent_params["noise"]["class"]=="UniformNoise":
+            generated_fixed_noise=generate_static_noise_list(self.ROBOTS_AMOUNT,
                                                          self.DISHONEST_AMOUNT,
-                                                            agent_params["dishonest_noise"],
-                                                            agent_params["noise_sampling_mu"],
-                                                            agent_params["noise_sd"],
-                                                            # coverage_coeff=5,
+                                                            agent_params["noise"]["parameters"]["dishonest_noise"],
+                                                            agent_params["noise"]["parameters"]["noise_mu"],
+                                                            agent_params["noise"]["parameters"]["noise_range"],
                                                             random_switch=True,
                                                             random_seed=self.SIMULATION_SEED*20
                                                     )
         random_seeder(self.SIMULATION_SEED)#no need to waste samples if not random_switch             
         for behavior_params in behavior_params:
             for _ in range(behavior_params['population_size']):
-                if not agent_params["binormal_noise_sampling"]:
-                    #override with linear noise
-                    agent_params["noise_sampling_mu"] = generated_noise[robot_id]
-                agent_params.pop('dishonest_noise', None)
+
+                if agent_params["noise"]["class"]=="UniformNoise":
+                    #override with correct value for each agent
+                    agent_params["noise"]["parameters"]["noise_mu"] = generated_fixed_noise[robot_id]
+
                 robot_x=randint(agent_params['radius'], self.width - 1 - agent_params['radius'])
                 robot_y=randint(agent_params['radius'], self.height - 1 - agent_params['radius'])
                 robot = Agent(robot_id=robot_id,
