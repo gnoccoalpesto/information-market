@@ -28,10 +28,10 @@
     "communication_radius": AGENT_COMMUNICATION_RADIUS,
     "communication_stop_time": AGENT_COMMUNICATION_STOP_TIME,
     "communication_cooldown": AGENT_COMMUNICATION_COOLDOWN,
-    "noise_assignation": "AGENT_NOISE_ASSIGNATION",
-    "noise_sampling_mu": AGENT_NOISE_SAMPLING_MU,
-    "noise_sampling_sigma": AGENT_NOISE_SAMPLING_SIGMA,
-    "noise_sd": AGENT_NOISE_SAMPLING_SIGMA,
+    "noise": {
+      "class": "AGENT_NOISE_CLASS",
+      "parameters": AGENT_NOISE_PARAMETERS
+    },
     "fuel_cost": AGENT_FUEL_COST
   },
   "behaviors":[
