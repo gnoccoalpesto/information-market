@@ -37,9 +37,19 @@ BEHAVIORS_DICT = {  "n": "NaiveBeahvior",
                     "v": "ScepticalReputationBehavior",
                     "Nv": "NewScepticalReputationBehavior",
                     "t": "WealthThresholdBehavior",
-                    "w": "WealthWeightedBehavior",}
-
-SUB_FOLDERS_DICT={"n": "naive",
+                    "w": "WealthWeightedBehavior",
+                    }
+BEHAVIORS_NAME_DICT = {  "n": "Naive",
+                        "Nn": "Naive",
+                        "s": "Sceptical",
+                        "NS": "Sceptical",
+                        "r": "Reputation Ranking",
+                        "v": "Variable Scepticism",
+                        "Nv": "Variable Scepticism",
+                        "t": "Reputation Threshold",
+                        "w": "Reputation Weighted",
+                    }
+SUB_FOLDERS_DICT={  "n": "naive",
                     "Nn": "new_naive",
                     "s": "sceptical",
                     "NS": "new_sceptical",
@@ -47,22 +57,22 @@ SUB_FOLDERS_DICT={"n": "naive",
                     "v": "variable_scepticism",
                     "Nv": "new_variable_scepticism",
                     "t": "wealth_threshold",
-                    "w": "wealth_weighted",}
-
-PARAMS_NAME_DICT={"st": "scepticims threshold",
-                    "rt": "ranking threshold",
-                    "Cm": "comparison method",
-                    "sc": "scaling",
-                    "Wm": "weight method",
-                    "p": "penalization",
-                    "np": "non penalization",
-                    "lia": "lie angle",
-                    "smu": "bimodal noise sampling mean",
-                    "ssd": "bimodal noise sampling stdev",
-                    "nsd": "bimodal noise stdev",
-                    "nmu": "uniform noise mean",
-                    "nrang": "uniform noise range",
-                    "Sab": "saboteur performance",
+                    "w": "wealth_weighted",
+                    }
+PARAMS_NAME_DICT={  "ST": "scepticims threshold",
+                    "RT": "ranking threshold",
+                    "CM": "comparison method",
+                    "SC": "scaling",
+                    "WM": "weight method",
+                    "P": "penalization",
+                    "NP": "non penalization",
+                    "LIA": "lie angle",
+                    "SMU": "bimodal noise sampling mean",
+                    "SSD": "bimodal noise sampling stdev",
+                    "NSD": "bimodal noise stdev",
+                    "NMU": "uniform noise mean",
+                    "NRANG": "uniform noise range",
+                    "SAB": "saboteur performance",
                 }
 
 
@@ -77,33 +87,9 @@ def check_filename_existence(output_directory,metric,filename):
 
 def generate_filename(config:Configuration,):
     filename = config.value_of("data_collection")["filename"]
-    #TODO INCREMENTAL NAME GENERATION: if "+" in param name->add before
-    # if filename is None or filename == "":# or "+" in filename:
-    #     # if "+" in filename:
-    #     #     prefix=REMOVE + FROM NAME
-    #     n_naive=config.value_of("behaviors")[0]['population_size']
-    #     n_sceptical=config.value_of("behaviors")[1]['population_size']
-    #     n_honest=n_naive+n_sceptical
-    #     n_saboteur=config.value_of("behaviors")[2]['population_size']
-    #     n_scaboteur=config.value_of("behaviors")[3]['population_size']
-    #     n_dishonest=n_saboteur+n_scaboteur
-    #     #arbitrary threshold for the naives
-    #     th_honest= 3000 if n_sceptical==0 and n_honest>0 \
-    #         else config.value_of("behaviors")[1]['parameters']['threshold']
-    #     text_th_honest=str(th_honest).replace(".","").replace(",","")#eg 0.5 -> 05
-    #     lie_angle = config.value_of("behaviors")[3]['parameters']['lie_angle'] if n_scaboteur >0 \
-    #         else config.value_of("behaviors")[2]['parameters']['lie_angle']
-    #     penalization="no" if config.value_of("payment_system")["class"]=="DelayedPaymentPaymentSystem" else ""
-    #     seed=config.value_of("simulation_seed")
-    #     text_seed=f"{seed if seed!='' else 'random'}"
-    #     #TODO rework name convention to include more characteristics
-    #     filename = \
-    #         f"{n_honest}sceptical_{text_th_honest}th_"+\
-    #         f"{n_dishonest}scaboteur_{lie_angle}rotation_"+\
-    #         f"{penalization}penalisation_"+\
-    #         f"{text_seed}Seed.csv"
-    return filename
+    return filename#.split(".csv")[0].replace(".","")+".csv"
 
+    
 ####################################################################################
 
 def main():
