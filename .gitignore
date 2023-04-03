@@ -4,3 +4,6 @@ data/**/*.csv
 TODO.txt
 DO.txt
 DONE.txt
+config/*
+!config/config_template
+!config/new_behaviors.json

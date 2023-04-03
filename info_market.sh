@@ -3,10 +3,12 @@
 PROJECT_HOME="${HOME}/Scrivania/information-market/"
 # PROJECT_HOME="${HOME}/ing/tesi/information-market/"
 CONFIG_DIR="${PROJECT_HOME}config/"
+ASSETS_DIR="${PROJECT_HOME}assets/"
 EXEC_FILE="${PROJECT_HOME}src/info_market.py"
 # PLOT_DIRECTORY="${PROJECT_HOME}/plots/"
 DATA_DIR="${PROJECT_HOME}data/"
-CONFIG_FILE_TEMPLATE="${CONFIG_DIR}config_template"
+CONFIG_FILE_TEMPLATE="${ASSETS_DIR}config_template"
+# CONFIG_FILE_TEMPLATE="${CONFIG_DIR}config_template"
 
 
 #GENERAL PARAMETERS ####################################################
@@ -26,7 +28,8 @@ NEST_Y=300
 NEST_RADIUS=50
 
 #simulation
-SIMULATION_STEPS=15000
+SIMULATION_STEPS=1
+# SIMULATION_STEPS=15000
 SIMULATION_SEED=5684436
 
 #visualisation
@@ -64,7 +67,7 @@ NUMBER_RUNS=32
 #visualisation
 VISUALISATION_ACTIVATE=false
 
-#agent
+#noise
 AGENT_NOISE_ASSIGNATION_LIST=("bimodal" "average" "perfect")
 # RANDOM: "bimodal"; FIXED: "average" "perfect" (saboteur performance)
 # bimodal:
@@ -75,12 +78,6 @@ AGENT_NOISE_SD_LIST=(0.05)
 AGENT_NOISE_MU_LIST=(0.051)
 AGENT_NOISE_RANGE_LIST=(0.1)
 
-#behaviours
-BEHAVIOR_LIST=("n" "s" "r" "v" "Nv" "t" "w")
-NUMBER_OF_ROBOTS=25
-HONEST_POPULATION_LIST=(25 22)
-DISHONEST_LIE_ANGLES=(90)
-
 #payment system
 # PAYMENT_SYSTEM_CLASS=("OutlierPenalisationPaymentSystem")
 # PAYMENT_SYSTEM_CLASS=("DelayedPaymentPaymentSystem")
@@ -89,32 +86,37 @@ PAYMENT_SYSTEM_CLASS_LIST=("OutlierPenalisationPaymentSystem" "DelayedPaymentPay
 #data collection
 DATA_TRANSACTIONS_LOG=false
 
+#robots
+NUMBER_OF_ROBOTS=25
+HONEST_POPULATION_LIST=(25 22)
+DISHONEST_LIE_ANGLES=(90)
 
 # BEHAVIOURS ----------------------------------------------------
-SCEPTICISM_THRESHOLD_LIST=(0.25)
-RANKING_THRESHOLD_LIST=(0.3 0.5 0.7)
-COMPARISON_METHOD_LIST=("all_avg","all_max")
-SCALING_LIST=(0.5 0.3)
-WEIGHT_METHOD_LIST=("ratio" "exponential")
+BEHAVIOR_LIST=("n")
+BEHAVIOR_LIST=("n" "s" "r" "v" "Nv" "t" "w")
 
-# naive: n
+# naive: n ; new naive: Nn ; wealth weighted: w
 # -params:{}
-# -new naive: Nn
-# -params:{}
-# sceptical: s
-# -params:{threshold}
-# new sceptical: Ns
-# -params:{scepticism_threshold}
+
+# sceptical: s ; new sceptical: Ns
+# -params:{threshold} ; {scepticism_threshold}
+sSCEPTICISM_THRESHOLD_LIST=(0.25)
+
 # ranking: r
 # -params:{ranking_threshold}
-# variable scepticism: v
+rRANKING_THRESHOLD_LIST=(0.3 0.5 0.7)
+
+# variable scepticism: v ; new variable scepticism: Nv
 # -params:{comparison_method,scaling,scepticism_threshold,weight_method}
-# new variable scepticism: Nv
-# -params:{comparison_method,scaling,scepticism_threshold,weight_method}
-# wealth weighted: w
-# -params:{}
+vSCEPTICISM_THRESHOLD_LIST=(0.25)
+vCOMPARISON_METHOD_LIST=("all_avg" "all_max")
+vSCALING_LIST=(0.5 0.3)
+vWEIGHT_METHOD_LIST=("ratio" "exponential")
+
 # wealth threshold: t
 # -params:{comparison_method,scaling}
+tCOMPARISON_METHOD_LIST=("all_avg" "all_max")
+tSCALING_LIST=(0.5 0.3)
 
 
 declare -A HONEST_DICTIONARY
@@ -268,13 +270,13 @@ for AGENT_NOISE_ASSIGNATION in ${AGENT_NOISE_ASSIGNATION_LIST[*]} ; do
 							CONFIG_OUTPUT_DIRECTORY="${CONFIG_DIR}${SUB_DIR}"
 							FILENAME_BASE="${HONEST_POPULATION}${BEHAVIOR_INITIALS[${BEHAVIOR}]}_${PAYMENT_SYSTEM_NAME[${PAYMENT_SYSTEM_CLASS}]}_${DISHONEST_LIE_ANGLE}r"
 							FILENAME="${FILENAME_BASE}${FILENAME_ADDITIONAL_INFO}"
-							DATA_FILENAME="${FILENAME}.csv"
+							DATA_FILENAME="${FILENAME}"
 							# CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}${FILENAME}.json"
 							TEMP_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}temp.json"
 
 							mkdir -p ${CONFIG_OUTPUT_DIRECTORY}
 
-							sed -e "s|DATA_FILENAME|${DATA_FILENAME}|" \
+							sed -e "s|DATA_FILENAME|${DATA_FILENAME}.csv|" \
 								-e "s|WIDTH|${WIDTH}|" \
 								-e "s|HEIGHT|${HEIGHT}|" \
 								-e "s|FOOD_X|${FOOD_X}|" \
@@ -326,37 +328,42 @@ for AGENT_NOISE_ASSIGNATION in ${AGENT_NOISE_ASSIGNATION_LIST[*]} ; do
 							
 							# 	BEHAVIOUR PARAMS_SUBSTITUTION
 							if [[ ${BEHAVIOR} == "n" ]] || [[ ${BEHAVIOR} == "Nn" ]] || [[ ${BEHAVIOR} == "w" ]]; then
-								FINAL_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}${DATA_FILENAME}.json"
+								CURRENT_DATA_FILENAME=$( echo ${DATA_FILENAME} | 
+											sed -e "s|[\.]||g" )
+								FINAL_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}${CURRENT_DATA_FILENAME}.json"
 								cp ${TEMP_CONFIG_FILENAME} ${FINAL_CONFIG_FILENAME}
 							else
 								if [[ ${BEHAVIOR} == "s" ]] || [[ ${BEHAVIOR} == "Ns" ]]; then
-									for SCEPTICISM_THRESHOLD in ${SCEPTICISM_THRESHOLD_LIST[*]} ; do
+									for SCEPTICISM_THRESHOLD in ${sSCEPTICISM_THRESHOLD_LIST[*]} ; do
 										CURRENT_DATA_FILENAME=$( echo ${DATA_FILENAME} | 
-													sed -e "s|SCEPTICISM_THRESHOLD|${SCEPTICISM_THRESHOLD}|" )
+													sed -e "s|SCEPTICISM_THRESHOLD|${SCEPTICISM_THRESHOLD}|"  \
+																-e "s|[\.]||g")
 										FINAL_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}${CURRENT_DATA_FILENAME}.json"
 										sed -e "s|SCEPTICISM_THRESHOLD|${SCEPTICISM_THRESHOLD}|" \
 											${TEMP_CONFIG_FILENAME} > ${FINAL_CONFIG_FILENAME}
 									done
 								else
 									if [[ ${BEHAVIOR} == "r" ]]; then
-										for RANKING_THRESHOLD in ${RANKING_THRESHOLD_LIST[*]} ; do
+										for RANKING_THRESHOLD in ${rRANKING_THRESHOLD_LIST[*]} ; do
 											CURRENT_DATA_FILENAME=$( echo ${DATA_FILENAME} | 
-														sed -e "s|RANKING_THRESHOLD|${RANKING_THRESHOLD}|" )
+														sed -e "s|RANKING_THRESHOLD|${RANKING_THRESHOLD}|"  \
+																-e "s|[\.]||g")
 											FINAL_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}${CURRENT_DATA_FILENAME}.json"
 											sed -e "s|RANKING_THRESHOLD|${RANKING_THRESHOLD}|" \
 												${TEMP_CONFIG_FILENAME} > ${FINAL_CONFIG_FILENAME}
 										done
 									else
 										if [[ ${BEHAVIOR} == "v" ]] || [[ ${BEHAVIOR} == "Nv" ]]; then
-											for COMPARISON_METHOD in ${COMPARISON_METHOD_LIST[*]} ; do
-											for SCALING in ${SCALING_LIST[*]} ; do
-											for SCEPTICISM_THRESHOLD in ${SCEPTICISM_THRESHOLD_LIST[*]} ; do
-											for WEIGHT_METHOD in ${WEIGHT_METHOD_LIST[*]} ; do
+											for COMPARISON_METHOD in ${vCOMPARISON_METHOD_LIST[*]} ; do
+											for SCALING in ${vSCALING_LIST[*]} ; do
+											for SCEPTICISM_THRESHOLD in ${vSCEPTICISM_THRESHOLD_LIST[*]} ; do
+											for WEIGHT_METHOD in ${vWEIGHT_METHOD_LIST[*]} ; do
 												CURRENT_DATA_FILENAME=$( echo ${DATA_FILENAME} | 
 															sed -e "s|COMPARISON_METHOD|${COMPARISON_METHOD}|" \
 															-e "s|SCALING|${SCALING}|" \
 															-e "s|SCEPTICISM_THRESHOLD|${SCEPTICISM_THRESHOLD}|" \
-															-e "s|WEIGHT_METHOD|${WEIGHT_METHOD}|" )
+															-e "s|WEIGHT_METHOD|${WEIGHT_METHOD}|" \
+																-e "s|[\.]||g" )
 												FINAL_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}${CURRENT_DATA_FILENAME}.json"
 												sed -e "s|COMPARISON_METHOD|${COMPARISON_METHOD}|" \
 													-e "s|SCALING|${SCALING}|" \
@@ -369,11 +376,12 @@ for AGENT_NOISE_ASSIGNATION in ${AGENT_NOISE_ASSIGNATION_LIST[*]} ; do
 											done
 										else
 											if [[ ${BEHAVIOR} == "t" ]]; then
-												for COMPARISON_METHOD in ${COMPARISON_METHOD_LIST[*]} ; do
-												for SCALING in ${SCALING_LIST[*]} ; do
+												for COMPARISON_METHOD in ${tCOMPARISON_METHOD_LIST[*]} ; do
+												for SCALING in ${tSCALING_LIST[*]} ; do
 													CURRENT_DATA_FILENAME=$( echo ${DATA_FILENAME} | 
 																sed -e "s|COMPARISON_METHOD|${COMPARISON_METHOD}|" \
-																-e "s|SCALING|${SCALING}|" )
+																-e "s|SCALING|${SCALING}|" \
+																-e "s|[\.]||g")
 													FINAL_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}${CURRENT_DATA_FILENAME}.json"
 													sed -e "s|COMPARISON_METHOD|${COMPARISON_METHOD}|" \
 														-e "s|SCALING|${SCALING}|" \
@@ -415,13 +423,13 @@ for AGENT_NOISE_ASSIGNATION in ${AGENT_NOISE_ASSIGNATION_LIST[*]} ; do
 							CONFIG_OUTPUT_DIRECTORY="${CONFIG_DIR}${SUB_DIR}"
 							FILENAME_BASE="${HONEST_POPULATION}${BEHAVIOR_INITIALS[${BEHAVIOR}]}_${PAYMENT_SYSTEM_NAME[${PAYMENT_SYSTEM_CLASS}]}_${DISHONEST_LIE_ANGLE}lia"
 							FILENAME="${FILENAME_BASE}${FILENAME_ADDITIONAL_INFO}${NOISE_FILENAME_ADDITIONAL_INFO[${AGENT_NOISE_ASSIGNATION}]}"
-							DATA_FILENAME="${FILENAME}.csv"
+							DATA_FILENAME="${FILENAME}"
 							# CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}${FILENAME}.json"
 							TEMP_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}temp.json"
 
 							mkdir -p ${CONFIG_OUTPUT_DIRECTORY}
 
-							sed -e "s|DATA_FILENAME|${DATA_FILENAME}|" \
+							sed -e "s|DATA_FILENAME|${DATA_FILENAME}.csv|" \
 								-e "s|WIDTH|${WIDTH}|" \
 								-e "s|HEIGHT|${HEIGHT}|" \
 								-e "s|FOOD_X|${FOOD_X}|" \
@@ -472,37 +480,43 @@ for AGENT_NOISE_ASSIGNATION in ${AGENT_NOISE_ASSIGNATION_LIST[*]} ; do
 							
 							# 	BEHAVIOUR PARAMS_SUBSTITUTION
 							if [[ ${BEHAVIOR} == "n" ]] || [[ ${BEHAVIOR} == "Nn" ]] || [[ ${BEHAVIOR} == "w" ]]; then
-								FINAL_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}${DATA_FILENAME}.json"
+								# FINAL_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}${DATA_FILENAME}.json"
+								CURRENT_DATA_FILENAME=$( echo ${DATA_FILENAME} | 
+											sed -e "s|[\.]||g" )
+								FINAL_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}${CURRENT_DATA_FILENAME}.json"
 								cp ${TEMP_CONFIG_FILENAME} ${FINAL_CONFIG_FILENAME}
 							else
 								if [[ ${BEHAVIOR} == "s" ]] || [[ ${BEHAVIOR} == "Ns" ]]; then
-									for SCEPTICISM_THRESHOLD in ${SCEPTICISM_THRESHOLD_LIST[*]} ; do
+									for SCEPTICISM_THRESHOLD in ${sSCEPTICISM_THRESHOLD_LIST[*]} ; do
 										CURRENT_DATA_FILENAME=$( echo ${DATA_FILENAME} | 
-													sed -e "s|SCEPTICISM_THRESHOLD|${SCEPTICISM_THRESHOLD}|" )
+													sed -e "s|SCEPTICISM_THRESHOLD|${SCEPTICISM_THRESHOLD}|"  \
+																-e "s|[\.]||g")
 										FINAL_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}${CURRENT_DATA_FILENAME}.json"
 										sed -e "s|SCEPTICISM_THRESHOLD|${SCEPTICISM_THRESHOLD}|" \
 											${TEMP_CONFIG_FILENAME} > ${FINAL_CONFIG_FILENAME}
 									done
 								else
 									if [[ ${BEHAVIOR} == "r" ]]; then
-										for RANKING_THRESHOLD in ${RANKING_THRESHOLD_LIST[*]} ; do
+										for RANKING_THRESHOLD in ${rRANKING_THRESHOLD_LIST[*]} ; do
 											CURRENT_DATA_FILENAME=$( echo ${DATA_FILENAME} | 
-														sed -e "s|RANKING_THRESHOLD|${RANKING_THRESHOLD}|" )
+														sed -e "s|RANKING_THRESHOLD|${RANKING_THRESHOLD}|"  \
+																-e "s|[\.]||g")
 											FINAL_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}${CURRENT_DATA_FILENAME}.json"
 											sed -e "s|RANKING_THRESHOLD|${RANKING_THRESHOLD}|" \
 												${TEMP_CONFIG_FILENAME} > ${FINAL_CONFIG_FILENAME}
 										done
 									else
 										if [[ ${BEHAVIOR} == "v" ]] || [[ ${BEHAVIOR} == "Nv" ]]; then
-											for COMPARISON_METHOD in ${COMPARISON_METHOD_LIST[*]} ; do
-											for SCALING in ${SCALING_LIST[*]} ; do
-											for SCEPTICISM_THRESHOLD in ${SCEPTICISM_THRESHOLD_LIST[*]} ; do
-											for WEIGHT_METHOD in ${WEIGHT_METHOD_LIST[*]} ; do
+											for COMPARISON_METHOD in ${vCOMPARISON_METHOD_LIST[*]} ; do
+											for SCALING in ${vSCALING_LIST[*]} ; do
+											for SCEPTICISM_THRESHOLD in ${vSCEPTICISM_THRESHOLD_LIST[*]} ; do
+											for WEIGHT_METHOD in ${vWEIGHT_METHOD_LIST[*]} ; do
 												CURRENT_DATA_FILENAME=$( echo ${DATA_FILENAME} | 
 															sed -e "s|COMPARISON_METHOD|${COMPARISON_METHOD}|" \
 															-e "s|SCALING|${SCALING}|" \
 															-e "s|SCEPTICISM_THRESHOLD|${SCEPTICISM_THRESHOLD}|" \
-															-e "s|WEIGHT_METHOD|${WEIGHT_METHOD}|" )
+															-e "s|WEIGHT_METHOD|${WEIGHT_METHOD}|" \
+																-e "s|[\.]||g" )
 												FINAL_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}${CURRENT_DATA_FILENAME}.json"
 												sed -e "s|COMPARISON_METHOD|${COMPARISON_METHOD}|" \
 													-e "s|SCALING|${SCALING}|" \
@@ -515,11 +529,12 @@ for AGENT_NOISE_ASSIGNATION in ${AGENT_NOISE_ASSIGNATION_LIST[*]} ; do
 											done
 										else
 											if [[ ${BEHAVIOR} == "t" ]]; then
-												for COMPARISON_METHOD in ${COMPARISON_METHOD_LIST[*]} ; do
-												for SCALING in ${SCALING_LIST[*]} ; do
+												for COMPARISON_METHOD in ${tCOMPARISON_METHOD_LIST[*]} ; do
+												for SCALING in ${tSCALING_LIST[*]} ; do
 													CURRENT_DATA_FILENAME=$( echo ${DATA_FILENAME} | 
 																sed -e "s|COMPARISON_METHOD|${COMPARISON_METHOD}|" \
-																-e "s|SCALING|${SCALING}|" )
+																-e "s|SCALING|${SCALING}|" \
+																-e "s|[\.]||g" )
 													FINAL_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}${CURRENT_DATA_FILENAME}.json"
 													sed -e "s|COMPARISON_METHOD|${COMPARISON_METHOD}|" \
 														-e "s|SCALING|${SCALING}|" \
@@ -542,3 +557,16 @@ for AGENT_NOISE_ASSIGNATION in ${AGENT_NOISE_ASSIGNATION_LIST[*]} ; do
 	fi
 
 done
+
+
+
+									# export PYTHONPATH=${PYPATH}
+									# COMMAND="python ${EXEC_FILE} ${CONF_FILE}"
+									# #COMMAND="./run_job.sh ${EXEC_FILE} ${CONF_FILE}"
+									# #COMMAND="sbatch run_job.sh ${EXEC_FILE} ${CONF_FILE}"
+									# echo "${COMMAND}"
+									# while ! ${COMMAND}
+									# do
+									# 	sleep 2
+									# done
+									# COUNT=$((COUNT + 1))
