@@ -1,3 +1,10 @@
-data/**/*.txt
-data/**/*.csv
+data*/**/*.txt
+data*/**/*.csv
+data.*/
+data*
 **/__pycache__/*
+config*/*
+config_*/*
+!config/config_template
+!config/new_behaviors.json
+src/error*

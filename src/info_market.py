@@ -4,7 +4,7 @@ import pandas as pd
 from multiprocessing import Pool
 from pathlib import Path
 from os.path import join, exists, isfile
-from os import listdir
+from os import listdir, system
 from sys import argv
 import argparse
 # from json.decoder import JSONDecodeError
@@ -28,6 +28,42 @@ CONFIG_LOG:bool = True
 #     if args.all:
 #         select_all=True
 #     return select_all
+
+BEHAVIORS_DICT = {  "n": "NaiveBeahvior",
+                    "Nn": "NewNaiveBehavior",
+                    "s": "ScepticalBehavior",
+                    "NS": "NewScepticalBehavior",
+                    "r": "ReputationRankingBehavior",
+                    "v": "ScepticalReputationBehavior",
+                    "Nv": "NewScepticalReputationBehavior",
+                    "t": "WealthThresholdBehavior",
+                    "w": "WealthWeightedBehavior",}
+
+SUB_FOLDERS_DICT={"n": "naive",
+                    "Nn": "new_naive",
+                    "s": "sceptical",
+                    "NS": "new_sceptical",
+                    "r": "ranking",
+                    "v": "variable_scepticism",
+                    "Nv": "new_variable_scepticism",
+                    "t": "wealth_threshold",
+                    "w": "wealth_weighted",}
+
+PARAMS_NAME_DICT={"st": "scepticims threshold",
+                    "rt": "ranking threshold",
+                    "Cm": "comparison method",
+                    "sc": "scaling",
+                    "Wm": "weight method",
+                    "p": "penalization",
+                    "np": "non penalization",
+                    "lia": "lie angle",
+                    "smu": "bimodal noise sampling mean",
+                    "ssd": "bimodal noise sampling stdev",
+                    "nsd": "bimodal noise stdev",
+                    "nmu": "uniform noise mean",
+                    "nrang": "uniform noise range",
+                    "Sab": "saboteur performance",
+                }
 
 
 def check_filename_existence(output_directory,metric,filename):
@@ -55,8 +91,8 @@ def generate_filename(config:Configuration,):
     #     th_honest= 3000 if n_sceptical==0 and n_honest>0 \
     #         else config.value_of("behaviors")[1]['parameters']['threshold']
     #     text_th_honest=str(th_honest).replace(".","").replace(",","")#eg 0.5 -> 05
-    #     lie_angle = config.value_of("behaviors")[3]['parameters']['rotation_angle'] if n_scaboteur >0 \
-    #         else config.value_of("behaviors")[2]['parameters']['rotation_angle']
+    #     lie_angle = config.value_of("behaviors")[3]['parameters']['lie_angle'] if n_scaboteur >0 \
+    #         else config.value_of("behaviors")[2]['parameters']['lie_angle']
     #     penalization="no" if config.value_of("payment_system")["class"]=="DelayedPaymentPaymentSystem" else ""
     #     seed=config.value_of("simulation_seed")
     #     text_seed=f"{seed if seed!='' else 'random'}"
@@ -119,13 +155,15 @@ def main():
             with open(join(".", "error.log"), "a+") as fe:
                 fe.write(f"{datetime.datetime.now()}, file {f} : \n"+str(e)+"\n\n")
             print(f"ERROR: {e}")
+            Path(join(".", "errors_config")).mkdir(parents=True, exist_ok=True)
+            system(f"cp {f} ./errors_config/{f.split('/')[-1]}")
             continue
 
         
 def run_processes(config: Configuration):
     nb_runs = config.value_of("number_runs")
     simulation_seed = config.value_of("simulation_seed")
-    print(f"running {nb_runs} runs with {'programmed'if simulation_seed!='' and simulation_seed!='random' else 'random'} simulation seed ")
+    print(f"### {datetime.datetime.now()} # running {nb_runs} runs with {'programmed'if simulation_seed!='' and simulation_seed!='random' else 'random'} simulation seed ")
     #TODO efficient way to create filename, check if file exists in the folders of interest, and pass
     #     the incrementing seed to the main controller
     #ISSUES: 1) what if result ofr some metric exists, but not for others?
@@ -136,7 +174,7 @@ def run_processes(config: Configuration):
         if RECORD_DATA: 
             record_data(config, controllers)
             if CONFIG_LOG: log_config(config,generate_filename(config),output_log=True)
-    print(f'######\tFinished {nb_runs} runs in {time.time()-start: .02f} seconds.\n')
+    print(f'###### {datetime.datetime.now()}\tFinished {nb_runs} runs in {time.time()-start: .02f} seconds.\n')
 
 
 def run(config:Configuration, i):

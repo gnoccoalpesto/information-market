@@ -28,8 +28,8 @@ class AgentAPI:
 
 
 """
-NOTE: random numbers are discarded in case of non binormal noise drawing to preserve the same sequence
-of the binormal case, for spawn and following requests
+NOTE: random numbers are discarded in case of non bimodal noise drawing to preserve the same sequence
+of the bimodal case, for spawn and following requests
 """
 class Agent:
     colors = {State.EXPLORING: "gray35", State.SEEKING_FOOD: "orange", State.SEEKING_NEST: "green"}
@@ -43,7 +43,6 @@ class Agent:
                  speed,
                  radius,
                  noise,
-                 noise2,
                  fuel_cost,
                  communication_radius,
                  communication_cooldown,

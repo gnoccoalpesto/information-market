@@ -34,7 +34,7 @@ SIMULATOR=======================================================
 --gui removed
 
 -DOUBLE MODE OF NOISE ASSIGNATION----------------OKOKOKOKOKOK
---drawing from a binormal distribution
+--drawing from a bimodal distribution
 --fixed, increasing with robot_id/ROBOT_AMOUNT
 ---perfect dishonests
 ---average dishonests

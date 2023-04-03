@@ -1930,22 +1930,22 @@ if __name__ == '__main__':
     
     title=f"{behaviour} behaviour\n25 honests, no penalisation\n different noise models"
     # title=f"{behaviour}({method} comparison) behaviour\n25 honests, no penalisation\n different noise models"
-    filenames=["25s_np_0r.csv","25s_np_0r_005sd_avg.csv","25s_np_0r_005sd_perf.csv"]
+    filenames=["25s_np_0r.csv","25s_np_0r_0051mea_01rang_avgSab.csv","25s_np_0r_0051mea_01rang_perfSab.csv"]
 
     # title=f"{behaviour} behaviour\n25 honests, penalisation\n different noise models, standard level"
     # # title=f"{behaviour}({method} comparison) behaviour\n25 honests, penalisation\n different noise models, standard level"
-    # filenames=["25s_p_0r.csv","25s_p_0r_005sd_avg.csv","25s_p_0r_005sd_perf.csv"]
+    # filenames=["25s_p_0r.csv","25s_p_0r_0051mea_01rang_avgSab.csv","25s_p_0r_0051mea_01rang_perfSab.csv"]
 
     # # ########################
     # labels=["90 lie angle\nbimodal noise","90 lie angle\nnon b. noise\naverage saboteurs","90 lie angle\nnon b. noise\nperfect saboteurs"]
     
     # # title=f"{behaviour}({method} comparison) behaviour\n22 honests, no penalisation\n different noise models, standard level\n 3 saboteurs, ids:{22,23,24}"
     # title=f"{behaviour} behaviour\n22 honests, no penalisation\n different noise models\n 3 saboteurs, ids:{22,23,24}"
-    # filenames=["22s_np_90r.csv","22s_np_90r_005sd_avg.csv","22s_np_90r_005sd_perf.csv"]
+    # filenames=["22s_np_90r.csv","22s_np_90r_0051mea_01rang_avgSab.csv","22s_np_90r_0051mea_01rang_perfSab.csv"]
 
     # title=f"{behaviour} behaviour\n22 honests, penalisation\n different noise models, standard level\n 3 saboteurs, ids:{22,23,24}"
     # # title=f"{behaviour}({method} comparison) behaviour\n22 honests, penalisation\n different noise models, standard level\n 3 saboteurs, ids:{22,23,24}"
-    # filenames=["22s_p_90r.csv","22s_p_90r_005sd_avg.csv","22s_p_90r_005sd_perf.csv"]
+    # filenames=["22s_p_90r.csv","22s_p_90r_0051mea_01rang_avgSab.csv","22s_p_90r_0051mea_01rang_perfSab.csv"]
 
     # COMPARISON OF SCEPTICAL AND DIFFERENT LIE ANGLES
     # labels=["SCEPTICAL 90 lie angle\nbimodal noise",f"{behaviour}, 0 lie angle\nbimodal noise",f"{behaviour}, 90 lie angle\nbimodal noise"]
@@ -1958,7 +1958,7 @@ if __name__ == '__main__':
     #INNER COMPARISON
     # labels=["0 lie angle\nbimodal noise","90 lie angle\nbimodal noise"]
     # title=f"{behaviour}({method} comparison) behaviour\n22 honests, penalisation\n 3 saboteurs, ids:{22,23,24}"
-    # filenames=["25rs_p_allavg05_ratiow_0r.csv","22rs_p_allavg08_ratiow_90r.csv"]
+    # filenames=["25vs_p_allavg05_ratiow_0r.csv","22vs_p_allavg08_ratiow_90r.csv"]
     
     ###############################################################################################################################################
             
