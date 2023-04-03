@@ -16,6 +16,7 @@ import scipy.stats as stats
 from model.market import exponential_model, logistics_model
 from model.navigation import Location
 from model.environment import generate_static_noise_list,generate_static_noise_list
+from info_market import BEHAVIORS_DICT, BEHAVIORS_NAME_DICT, SUB_FOLDERS_DICT, PARAMS_NAME_DICT
 
 palette = {
     "naive": "tab:blue",
@@ -73,30 +74,65 @@ def parse_args():
     return metric, mode
 
 
-def get_file_config(filename:str):
-    name_honest = re.search('[a-z]+', filename.split("_")[0]).group()
-    name_saboteur = re.search('[a-z]+', filename.split("_")[2]).group()
-    n_honest = int(re.search('[0-9]+', filename.split("_")[0]).group())
-    n_saboteur = int(re.search('[0-9]+', filename.split("_")[2]).group())
-    skepticism=re.search('[0-9]+', filename.split("_")[1]).group()
-    if int(skepticism)>1340:
-        if int(skepticism)>2000:
-            skepticism="naive"
-        else:
-            skepticism="threshold naive"
-    else:
-        if skepticism[0]=="0":
-            skepticism="0."+skepticism[1:]
-        skepticism="th "+skepticism
-    lie_angle=filename.split("_")[3]
-    lie_angle=re.search('[0-9]+', lie_angle).group()+" "+\
-        re.search('[a-z]+', lie_angle).group() \
-        if n_saboteur>0 else "no saboteurs"
-    penalisation=re.search('[a-z,0-9]+', filename.split("_")[4]).group()
-    penalisation= "no pen" if penalisation=="nopenalisation" else "pen"
-    return name_honest, n_honest,name_saboteur,n_saboteur,\
-                skepticism, lie_angle,penalisation
+def get_file_params(filename:str):
+    """
+    filename format:
+    nhonestHONESTBEHAVIOUR_PAYMENTSYSTEM_lieangleLIA_behaviorparams_noiseparams
 
+    HONESTBEHAVIOUR =   "n": "NaiveBeahvior",
+                        "Nn": "NewNaiveBehavior",
+                        "s": "ScepticalBehavior",
+                        "NS": "NewScepticalBehavior",
+                        "r": "ReputationRankingBehavior",
+                        "v": "ScepticalReputationBehavior",
+                        "Nv": "NewScepticalReputationBehavior",
+                        "t": "WealthThresholdBehavior",
+                        "w": "WealthWeightedBehavior",
+
+    PAYMENTSYSTEM =     "NP": "No Penalization",
+                        "P": "Penalization",
+
+    lieangle =          [0, 90]
+
+    behaviorparams =    "n","Nn","w":   {},
+                        "s","Ns":       {"ST": "scepticims threshold"},
+                        "r":            {"RT": "ranking threshold"},
+                        "v","Nv":       {"CM": "comparison method",
+                                        "SC": "scaling",
+                                        "ST": "scepticims threshold",
+                                        "WM": "weight method"},
+                        "t":            {"CM": "comparison method",
+                                        "SC": "scaling"}
+                                            
+    noiseparams =       "bimodal":      {"SMU": "noise sampling mean",
+                                        "SSD": "noise sampling standard deviation",
+                                        "NSD": "noise standard deviation"},
+                        "uniform":      {"NMU": "noise sampling mean",
+                                        "NRANG": "noise range",
+                                        "SAB": "saboteur performance" ={"avg": "average",
+                                                                        "perf": "perfect"}}
+    """
+    filename=filename.split(".json")[0]
+    params=filename.split("_")
+    n_honest=re.search('[0-9]+', params[0]).group()
+    honest_behavior=BEHAVIORS_NAME_DICT["".join(re.findall('[a-zA-Z]+', params[0]))]
+    payment=PARAMS_NAME_DICT[params[1]]
+    lie_angle=re.search('[0-9]+', params[2]).group()
+    behaviour_params_list=params[3:-3]
+    noise_params_list=params[-3:]
+    behaviour_params=""
+    for p in behaviour_params_list:
+        value="".join(re.findall('[0-9a-z]+', p))
+        behaviour_params+=f"{value} {PARAMS_NAME_DICT[''.join(re.findall('[A-Z]+', p))]},"
+    noise_params=""
+    for p in noise_params_list:
+        value="".join(re.findall('[0-9a-z]+', p))
+        noise_params+=f"{value} {PARAMS_NAME_DICT[''.join(re.findall('[A-Z]+', p))]},"
+    behaviour_params=behaviour_params[:-1]
+    noise_params=noise_params[:-1]
+    message=f"{n_honest} {honest_behavior},\n{payment}, lie_angle: {lie_angle},\n{behaviour_params},\n{noise_params}"
+    return n_honest, honest_behavior, payment, lie_angle, behaviour_params, noise_params, message
+        
 
 #------------------------------------------------------------------------------------------------
 #---------------------------------------STATISTICAL TESTS----------------------------------------
@@ -358,7 +394,7 @@ def myboxplots(
     sns.set_style("whitegrid")
     for idx,filename in enumerate(filenames):
         name_honest, n_honest,name_saboteur,n_saboteur,\
-            skepticism, lie_angle,penalisation=get_file_config(filename)
+            skepticism, lie_angle,penalisation=get_file_params(filename)
         # params=f"{n_honest} honests,\n{skepticism},\n {lie_angle},\n {penalisation}"
         # axs[idx].set_xlabel(params)
         filename=f"{data_folder}{compare}/{metric}/{filename}"
@@ -2010,5 +2046,9 @@ if __name__ == '__main__':
     #                 title=title,
     #                 )
 
-    noise_level(saboteurs_noise="average",noise_average=0.051,noise_range=0.14,random_switch=True,random_seed=5684436*20)
-    noise_level(saboteurs_noise="perfect",noise_average=0.051,noise_range=0.14,random_switch=True,random_seed=5684436*20)
+    # noise_level(saboteurs_noise="average",noise_average=0.051,noise_range=0.14,random_switch=True,random_seed=5684436*20)
+    # noise_level(saboteurs_noise="perfect",noise_average=0.051,noise_range=0.14,random_switch=True,random_seed=5684436*20)
+    # filename=["25Nv_P_0LIA_allmaxCM_05SC_025ST_ratioWM_005SMU_005SSD_005NSD.json"]
+    # filename=["25Nv_NP_0LIA_allavgCM_03SC_025ST_ratioWM_0051NMU_01NRANG_avgSAB"]
+    # _,_,_,_,_,_, message=get_file_params(filename[0])
+    # print(message)
