@@ -1,12 +1,12 @@
 from abc import ABC, abstractmethod
 from collections import Counter
-
 import numpy as np
+import pandas as pd
 
 from helpers.utils import InsufficientFundsException
 from model.navigation import Location
-import pandas as pd
 
+#torns off warning when working with on slices of DataFrames
 pd.options.mode.chained_assignment = None
 
 

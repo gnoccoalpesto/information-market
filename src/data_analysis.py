@@ -1963,92 +1963,89 @@ if __name__ == '__main__':
     # method="allmax03"
     # #######################
     labels=["0 lie angle\nbimodal noise","0 lie angle\nnon b. noise\naverage saboteurs","0 lie angle\nnon b. noise\nperfect saboteurs"]
+
     
-    title=f"{behaviour} behaviour\n25 honests, no penalisation\n different noise models"
-    # title=f"{behaviour}({method} comparison) behaviour\n25 honests, no penalisation\n different noise models"
-    filenames=["25s_np_0r.csv","25s_np_0r_0051mea_01rang_avgSab.csv","25s_np_0r_0051mea_01rang_perfSab.csv"]
+#     title=f"{behaviour} behaviour\n25 honests, no penalisation\n different noise models"
+#     # title=f"{behaviour}({method} comparison) behaviour\n25 honests, no penalisation\n different noise models"
+#     filenames=["25s_np_0r.csv","25s_np_0r_0051mea_01rang_avgSab.csv","25s_np_0r_0051mea_01rang_perfSab.csv"]
 
-    # title=f"{behaviour} behaviour\n25 honests, penalisation\n different noise models, standard level"
-    # # title=f"{behaviour}({method} comparison) behaviour\n25 honests, penalisation\n different noise models, standard level"
-    # filenames=["25s_p_0r.csv","25s_p_0r_0051mea_01rang_avgSab.csv","25s_p_0r_0051mea_01rang_perfSab.csv"]
+#     # title=f"{behaviour} behaviour\n25 honests, penalisation\n different noise models, standard level"
+#     # # title=f"{behaviour}({method} comparison) behaviour\n25 honests, penalisation\n different noise models, standard level"
+#     # filenames=["25s_p_0r.csv","25s_p_0r_0051mea_01rang_avgSab.csv","25s_p_0r_0051mea_01rang_perfSab.csv"]
 
-    # # ########################
-    # labels=["90 lie angle\nbimodal noise","90 lie angle\nnon b. noise\naverage saboteurs","90 lie angle\nnon b. noise\nperfect saboteurs"]
+#     # # ########################
+#     # labels=["90 lie angle\nbimodal noise","90 lie angle\nnon b. noise\naverage saboteurs","90 lie angle\nnon b. noise\nperfect saboteurs"]
     
-    # # title=f"{behaviour}({method} comparison) behaviour\n22 honests, no penalisation\n different noise models, standard level\n 3 saboteurs, ids:{22,23,24}"
-    # title=f"{behaviour} behaviour\n22 honests, no penalisation\n different noise models\n 3 saboteurs, ids:{22,23,24}"
-    # filenames=["22s_np_90r.csv","22s_np_90r_0051mea_01rang_avgSab.csv","22s_np_90r_0051mea_01rang_perfSab.csv"]
+#     # # title=f"{behaviour}({method} comparison) behaviour\n22 honests, no penalisation\n different noise models, standard level\n 3 saboteurs, ids:{22,23,24}"
+#     # title=f"{behaviour} behaviour\n22 honests, no penalisation\n different noise models\n 3 saboteurs, ids:{22,23,24}"
+#     # filenames=["22s_np_90r.csv","22s_np_90r_0051mea_01rang_avgSab.csv","22s_np_90r_0051mea_01rang_perfSab.csv"]
 
-    # title=f"{behaviour} behaviour\n22 honests, penalisation\n different noise models, standard level\n 3 saboteurs, ids:{22,23,24}"
-    # # title=f"{behaviour}({method} comparison) behaviour\n22 honests, penalisation\n different noise models, standard level\n 3 saboteurs, ids:{22,23,24}"
-    # filenames=["22s_p_90r.csv","22s_p_90r_0051mea_01rang_avgSab.csv","22s_p_90r_0051mea_01rang_perfSab.csv"]
+#     # title=f"{behaviour} behaviour\n22 honests, penalisation\n different noise models, standard level\n 3 saboteurs, ids:{22,23,24}"
+#     # # title=f"{behaviour}({method} comparison) behaviour\n22 honests, penalisation\n different noise models, standard level\n 3 saboteurs, ids:{22,23,24}"
+#     # filenames=["22s_p_90r.csv","22s_p_90r_0051mea_01rang_avgSab.csv","22s_p_90r_0051mea_01rang_perfSab.csv"]
 
-    # COMPARISON OF SCEPTICAL AND DIFFERENT LIE ANGLES
-    # labels=["SCEPTICAL 90 lie angle\nbimodal noise",f"{behaviour}, 0 lie angle\nbimodal noise",f"{behaviour}, 90 lie angle\nbimodal noise"]
-    # title=f"behaviour comparison\n22 honests, penalisation\n 3 saboteurs, ids:{22,23,24}"
-    # data_folder=f"../data/{behaviour}/"
-    # metric="items_collected"
-    # filenames=["../data/sceptical/","25tw_p_allavg.csv","22tw_p_allavg_90r.csv"]
-    # filenames=[data_folder+metric+"/"+filename for filename in filenames[1:]]
+#     # COMPARISON OF SCEPTICAL AND DIFFERENT LIE ANGLES
+#     # labels=["SCEPTICAL 90 lie angle\nbimodal noise",f"{behaviour}, 0 lie angle\nbimodal noise",f"{behaviour}, 90 lie angle\nbimodal noise"]
+#     # title=f"behaviour comparison\n22 honests, penalisation\n 3 saboteurs, ids:{22,23,24}"
+#     # data_folder=f"../data/{behaviour}/"
+#     # metric="items_collected"
+#     # filenames=["../data/sceptical/","25tw_p_allavg.csv","22tw_p_allavg_90r.csv"]
+#     # filenames=[data_folder+metric+"/"+filename for filename in filenames[1:]]
 
-    #INNER COMPARISON
-    # labels=["0 lie angle\nbimodal noise","90 lie angle\nbimodal noise"]
-    # title=f"{behaviour}({method} comparison) behaviour\n22 honests, penalisation\n 3 saboteurs, ids:{22,23,24}"
-    # filenames=["25vs_p_allavg05_ratiow_0r.csv","22vs_p_allavg08_ratiow_90r.csv"]
+#     #INNER COMPARISON
+#     # labels=["0 lie angle\nbimodal noise","90 lie angle\nbimodal noise"]
+#     # title=f"{behaviour}({method} comparison) behaviour\n22 honests, penalisation\n 3 saboteurs, ids:{22,23,24}"
+#     # filenames=["25vs_p_allavg05_ratiow_0r.csv","22vs_p_allavg08_ratiow_90r.csv"]
     
-    ###############################################################################################################################################
+#     ###############################################################################################################################################
             
-    # metric,mode=parse_args()
-    # myboxplots()
-    # myttest(data_folder="../data/all/",compare="")
-    # myanovatest()
-    # sidebyside_boxplots()
-    # plot_evolution(compare="g")
-    # evolution_boxplot0()
-    # after_transitory_phase()
-    # boxplot_evo_pen_lie()
-    # multi_boxplot(filenames=filenames,
-    #             data_folder="../data/reputation_global/",
-    #             metric="items_evolution",
-    #             experiments_labels=labels,
-    #             title=title,) 
-    # noise_vs_items(filenames,
-    #                 data_folder=f"../data/{behaviour}/",
-    #                 # metric=f"items_collected/{method}",
-    #                 metric=f"items_collected",
-    #                 experiments_labels=labels,
-    #                 title=title,
-    # )                
+#     # metric,mode=parse_args()
+#     # myboxplots()
+#     # myttest(data_folder="../data/all/",compare="")
+#     # myanovatest()
+#     # sidebyside_boxplots()
+#     # plot_evolution(compare="g")
+#     # evolution_boxplot0()
+#     # after_transitory_phase()
+#     # boxplot_evo_pen_lie()
+#     # multi_boxplot(filenames=filenames,
+#     #             data_folder="../data/reputation_global/",
+#     #             metric="items_evolution",
+#     #             experiments_labels=labels,
+#     #             title=title,) 
+#     # noise_vs_items(filenames,
+#     #                 data_folder=f"../data/{behaviour}/",
+#     #                 # metric=f"items_collected/{method}",
+#     #                 metric=f"items_collected",
+#     #                 experiments_labels=labels,
+#     #                 title=title,
+#     # )                
 
-    # find_best_worst_seeds(filenames=[
-                                    
-    #                                 ],
-    #                     data_folder="../data/sceptical/",
-    #                     metric="items_collected",
-    #                     base_seed=5684436,
-    #                     amount_to_find=3,
-    #                 )
+#     # find_best_worst_seeds(filenames=[
+  
+#     #                                 ],
+#     #                     data_folder="../data/sceptical/",
+#     #                     metric="items_collected",
+#     #                     base_seed=5684436,
+#     #                     amount_to_find=3,
+#     #                 )
 
-    filenames=[
-        "",
-        ""
-        "",
-        "",
-        "",
-        "",
-    ]
-    labels=["naive","sceptical","ranking (50%)","weight weighted naive","threshold (.8 average)","variable scepticism"]
-    title="comparison different behaviours"
-    # iterative_boxplot(filenames=filenames,
-    #                 data_folder=f"",
-    #                 metric="items_collected",
-    #                 experiments_labels=labels,
-    #                 title=title,
-    #                 )
+#     filenames=[
+#         "",
+#         ""
+#         "",
+#         "",
+#         "",
+#         "",
+#     ]
+#     labels=["naive","sceptical","ranking (50%)","weight weighted naive","threshold (.8 average)","variable scepticism"]
+#     title="comparison different behaviours"
+#     # iterative_boxplot(filenames=filenames,
+#     #                 data_folder=f"",
+#     #                 metric="items_collected",
+#     #                 experiments_labels=labels,
+#     #                 title=title,
+#     #                 )
 
-    # noise_level(saboteurs_noise="average",noise_average=0.051,noise_range=0.14,random_switch=True,random_seed=5684436*20)
-    # noise_level(saboteurs_noise="perfect",noise_average=0.051,noise_range=0.14,random_switch=True,random_seed=5684436*20)
-    # filename=["25Nv_P_0LIA_allmaxCM_05SC_025ST_ratioWM_005SMU_005SSD_005NSD.json"]
-    # filename=["25Nv_NP_0LIA_allavgCM_03SC_025ST_ratioWM_0051NMU_01NRANG_avgSAB"]
-    # _,_,_,_,_,_, message=get_file_params(filename[0])
-    # print(message)
+#     noise_level(saboteurs_noise="average",noise_average=0.051,noise_range=0.14,random_switch=True,random_seed=5684436*20)
+#     noise_level(saboteurs_noise="perfect",noise_average=0.051,noise_range=0.14,random_switch=True,random_seed=5684436*20)

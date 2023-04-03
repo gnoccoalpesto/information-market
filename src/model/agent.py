@@ -3,7 +3,7 @@ import copy
 from helpers import random_walk as rw
 from random import random, choices, gauss
 from math import sin, cos, radians
-from tkinter import LAST
+# from tkinter import LAST
 from collections import deque
 
 from model.behavior import State, behavior_factory, RequiredInformation
@@ -213,61 +213,61 @@ class Agent:
         return angle
 
 
-    def draw(self, canvas):
-        circle = canvas.create_oval(self.pos[0] - self._radius,
-                                    self.pos[1] - self._radius,
-                                    self.pos[0] + self._radius,
-                                    self.pos[1] + self._radius,
-                                    fill=self.behavior.color,
-                                    outline=self.colors[self.behavior.state],
-                                    width=3)
-        self.draw_comm_radius(canvas)
-        # self.draw_goal_vector(canvas)
-        self.draw_orientation(canvas)
-        # self.draw_trace(canvas)
+    # def draw(self, canvas):
+    #     circle = canvas.create_oval(self.pos[0] - self._radius,
+    #                                 self.pos[1] - self._radius,
+    #                                 self.pos[0] + self._radius,
+    #                                 self.pos[1] + self._radius,
+    #                                 fill=self.behavior.color,
+    #                                 outline=self.colors[self.behavior.state],
+    #                                 width=3)
+    #     self.draw_comm_radius(canvas)
+    #     # self.draw_goal_vector(canvas)
+    #     self.draw_orientation(canvas)
+    #     # self.draw_trace(canvas)
 
 
-    def draw_trace(self, canvas):
-        tail = canvas.create_line(*self.trace)
+    # def draw_trace(self, canvas):
+    #     tail = canvas.create_line(*self.trace)
 
 
-    def draw_comm_radius(self, canvas):
-        circle = canvas.create_oval(self.pos[0] - self.communication_radius,
-                                    self.pos[1] - self.communication_radius,
-                                    self.pos[0] + self.communication_radius,
-                                    self.pos[1] + self.communication_radius,
-                                    outline="gray")
+    # def draw_comm_radius(self, canvas):
+    #     circle = canvas.create_oval(self.pos[0] - self.communication_radius,
+    #                                 self.pos[1] - self.communication_radius,
+    #                                 self.pos[0] + self.communication_radius,
+    #                                 self.pos[1] + self.communication_radius,
+    #                                 outline="gray")
 
 
-    def draw_goal_vector(self, canvas):
-        arrow = canvas.create_line(self.pos[0],
-                                   self.pos[1],
-                                   self.pos[0] + rotate(
-                                       self.behavior.navigation_table.get_relative_position_for_location(Location.FOOD),
-                                       self.orientation)[0],
-                                   self.pos[1] + rotate(
-                                       self.behavior.navigation_table.get_relative_position_for_location(Location.FOOD),
-                                       self.orientation)[1],
-                                   arrow=LAST,
-                                   fill="darkgreen")
-        arrow = canvas.create_line(self.pos[0],
-                                   self.pos[1],
-                                   self.pos[0] + rotate(
-                                       self.behavior.navigation_table.get_relative_position_for_location(Location.NEST),
-                                       self.orientation)[0],
-                                   self.pos[1] + rotate(
-                                       self.behavior.navigation_table.get_relative_position_for_location(Location.NEST),
-                                       self.orientation)[1],
-                                   arrow=LAST,
-                                   fill="darkorange")
+    # def draw_goal_vector(self, canvas):
+    #     arrow = canvas.create_line(self.pos[0],
+    #                                self.pos[1],
+    #                                self.pos[0] + rotate(
+    #                                    self.behavior.navigation_table.get_relative_position_for_location(Location.FOOD),
+    #                                    self.orientation)[0],
+    #                                self.pos[1] + rotate(
+    #                                    self.behavior.navigation_table.get_relative_position_for_location(Location.FOOD),
+    #                                    self.orientation)[1],
+    #                                arrow=LAST,
+    #                                fill="darkgreen")
+    #     arrow = canvas.create_line(self.pos[0],
+    #                                self.pos[1],
+    #                                self.pos[0] + rotate(
+    #                                    self.behavior.navigation_table.get_relative_position_for_location(Location.NEST),
+    #                                    self.orientation)[0],
+    #                                self.pos[1] + rotate(
+    #                                    self.behavior.navigation_table.get_relative_position_for_location(Location.NEST),
+    #                                    self.orientation)[1],
+    #                                arrow=LAST,
+    #                                fill="darkorange")
 
 
-    def draw_orientation(self, canvas):
-        line = canvas.create_line(self.pos[0],
-                                  self.pos[1],
-                                  self.pos[0] + self._radius * cos(radians(self.orientation)),
-                                  self.pos[1] + self._radius * sin(radians(self.orientation)),
-                                  fill="white")
+    # def draw_orientation(self, canvas):
+    #     line = canvas.create_line(self.pos[0],
+    #                               self.pos[1],
+    #                               self.pos[0] + self._radius * cos(radians(self.orientation)),
+    #                               self.pos[1] + self._radius * sin(radians(self.orientation)),
+    #                               fill="white")
 
 
     def speed(self):
