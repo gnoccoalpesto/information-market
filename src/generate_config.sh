@@ -4,8 +4,12 @@ PROJECT_HOME="${HOME}/ing/tesi/information-market/"
 CONFIG_DIR="${PROJECT_HOME}config/"
 ASSETS_DIR="${PROJECT_HOME}assets/"
 EXEC_FILE="${PROJECT_HOME}src/info_market.py"
-DATA_DIR="${PROJECT_HOME}dataNEW/"
+DATA_DIR="${PROJECT_HOME}data/CLUSTER/"
 # DATA_DIR="${PROJECT_HOME}data/"
+if [ $# -ne 0 ]; then
+  DATA_DIR="${DATA_DIR}$1/"
+fi
+
 CONFIG_FILE_TEMPLATE="${ASSETS_DIR}config_template"
 # CONFIG_FILE_TEMPLATE="${CONFIG_DIR}config_template"
 
@@ -59,9 +63,9 @@ MARKET_REWARD=1
 # ----------------- NOTE LISTS MUST BE IN THIS FORMAT: (value1 ... valueN) --------------- #
 
 #simulation
-SIMULATION_STEPS=1
+SIMULATION_STEPS=15000
 SIMULATION_SEED=5684436
-NUMBER_RUNS=2
+NUMBER_RUNS=20
 
 #visualisation
 VISUALISATION_ACTIVATE=false
@@ -75,7 +79,7 @@ AGENT_NOISE_SAMPLING_SIGMA_LIST=(0.05)
 AGENT_NOISE_SD_LIST=(0.05)
 # average, perfect:
 AGENT_NOISE_MU_LIST=(0.051)
-AGENT_NOISE_RANGE_LIST=(0.1)
+AGENT_NOISE_RANGE_LIST=(0.1 0.14)
 
 #payment system
 # PAYMENT_SYSTEM_CLASS=("OutlierPenalisationPaymentSystem")
@@ -88,7 +92,7 @@ DATA_TRANSACTIONS_LOG=false
 
 #robots
 NUMBER_OF_ROBOTS=25
-HONEST_POPULATION_LIST=(25 24)
+HONEST_POPULATION_LIST=(25)
 DISHONEST_LIE_ANGLES=(90)
 
 
@@ -104,19 +108,19 @@ sSCEPTICISM_THRESHOLD_LIST=(0.25)
 
 # ranking: r
 # -params:{ranking_threshold}
-rRANKING_THRESHOLD_LIST=(0.3 0.5 0.7)
+rRANKING_THRESHOLD_LIST=(0.3 0.5)
 
 # variable scepticism: v ; new variable scepticism: Nv
 # -params:{comparison_method,scaling,scepticism_threshold,weight_method}
 vSCEPTICISM_THRESHOLD_LIST=(0.25)
 vCOMPARISON_METHOD_LIST=("allavg" "allmax")
-vSCALING_LIST=(0.5 0.3)
+vSCALING_LIST=(0.8 0.5 0.3)
 vWEIGHT_METHOD_LIST=("ratio" "exponential")
 
 # wealth threshold: t
 # -params:{comparison_method,scaling}
 tCOMPARISON_METHOD_LIST=("allavg" "allmax")
-tSCALING_LIST=(0.5 0.3)
+tSCALING_LIST=(0.8 0.5 0.3)
 
 
 # PARAMETERS DICTIONARIES #######################################################
@@ -239,6 +243,7 @@ declare -A NOISE_FILENAME_ADDITIONAL_INFO
 # 	-e "s|TEST_NAME_LIST|${TEST_NAME_LIST}|" \
 # 		${SUMMARY_TEMPLATE} > ${CONF_FILE_SUMMARY}
 
+COUNT=0
 
 #CONFIG FILE GENERATION ##	#######################################################################
 for AGENT_NOISE_ASSIGNATION in ${AGENT_NOISE_ASSIGNATION_LIST[*]} ; do
@@ -390,6 +395,7 @@ for AGENT_NOISE_ASSIGNATION in ${AGENT_NOISE_ASSIGNATION_LIST[*]} ; do
 									fi
 								fi
 							fi
+							COUNT=$((COUNT + 1))
 							rm ${TEMP_CONFIG_FILENAME}
 						done
 					done
@@ -545,6 +551,7 @@ for AGENT_NOISE_ASSIGNATION in ${AGENT_NOISE_ASSIGNATION_LIST[*]} ; do
 								fi
 							fi
 							rm ${TEMP_CONFIG_FILENAME}
+							COUNT=$((COUNT + 1))
 						done
 					done
 				done
@@ -553,6 +560,8 @@ for AGENT_NOISE_ASSIGNATION in ${AGENT_NOISE_ASSIGNATION_LIST[*]} ; do
 		done
 	fi
 done
+
+echo "CREATED " $COUNT " CONFIGURATIONS"
 
 ####################################################################################
 ####################################################################################
