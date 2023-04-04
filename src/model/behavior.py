@@ -86,18 +86,18 @@ class TemplateBehaviour(Behavior):
         self.dr = np.array([0, 0]).astype('float64')
         self.id = -1
         self.required_information = -1
-        self.INFORMATION_ORDERING_METRICS=""
+        self.information_ordering_metric=""
 
 
     def get_ordered_metadata(self,location: Location, payment_database: PaymentDB,session: CommunicationSession):
         #COULD JUST COMPLETELY OVERRIDE THIS
         metadata = session.get_metadata(location)
-        if self.INFORMATION_ORDERING_METRICS == "reputation":
+        if self.information_ordering_metric == "reputation":
             for bot_id in metadata:
                 metadata[bot_id]["reputation"] = payment_database.get_reward(bot_id)
         sorted_metadata= sorted(metadata.items(), key=lambda item:
-                     item[1][self.INFORMATION_ORDERING_METRICS])
-        return reversed(sorted_metadata) if self.INFORMATION_ORDERING_METRICS == "reputation" \
+                     item[1][self.information_ordering_metric])
+        return reversed(sorted_metadata) if self.information_ordering_metric == "reputation" \
                 else sorted_metadata
 
 
@@ -106,7 +106,7 @@ class TemplateBehaviour(Behavior):
         test if data is valid to be bought; could also have behaviour specific traits
         TODO: should i use should combine from strategy?
         """
-        #return self.strategy.should_combine(data[self.INFORMATION_ORDERING_METRICS])
+        #return self.strategy.should_combine(data[self.information_ordering_metric])
         return True
 
 
@@ -122,10 +122,10 @@ class TemplateBehaviour(Behavior):
     def test_data_quality(self,location:Location,other_target:Target,payment_database:PaymentDB,seller_id):
         """
         tests if data is good enough to be combined with local data; behaviour and strategy specific
-        # return data[self.INFORMATION_ORDERING_METRICS] < self.navigation_table.get_age_for_location(location)
+        # return data[self.information_ordering_metric] < self.navigation_table.get_age_for_location(location)
         TODO: should i use should combine from strategy?
         """
-        # return self.strategy.should_combine(data[self.INFORMATION_ORDERING_METRICS])
+        # return self.strategy.should_combine(data[self.information_ordering_metric])
         return True
 
     def combine_data(self,location:Location,target:Target, other_target:Target,
@@ -860,11 +860,11 @@ class NewNaiveBehavior(TemplateBehaviour):
     def __init__(self):
         super().__init__()
         self.required_information=RequiredInformation.LOCAL
-        self.INFORMATION_ORDERING_METRICS="age"
+        self.information_ordering_metric="age"
         self.strategy=strategy_factory("WeightedAverageAgeStrategy")
 
     def test_data_validity(self, location: Location, data,_,__):
-        return data[self.INFORMATION_ORDERING_METRICS] <\
+        return data[self.information_ordering_metric] <\
              self.navigation_table.get_age_for_location(location)
 
 
@@ -885,7 +885,7 @@ class NewScepticalBehavior(TemplateBehaviour):
     def __init__(self,scepticism_threshold=.25):
         super().__init__()
         self.required_information=RequiredInformation.LOCAL
-        self.INFORMATION_ORDERING_METRICS="age"
+        self.information_ordering_metric="age"
         self.strategy=strategy_factory("WeightedAverageAgeStrategy")
         self.pending_information = {location: {} for location in Location}
         self.scepticism_threshold=scepticism_threshold
@@ -894,7 +894,7 @@ class NewScepticalBehavior(TemplateBehaviour):
         return self.scepticism_threshold
 
     def test_data_validity(self, location: Location, data,_,seller_id):
-        if data[self.INFORMATION_ORDERING_METRICS] <\
+        if data[self.information_ordering_metric] <\
                 self.navigation_table.get_age_for_location(location) \
                 and seller_id not in self.pending_information[location]:
             return True
@@ -976,7 +976,7 @@ class WealthWeightedBehavior(TemplateBehaviour):
     def __init__(self):
         super().__init__()
         self.required_information=RequiredInformation.GLOBAL
-        self.INFORMATION_ORDERING_METRICS="reputation"
+        self.information_ordering_metric="reputation"
         self.strategy=strategy_factory("RunningWeightedAverageReputationStrategy")
         if self.strategy.__class__.__name__=="FullWeightedAverageReputationStrategy":
             #TODO: use this to store all the info bought and pass it to strategy
@@ -991,7 +991,7 @@ class WealthWeightedBehavior(TemplateBehaviour):
         -AGE FOR ORDERING AND PRECEDENCE?
         """
         # my_reward=payment_database.get_reward(self.id)
-        # return data[self.INFORMATION_ORDERING_METRICS] >= my_reward
+        # return data[self.information_ordering_metric] >= my_reward
         return data["age"] < self.navigation_table.get_age_for_location(location)
 
 
@@ -1015,7 +1015,7 @@ class ReputationRankingBehavior(TemplateBehaviour):
     def __init__(self,ranking_threshold=.5):
         super().__init__()
         self.required_information=RequiredInformation.GLOBAL
-        self.INFORMATION_ORDERING_METRICS="reputation"
+        self.information_ordering_metric="reputation"
         self.strategy=strategy_factory("WeightedAverageAgeStrategy")
         self.RANKING_THRESHOLD=ranking_threshold
 
@@ -1060,10 +1060,10 @@ class WealthThresholdBehavior(TemplateBehaviour):
     def __init__(self,comparison_method="allavg",scaling=.3):
         super().__init__()
         self.required_information=RequiredInformation.GLOBAL
-        self.INFORMATION_ORDERING_METRICS="age"
+        self.information_ordering_metric="age"
         self.strategy=strategy_factory("WeightedAverageAgeStrategy")
-        self.SCALING=scaling
-        self.METHOD=comparison_method
+        self.scaling=scaling
+        self.comparison_method=comparison_method
 
 
     def test_data_validity(self, location: Location, data,_,__):
@@ -1100,7 +1100,8 @@ class WealthThresholdBehavior(TemplateBehaviour):
         neighavg: selects only above certain percentage of average wealth, considering neighbors
         neighmin: selects only above a certain percentage of minimum wealth (poorest bots), of neighbors
         """
-        extension, metric=re.split("_",self.METHOD)
+        # extension, metric=re.split("_",self.comparison_method)
+        extension, metric=self.comparison_method[:-3],self.comparison_method[-3:]
         reputation_dict = {"all":{
                                 "max":payment_database.get_highest_reward,
                                  "avg":payment_database.get_average_reward,
@@ -1113,7 +1114,7 @@ class WealthThresholdBehavior(TemplateBehaviour):
                                 }
                             }
         try:
-            return self.SCALING*reputation_dict[extension][metric]()
+            return self.scaling*reputation_dict[extension][metric]()
         except KeyError:
             exit(1)
 
@@ -1134,15 +1135,16 @@ class NewScepticalReputationBehavior(NewScepticalBehavior):
     def __init__(self,scepticism_threshold=.25,comparison_method="allavg",scaling=.3,weight_method="ratio"):
         super().__init__(scepticism_threshold)
         self.required_information=RequiredInformation.GLOBAL
-        self.INFORMATION_ORDERING_METRICS="age"
+        self.information_ordering_metric="age"
         self.strategy=strategy_factory("WeightedAverageAgeStrategy")
-        self.SCALING=scaling
-        self.C_METHOD=comparison_method
-        self.W_METHOD=weight_method
+        self.scaling=scaling
+        self.comparison_method=comparison_method
+        self.weight_method=weight_method
 
     def get_scepticism_threshold(self,payment_database:PaymentDB,seller_id):
         reputation_score=payment_database.get_reward(seller_id)
-        extension, metric=re.split("_",self.C_METHOD)
+        # extension, metric=re.split("_",self.comparison_method)
+        extension, metric=self.comparison_method[:-3],self.comparison_method[-3:]
 
         reputation_dict = {"all":{
                             "max":payment_database.get_highest_reward,
@@ -1161,18 +1163,18 @@ class NewScepticalReputationBehavior(NewScepticalBehavior):
         #TODO fix wrong initialization of behaviour, causing some to have default
         # print(self.weight_method)
         try:
-            if self.W_METHOD=="ratio":
-                return self.scepticism_threshold*reputation_score/(metric_score*self.SCALING)
-            # elif self.W_METHOD=="linear":
+            if self.weight_method=="ratio":
+                return self.scepticism_threshold*reputation_score/(metric_score*self.scaling)
+            # elif self.weight_method=="linear":
             #     if reputation_score>metric_score:
             #         threshold= self.scepticism_threshold+reputation_score/metric_score
             #     else:
             #         threshold= self.scepticism_threshold-reputation_score/metric_score
             #     return max(0,threshold)
-            elif self.W_METHOD=="exponential":
-                return self.scepticism_threshold*(reputation_score/(metric_score*self.SCALING))**2
-            elif self.W_METHOD=="logarithmic":
-                return self.scepticism_threshold*np.log(reputation_score/(metric_score*self.SCALING))
+            elif self.weight_method=="exponential":
+                return self.scepticism_threshold*(reputation_score/(metric_score*self.scaling))**2
+            elif self.weight_method=="logarithmic":
+                return self.scepticism_threshold*np.log(reputation_score/(metric_score*self.scaling))
         except:
             return self.scepticism_threshold
 

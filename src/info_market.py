@@ -13,10 +13,17 @@ from controllers.main_controller import MainController, Configuration
 # from controllers.view_controller import ViewController
 # import data_analysis
 
-
-# VERBOSE:bool = True
+# GLOBAL VARIABLES ##################################################################
 RECORD_DATA:bool = True
 CONFIG_LOG:bool = True
+# VERBOSE:bool = True
+
+# PROJECT_DIR="/home/ing/tesi/information_market/"
+# ERRORS_CONFIG_DIR=f"{PROJECT_DIR}src/errors_config/"
+# ERRORS_LOG_FILE=f"{PROJECT_DIR}src/error.log"
+# "." should be considered as /src folder
+ERRORS_CONFIG_DIR="./errors_config/"
+ERRORS_LOG_FILE="./error.log"
 
 ### UTILITIES ######################################################################
 # #TODO
@@ -133,16 +140,20 @@ def main():
     for i,f in enumerate(filenames):
         c = Configuration(config_file=f)
         print(f"Running config {i+1}/{len(filenames)}: {f}")
-        if CONFIG_LOG: log_config(c,f)   
-        try:   
+        if CONFIG_LOG: log_config(c,f)
+        # run_processes(c)# uncomment for better config debugging  
+        try:# comment here if uncommenting above
             run_processes(c)
+            if exists(join(ERRORS_CONFIG_DIR,f.split('/')[-1])):
+                system(f"rm {join(ERRORS_CONFIG_DIR,f.split('/')[-1])}")
+                print("successfully removed file from errors_config folder")
         except Exception as e:
         #TODO not working with JSONDecodeError
-            with open(join(".", "error.log"), "a+") as fe:
+            with open(ERRORS_LOG_FILE, "a+") as fe:
                 fe.write(f"{datetime.datetime.now()}, file {f} : \n"+str(e)+"\n\n")
             print(f"ERROR: {e}")
-            Path(join(".", "errors_config")).mkdir(parents=True, exist_ok=True)
-            system(f"cp {f} ./errors_config/{f.split('/')[-1]}")
+            Path(ERRORS_CONFIG_DIR).mkdir(parents=True, exist_ok=True)
+            system(f"cp {f} {ERRORS_CONFIG_DIR}{f.split('/')[-1]}")
             continue
 
         
@@ -150,10 +161,6 @@ def run_processes(config: Configuration):
     nb_runs = config.value_of("number_runs")
     simulation_seed = config.value_of("simulation_seed")
     print(f"### {datetime.datetime.now()} # running {nb_runs} runs with {'programmed'if simulation_seed!='' and simulation_seed!='random' else 'random'} simulation seed ")
-    #TODO efficient way to create filename, check if file exists in the folders of interest, and pass
-    #     the incrementing seed to the main controller
-    #ISSUES: 1) what if result ofr some metric exists, but not for others?
-    #        2) is it efficient to split existence/creation+to_csv, with double check? (it's not)
     start = time.time()
     with Pool() as pool:
         controllers = pool.starmap(run, [(config, i) for i in range(nb_runs)])
