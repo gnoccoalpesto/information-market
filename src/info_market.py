@@ -10,7 +10,7 @@ import argparse
 # from json.decoder import JSONDecodeError
 
 from controllers.main_controller import MainController, Configuration
-from controllers.view_controller import ViewController
+# from controllers.view_controller import ViewController
 # import data_analysis
 
 # GLOBAL VARIABLES ##################################################################
@@ -105,24 +105,24 @@ def main():
         for p in argv[1:]:
             if isfile(p):
                 config = Configuration(config_file=p)
-                if config.value_of("visualization")['activate']:
-                    main_controller = MainController(config)
-                    # data_analysis.noise_level(
-                    #                             main_controller.environment.ROBOTS_AMOUNT,
-                    #                             main_controller.environment.DISHONEST_AMOUNT,
-                    #                             config.value_of("agent")['noise_sampling_mu'],
-                    #                             config.value_of("agent")['noise_sd'],
-                    #                             "average",
-                    #                             random_switch=True,
-                    #                             random_seed=main_controller.environment.SIMULATION_SEED,
-                    #                         )
-                    view_controller = ViewController(main_controller,
-                                                        config.value_of("width"),
-                                                        config.value_of("height"),
-                                                        config.value_of("visualization")['fps'])
-                    exit(0)
-                else:
-                    filenames.append(p)
+                # if config.value_of("visualization")['activate']:
+                #     main_controller = MainController(config)
+                #     # data_analysis.noise_level(
+                #     #                             main_controller.environment.ROBOTS_AMOUNT,
+                #     #                             main_controller.environment.DISHONEST_AMOUNT,
+                #     #                             config.value_of("agent")['noise_sampling_mu'],
+                #     #                             config.value_of("agent")['noise_sd'],
+                #     #                             "average",
+                #     #                             random_switch=True,
+                #     #                             random_seed=main_controller.environment.SIMULATION_SEED,
+                #     #                         )
+                #     view_controller = ViewController(main_controller,
+                #                                         config.value_of("width"),
+                #                                         config.value_of("height"),
+                #                                         config.value_of("visualization")['fps'])
+                #     exit(0)
+                # else:
+                filenames.append(p)
             else:
                 filenames.extend([join(p, f) for f in listdir(p) if isfile(join(p, f))])
 

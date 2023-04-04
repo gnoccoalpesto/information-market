@@ -1,6 +1,16 @@
 #!/bin/bash
 
-PROJECT_HOME="${HOME}/ing/tesi/information-market/"
+# automatically generates multiple config file for the information market simulation
+# all the permitted (wrt behaviour.py) combinations of parameters are generated
+# the generated config files are stored in the CONFIG_DIR directory
+# config files are named according to the parameters they contain
+# filename of results of configurations runs are identical to the config file name
+# OPTIONALLY, can pass a parameter to create a subdirectory in the data directory
+#             for the current experiment
+#
+# usage: ./generate_config.sh [subdirectory_name]
+
+PROJECT_HOME="${HOME}/information-market/"
 CONFIG_DIR="${PROJECT_HOME}config/"
 ASSETS_DIR="${PROJECT_HOME}assets/"
 EXEC_FILE="${PROJECT_HOME}src/info_market.py"
