@@ -1,6 +1,6 @@
 import re
 import os
-from os.path import join, isfile
+from os.path import join, isfile,exists
 import argparse
 from random import gauss, random
 import time
@@ -8,15 +8,18 @@ import time
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.ticker as mtick #percentage on axis for matplotlib
-from  matplotlib.ticker import FuncFormatter #force axis to have integer ticks
+import matplotlib.ticker as mtick # to plot percentage on axis for matplotlib
+from  matplotlib.ticker import FuncFormatter #to force axis to have integer ticks
 import seaborn as sns
 import scipy.stats as stats
 
+import config as CONFIG_FILE
 from model.market import exponential_model, logistics_model
 from model.navigation import Location
 from model.environment import generate_static_noise_list,generate_static_noise_list
-from info_market import BEHAVIORS_DICT, BEHAVIORS_NAME_DICT, SUB_FOLDERS_DICT, PARAMS_NAME_DICT
+from model.behavior import BEHAVIORS_DICT, BEHAVIORS_NAME_DICT,\
+     SUB_FOLDERS_DICT, PARAMS_NAME_DICT, NOISE_PARAMS_DICT, BEHAVIOR_PARAMS_DICT
+
 
 palette = {
     "naive": "tab:blue",
@@ -40,8 +43,7 @@ name_conversion = {
 
 
 #------------------------------------------------------------------------------------------------
-#---------------------------------------UTILITIES------------------------------------------------Ù
-
+#---------------------------------------UTILITIES------------------------------------------------
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-s', '--standalone',action='store_true',
@@ -74,7 +76,7 @@ def parse_args():
     return metric, mode
 
 
-def get_file_params(filename:str):
+def params_from_filename(filename:str):
     """
     filename format:
     nhonestHONESTBEHAVIOUR_PAYMENTSYSTEM_lieangleLIA_behaviorparams_noiseparams
@@ -82,7 +84,7 @@ def get_file_params(filename:str):
     HONESTBEHAVIOUR =   "n": "NaiveBeahvior",
                         "Nn": "NewNaiveBehavior",
                         "s": "ScepticalBehavior",
-                        "NS": "NewScepticalBehavior",
+                        "Ns": "NewScepticalBehavior",
                         "r": "ReputationRankingBehavior",
                         "v": "ScepticalReputationBehavior",
                         "Nv": "NewScepticalReputationBehavior",
@@ -107,7 +109,7 @@ def get_file_params(filename:str):
     noiseparams =       "bimodal":      {"SMU": "noise sampling mean",
                                         "SSD": "noise sampling standard deviation",
                                         "NSD": "noise standard deviation"},
-                        "uniform":      {"NMU": "noise sampling mean",
+                        "uniform":      {"NMU": "noise mean",
                                         "NRANG": "noise range",
                                         "SAB": "saboteur performance" ={"avg": "average",
                                                                         "perf": "perfect"}}
@@ -133,6 +135,80 @@ def get_file_params(filename:str):
     message=f"{n_honest} {honest_behavior},\n{payment}, lie_angle: {lie_angle},\n{behaviour_params},\n{noise_params}"
     return n_honest, honest_behavior, payment, lie_angle, behaviour_params, noise_params, message
         
+
+def filename_from_params(n_honests:int,
+                        behavior_initials:str,
+                        payment_system:str,
+                        lie_angle:int,
+                        behavior_params_values:list,
+                        noise_type:str,
+                        noise_params_values:list
+                        ):
+    behavior_params=""
+    if behavior_params_values:
+        for x,y in zip(behavior_params_values,BEHAVIOR_PARAMS_DICT[behavior_initials]):
+            behavior_params+=f"{x}{y}_"
+    noise_params=""
+    for x,y in zip(noise_params_values,NOISE_PARAMS_DICT[noise_type]):
+        noise_params+=f"{x}{y}_"
+    noise_params=noise_params[:-1]
+    filename=f"{n_honests}{behavior_initials}_{payment_system}_{lie_angle}LIA_{behavior_params}{noise_params}"
+    return filename
+
+def filenames_list_for_plotting(
+                                data_folder,
+                                experiment="",
+                                metric="",
+                                N_ROBOTS=25,
+                                n_honests=[25,24,22,],
+                                behaviors=["n","s","r","Nv","t","w"],
+                                behavior_params_experiments=dict(),
+                                payment_systems=["P","NP"],
+                                noise_mu=0.0051,
+                                noise_range=0.1,
+                                # saboteur_performance=["avg","perf"],
+                                noise_sampling_mu=0.05,
+                                noise_sampling_sd=0.05,
+                                noise_sd=0.05,
+                                ):
+    uniform_avg_noise_params_values=[noise_mu,noise_range,"avg"]
+    uniform_perf_noise_params_values=[noise_mu,noise_range,"perf"]
+    bimodal_noise_params_values=[noise_sampling_mu,noise_sampling_sd,noise_sd]
+    filenames_list=[]
+    for behavior_initials in behaviors:
+        for behavior_params_values in behavior_params_experiments[behavior_initials]:
+            for n_honest in n_honests:
+                for payment_system in payment_systems:
+                    lie_angle=0 if n_honest==N_ROBOTS else 90
+
+                    behavior_params_text=""
+                    for v,p in zip(behavior_params_values,BEHAVIOR_PARAMS_DICT[behavior_initials]):
+                        behavior_params_text+=f"{v} {PARAMS_NAME_DICT[p]},"
+                    filenames=[ filename_from_params(n_honest,
+                                            behavior_initials,
+                                            payment_system,
+                                            lie_angle,
+                                            behavior_params_values,
+                                            "bimodal",
+                                            bimodal_noise_params_values,),
+                                filename_from_params(n_honest,
+                                            behavior_initials,
+                                            payment_system,
+                                            lie_angle,
+                                            behavior_params_values,
+                                            "uniform",
+                                            uniform_avg_noise_params_values),
+                                filename_from_params(n_honest,
+                                            behavior_initials,
+                                            payment_system,
+                                            lie_angle,
+                                            behavior_params_values,
+                                            "uniform",
+                                            uniform_perf_noise_params_values)                       
+                            ]
+                    filenames=[data_folder+experiment+"/"+SUB_FOLDERS_DICT[behavior_initials]+"/"+metric+"/"+filename+".csv" for filename in filenames]
+                    filenames_list.append(filenames)
+    return filenames_list
 
 #------------------------------------------------------------------------------------------------
 #---------------------------------------STATISTICAL TESTS----------------------------------------
@@ -267,8 +343,146 @@ def find_best_worst_seeds(filenames=[],
             print(f"{1+i} worst seed: {worst[0]} (run {worst[0]-base_seed}), value: {worst[1]}")
 
 
+def load_csv(filename,
+            data_folder_and_subfolder="../data/",
+            metric="items",
+            experiment_part="whole"):
+    '''
+    returns the appropriate DataFrame, given the filename and the experiment part
+    :param filename: the name of the file to load, must include the extension
+    :param data_folder_and_subfolder: the folder where the data is stored, must include up to the metric
+    :param metric: the metric to choose from.  Accepted values are:
+        "items": number of items collected by the robots
+        "rewards": rewards gained by the robots.
+    :param experiment_part: the part of the experiment to load. Accepted values are:
+         "whole": in this case the data from the end of the experiment is loaded;
+            selected metric folders will be "items_collected" or "rewards"
+         "stableN": in this case only the last N% of the experiment is considered;
+            selected metric folders will be "items_evolution" or "rewards_evolution".
+            Params ofr the loading will differe according to the different file format.
+
+    :return: the DataFrame containing the data, in a form of a vector
+    '''
+    if experiment_part=="whole":
+        if metric=="items": metric="items_collected"
+        df=pd.read_csv(f"{data_folder_and_subfolder}{metric}/{filename}")
+    elif experiment_part=="stableN":
+        if metric=="items": metric="items_evolution"
+        elif metric=="rewards": metric="rewards_evolution"
+        df=pd.read_csv(f"{data_folder_and_subfolder}{metric}_evolution/{filename}")
+        df=df.iloc[-int(len(df)*0.2):]
+
+
 #------------------------------------------------------------------------------------------------
 #---------------------------------------PLOTTING-------------------------------------------------
+def bimodal_uniform_noise_comparison(
+                                        data_folder,
+                                        experiment="",
+                                        metric="",
+                                        N_ROBOTS=25,
+                                        n_honests=[25,24,22,],
+                                        behaviors=["n","s","r","Nv","t","w"],
+                                        behavior_params_experiments=dict(),
+                                        payment_systems=["P","NP"],
+                                        noise_mu=0.051,
+                                        noise_range=0.1,
+                                        saboteur_performance=["avg","perf"],
+                                        noise_sampling_mu=0.05,
+                                        noise_sampling_sd=0.05,
+                                        noise_sd=0.05,
+                                        MULTI_PLOT=True,
+                                        SAVE_PLOT=False,
+                                        save_folder=""
+                                ):
+        uniform_avg_noise_params_values=[noise_mu,noise_range,"avg"]
+        uniform_perf_noise_params_values=[noise_mu,noise_range,"perf"]
+        bimodal_noise_params_values=[noise_sampling_mu,noise_sampling_sd,noise_sd]
+
+        if MULTI_PLOT:fig_count=0
+        if SAVE_PLOT and not os.path.exists(save_folder+experiment):
+            os.makedirs(save_folder+experiment)
+        for behavior_initials in behaviors:
+            for behavior_params_values in behavior_params_experiments[behavior_initials]:
+                for n_honest in n_honests:
+                    for payment_system in payment_systems:
+                        lie_angle=0 if n_honest==N_ROBOTS else 90
+
+                        behavior_params_text=""
+                        for v,p in zip(behavior_params_values,BEHAVIOR_PARAMS_DICT[behavior_initials]):
+                            behavior_params_text+=f"{v} {PARAMS_NAME_DICT[p]},"
+
+                        penalisation=" no" if payment_system=="NP" else ""
+                        labels=[f"{lie_angle} lie angle\nbimodal noise",
+                                f"{lie_angle} lie angle\nnon b. noise\naverage saboteurs",
+                                f"{lie_angle} lie angle\nnon b. noise\nperfect saboteurs"]                    
+                        
+                        title=f"{BEHAVIORS_NAME_DICT[behavior_initials]} behaviour\n"\
+                        f"parameters: {behavior_params_text}\n"\
+                        f"{n_honest} honests,{penalisation} penalisation\n"\
+                        "different noise models"
+                        #TODO :
+                        # if n_SAB>0:
+                        # ["binormal","uniform,avg","uniform,perf"]
+                        # else:
+                        # ["bimodal","uniform, no SAB"]
+                        filenames=[ filename_from_params(n_honest,
+                                                behavior_initials,
+                                                payment_system,
+                                                lie_angle,
+                                                behavior_params_values,
+                                                "bimodal",
+                                                bimodal_noise_params_values,),
+                                    filename_from_params(n_honest,
+                                                behavior_initials,
+                                                payment_system,
+                                                lie_angle,
+                                                behavior_params_values,
+                                                "uniform",
+                                                uniform_avg_noise_params_values),
+                                    filename_from_params(n_honest,
+                                                behavior_initials,
+                                                payment_system,
+                                                lie_angle,
+                                                behavior_params_values,
+                                                "uniform",
+                                                uniform_perf_noise_params_values)                       
+                                ]
+                        filenames=[data_folder+experiment+"/"+SUB_FOLDERS_DICT[behavior_initials]+"/"+metric+"/"+filename+".csv" for filename in filenames]
+                        # print(filenames)
+                        # for f in filenames:
+                        #     print(exists(f))
+
+                        #TODO if all files exists:{{{
+
+                        #TODO: include all data instead
+                        # format: [experiment]/[n_honest][behavior]_[PAYMENT_SYSTEM]_[lie_angle]_[behavior_params_values]_[NOISE_UNIFORM]_[noise_params_values].csv
+                        save_name=filename_from_params(n_honest,
+                                                behavior_initials,
+                                                payment_system,
+                                                lie_angle,
+                                                behavior_params_values,
+                                                "uniform",
+                                                uniform_avg_noise_params_values)
+                        noise_vs_items(filenames,
+                                        data_folder=f"",
+                                        # metric=f"items_collected/{method}",
+                                        metric=f"",
+                                        experiments_labels=labels,
+                                        title=title,
+                                        multi_plot=MULTI_PLOT,
+                                        save_plot=SAVE_PLOT,
+                                        # save_folder=CONFIG_FILE.PLOT_FOLDER+experiment+"/"+SUB_FOLDERS_DICT[behavior_initials]+"/",
+                                        #TODO add subfolders for behaviours
+                                        save_folder=CONFIG_FILE.PLOT_FOLDER+experiment+"/",
+                                        save_name=save_name
+                        )                
+                        fig_count+=1
+                        #TODO (above) else:
+                        # warning, pass}}}
+        if MULTI_PLOT and not SAVE_PLOT:plt.show()
+        fig_count=0
+
+
 def noise_level(
                 number_agents=25,
                 number_saboteurs=3,
@@ -307,6 +521,62 @@ def noise_level(
     # plt.pause(0.001)
 
 
+def plot_results(filenames,
+                 data_folder="../data/DATA_SUBFOLDER/",
+                 metric="items",
+                 experiment_part="whole",
+                 type_of_plot="behaviour",
+                 params_to_iterate_on=None, 
+                 params_to_generate_labels=[]
+                 ):
+    '''
+    :param filenames: list of filenames to compare.
+        if absolute path is passed, data_folder and metric are ignored
+        shape must be [[filename1, filename2, ...], [filename1, filename2, ...], ...]
+        for type_of_plot="behaviour": [[b11,b12,...],[b21,b22,...],...], will compare bkj for each j,
+            producing k subplots, with j elements each
+        for type_of_plot="noise": [...,[bKref,bKavg,bKperf],...], will compare b1ref with b1avg and b1perf, for each K,
+            producing K different plots, each with 3 subplots, each one with N_ROBOTS elements
+        TODO: add automatic fetching from data folder + metric
+    :param data_folder: main data folder.
+        This is devided in SUBFOLDERS (different experiments,...); each one of this contains folders
+        for each tested behaviour (these are automatically retrived by filenames)
+        Each behaviour subfolder contains the data from each tested metric.
+    :param metric: the metric to plot. Accepted values:
+        "items": number of collected items in an experiments
+        "reward": reward in an experiments
+        wrt the experiment_part, this will load data from items_collected and reward or from
+        items_evolution and reward_evolution
+    :param experiment_part: decide if use data from the whole experiment or just a part of it. Accepted values:
+        "whole": use all the data; this will load data from items_collected and reward
+        "stableN", N:int =[50,100] || [0.5,1]: use only the data from the last N% of the experiment;
+         this will load data from intems_evolution and reward_evolution
+    :param type_of_plot: decide the type of plot to use. Accepted values:
+        "behaviour": compares result for same parameters for different behaviours
+        "noise": compares different noise levels (==agents ids) for same behaviour and parameters
+    :param params_to_iterate_on: TODO list of parameters to iterate on.
+        as for now, this uses the filenames arrays
+    :param params_to_generate_labels: list of params of data to include in the legend.
+        values must be keys of PARAMS_NAME_DICT     
+    '''
+    #1 GET METRIC
+    if experiment_part == "whole":
+        if metric=="items": metric="items_collected"
+        elif metric=="reward": metric="reward"
+    else:
+        metric+="_evolution"
+        stable_part = float(experiment_part[6:])
+    #2 CONSTRUCT THE COMPLETE FILENAMES
+    #if filenames are absolute paths, ignore data_folder and metric
+    #TODO, as for now, construct manually using the lists
+    # if filenames[0][0][0] != "/":
+    #     filenames = [[data_folder + f + "/" + metric + ".csv" \
+    #         for f in filenames[i]] for i in range(len(filenames))]
+
+    #3 ITERATE OVER VECTORS
+    #TODO
+
+
 def noise_vs_items(
                     filenames=[],
                     data_folder="../data/reputation/",
@@ -314,7 +584,11 @@ def noise_vs_items(
                     saboteurs_noise="",
                     experiments_labels=[],
                     title="",
-                    by=1
+                    by=1,
+                    multi_plot=False,
+                    save_plot=False,
+                    save_folder="../plots/",
+                    save_name="noise_vs_items",
                 ):
     '''
     :param filenames: list of filenames to compare,
@@ -323,14 +597,16 @@ def noise_vs_items(
                             "bimodal","b": agents have random noise. Otherwise is fixed and
                             "average","a": saboteurs have average noise among all,
                             "perfect","p": saboteurs have lowest noise among all.
+    :param multi_plot: if True, .show() performed outside, after creation of all plots
     '''
-    BASE_BOX_WIDTH=3
-    BASE_BOX_HEIGHT=7
+    BASE_BOX_WIDTH=5
+    BASE_BOX_HEIGHT=8
     n_boxes=len(filenames)// by
     fig, axs = plt.subplots(by, n_boxes, sharey=True)
     fig.set_size_inches(BASE_BOX_WIDTH*n_boxes,BASE_BOX_HEIGHT)
     #READ FILE, ONLY FINAL DATA IS NEEDED
-    data_folder+=f"{metric}/"
+    if metric!="":
+        data_folder+=f"{metric}/"
     for i,f in enumerate(filenames):
         if not data_folder=="" and not data_folder==None:
             f=f"{data_folder}{f}"
@@ -353,82 +629,10 @@ def noise_vs_items(
         # plt.xticks(rotation=45) 
     plt.gca().yaxis.set_major_formatter(FuncFormatter(lambda x, _: int(x)))
     plt.ylim(0,25)
-    plt.show()
+    if not multi_plot:plt.show()
+    if save_plot:
+        plt.savefig(f"{save_folder}{save_name}.png", bbox_inches='tight')
 
-
-
-
-def myboxplots(
-                filenames=[],
-                # comparison_method="s",
-                data_folder="../data/all",\
-                title="",\
-                compare="",\
-                # metric="rewards",
-                metric="items_collected",
-                mode="r",
-                by=1
-                ):
-    '''
-    :param filenames: list of filenames to compare,
-                    if empty all the files in the folder are fetched
-    TODO: if filenames is a list of lists, each sublist is a group of files to compare with different hue
-            should introduce a param to understand if must compare withing a group or between groups
-    :param comparison_method: "s" for single, "w" for within, "b" for between
-
-    :param mode: "s" for standalone, "c" for cumulative, "r" for relative
-    '''
-    BASE_BOX_WIDTH=3
-    BASE_BOX_HEIGHT=7
-    filenames = [
-                "24sceptical_3000th_1scaboteur_0rotation_nopenalisation.txt"
-    ]
-    if filenames==[]:
-        filenames=os.listdir(f"{data_folder}{compare}/{metric}/")
-        #TODO is the following better?
-        # filenames=[f for f in os.listdir(use_dir) if os.path.isfile(os.path.join(use_dir, f))]
-    n_boxes=len(filenames)// by
-    fig, axs = plt.subplots(by, n_boxes, sharey=True)
-    fig.set_size_inches(BASE_BOX_WIDTH*n_boxes,BASE_BOX_HEIGHT)
-    # fig.supxlabel()
-    sns.set_style("whitegrid")
-    for idx,filename in enumerate(filenames):
-        name_honest, n_honest,name_saboteur,n_saboteur,\
-            skepticism, lie_angle,penalisation=get_file_params(filename)
-        # params=f"{n_honest} honests,\n{skepticism},\n {lie_angle},\n {penalisation}"
-        # axs[idx].set_xlabel(params)
-        filename=f"{data_folder}{compare}/{metric}/{filename}"
-        # match mode:
-        #     case "r":#RELATIVE DATA
-        if mode=="r":
-            #TODO correct?
-            data=pd.read_csv(filename, header=None).to_numpy()
-            print(type(data))
-            data=(100*data/np.sum(data,axis=1)[:,None]).flatten()
-            #TODO could use title functions inside plot calls
-            sns.boxplot(data=data,ax=axs[idx]).set(xticklabels=[],xticks=[])
-            data_title=metric+ " (relative)"
-            axs[idx].yaxis.set_major_formatter(mtick.PercentFormatter())
-        # case "c":#CUMULATIVE DATA
-        elif mode=="c":
-            data=pd.read_csv(filename, header=None)
-            datatot = data.apply(np.sum, axis=1)
-            sns.boxplot(data=datatot,ax=axs[idx]).set(xticklabels=[],xticks=[])
-            # angle = 10 * (idx + 0)
-            # sns.boxplot(x=[angle for _ in batch_total], y=data, ax=axs[idx], linewidth=2)
-            data_title=metric+ " (cumulative)"
-            # case "s":#STANDALONE DATA
-        elif mode=="s":
-            data=pd.read_csv(filename, header=None).values.flatten()
-            sns.boxplot(data=data.flatten(),ax=axs[idx]).set(xticklabels=[],xticks=[])
-            data_title=metric+ " (standalone)"
-    sns.despine(fig, axs[idx], trim=False)
-    fig.supylabel(data_title.replace("_"," "))
-    title=title if title!="" else f"compare: {compare}".replace("_"," ")
-    # title=title if title!="" else f"compare: {compare}\n{n_honest} {name_honest} vs {n_saboteur} {name_saboteur}".replace("_"," ")
-    fig.suptitle(title,fontweight="bold")
-    plt.ylim(bottom=0)
-    plt.show()
 
 
 def boxplots_pen_lie(
@@ -1725,7 +1929,7 @@ def correlation_plot(filename, directory, suptitle=None):
 # ]
 
 
-def correlation_plots():
+def correlation_plots(filenames):
     for i, filename in enumerate(filenames):
         correlation_plot(filename, "../data/correlation/", chr(i + 65))
 
@@ -1902,123 +2106,77 @@ if __name__ == '__main__':
 
 
 
-    filenames=[ 
-                # ["../data/naive/items_evolution/22n_p_0r.csv",
-                # "../data/naive/items_evolution/22n_p_90r.csv"],
-                ["../data/sceptical/items_evolution/22s_p_0r.csv",
-                "../data/sceptical/items_evolution/22s_p_90r.csv"],
-                [
-                "22c_p_allavg05_0r.csv",
-                "22c_p_allavg05_90r.csv",
-                ],
-                [
-                "22c_p_allavg08_0r.csv",
-                "22c_p_allavg08_90r.csv",
-                ],
-                [
-                "22c_p_allavg11_0r.csv",
-                "22c_p_allavg11_90r.csv",
-                ],
-                [
-                "22c_p_allmax02_0r.csv",
-                "22c_p_allmax02_90r.csv",
-                ],
-                [
-                "22c_p_allmax03_0r.csv",
-                "22c_p_allmax03_90r.csv",
-                ],
-                [
-                "22c_p_allmax035_0r.csv",
-                "22c_p_allmax035_90r.csv",
-                ],
-                [
-                "22c_p_allmin100_0r.csv",
-                "22c_p_allmin100_90r.csv",
-                ],
-                [
-                "22c_p_allmin250_0r.csv",
-                "22c_p_allmin250_90r.csv",
-                ],
-                [
-                "22c_p_allmin400_0r.csv",
-                "22c_p_allmin400_90r.csv",
-                ]
-            ]
-    labels=[
-            # "naive penalisation",
-            "sceptical",
-            "threshold: .5 of average",
-            "t: .8 of average",
-            "t: 1.1 of average",
-            "t: .2 of max",
-            "t: .3 of max",
-            "t: .35 of max",
-            "t: *100 of min",
-            "t: *250 of min",
-            "t: *400 of min",
-            ]
+    # filenames=[ 
+    #             # ["../data/naive/items_evolution/22n_p_0r.csv",
+    #             # "../data/naive/items_evolution/22n_p_90r.csv"],
+    #             ["../data/sceptical/items_evolution/22s_p_0r.csv",
+    #             "../data/sceptical/items_evolution/22s_p_90r.csv"],
+    #             [
+    #             "22c_p_allavg05_0r.csv",
+    #             "22c_p_allavg05_90r.csv",
+    #             ],
+    #         ]
+    # labels=[
+    #         # "naive penalisation",
+    #         "sceptical",
+    #         "threshold: .5 of average",
+    #         ]
 
-    # LINEAR NOISE ANALYSIS ############################################################################################################À
-    behaviour="sceptical_05mean"
-    # method="allmax03"
-    # #######################
-    labels=["0 lie angle\nbimodal noise","0 lie angle\nnon b. noise\naverage saboteurs","0 lie angle\nnon b. noise\nperfect saboteurs"]
+
+    # noise_level(number_saboteurs=1,saboteurs_noise="average",noise_average=0.051,noise_range=0.1,random_switch=True,random_seed=5684436*20)
+    # noise_level(number_saboteurs=1,saboteurs_noise="perfect",noise_average=0.051,noise_range=0.1,random_switch=True,random_seed=5684436*20)
+    # exit()
+
+    # UNIFORM NOISE ANALYSIS ############################################################################################################
+
+
+        
+    experiment="CLUSTER"
+    metric="items_collected"
+
+    N_ROBOTS=25
+    n_honests=[25]
     
-    title=f"{behaviour} behaviour\n25 honests, no penalisation\n different noise models"
-    # title=f"{behaviour}({method} comparison) behaviour\n25 honests, no penalisation\n different noise models"
-    filenames=["25s_np_0r.csv","25s_np_0r_0051mea_01rang_avgSab.csv","25s_np_0r_0051mea_01rang_perfSab.csv"]
+    behaviors=["n","s","r","Nv","t","w"]
 
-    # title=f"{behaviour} behaviour\n25 honests, penalisation\n different noise models, standard level"
-    # # title=f"{behaviour}({method} comparison) behaviour\n25 honests, penalisation\n different noise models, standard level"
-    # filenames=["25s_p_0r.csv","25s_p_0r_0051mea_01rang_avgSab.csv","25s_p_0r_0051mea_01rang_perfSab.csv"]
+    #TODO: create this as a summary from config generation / running
+    behavior_params_experiments={"n":[[]],
+                                "s":[[0.25]],
+                                "r":[[0.3],[0.5]],
+                                "Nv":[["allavg",0.3,0.25,"exponential"],
+                                    ["allavg",0.5,0.25,"exponential"],
+                                    ["allavg",0.8,0.25,"exponential"],
+                                    ["allavg",0.3,0.25,"ratio"],
+                                    ["allavg",0.5,0.25,"ratio"],
+                                    ["allavg",0.8,0.25,"ratio"],
+                                    ["allmax",0.3,0.25,"exponential"],
+                                    ["allmax",0.5,0.25,"exponential"],
+                                    ["allmax",0.8,0.25,"exponential"],
+                                    ["allmax",0.3,0.25,"ratio"],
+                                    ["allmax",0.5,0.25,"ratio"],
+                                    ["allmax",0.8,0.25,"ratio"]],
+                                "t":[["allavg",0.3],
+                                    ["allavg",0.5],
+                                    ["allavg",0.8],
+                                    ["allmax",0.3],
+                                    ["allmax",0.5],
+                                    ["allmax",0.8]],
+                                "w":[[]]   
+                                }
+    bimodal_uniform_noise_comparison(data_folder=CONFIG_FILE.DATA_FOLDER,
+                                    experiment=experiment,
+                                    metric=metric,
+                                    N_ROBOTS=N_ROBOTS,
+                                    n_honests=n_honests,
+                                    behaviors=behaviors,
+                                    behavior_params_experiments=behavior_params_experiments,
+                                    )
 
-    # # ########################
-    # labels=["90 lie angle\nbimodal noise","90 lie angle\nnon b. noise\naverage saboteurs","90 lie angle\nnon b. noise\nperfect saboteurs"]
-    
-    # # title=f"{behaviour}({method} comparison) behaviour\n22 honests, no penalisation\n different noise models, standard level\n 3 saboteurs, ids:{22,23,24}"
-    # title=f"{behaviour} behaviour\n22 honests, no penalisation\n different noise models\n 3 saboteurs, ids:{22,23,24}"
-    # filenames=["22s_np_90r.csv","22s_np_90r_0051mea_01rang_avgSab.csv","22s_np_90r_0051mea_01rang_perfSab.csv"]
-
-    # title=f"{behaviour} behaviour\n22 honests, penalisation\n different noise models, standard level\n 3 saboteurs, ids:{22,23,24}"
-    # # title=f"{behaviour}({method} comparison) behaviour\n22 honests, penalisation\n different noise models, standard level\n 3 saboteurs, ids:{22,23,24}"
-    # filenames=["22s_p_90r.csv","22s_p_90r_0051mea_01rang_avgSab.csv","22s_p_90r_0051mea_01rang_perfSab.csv"]
-
-    # COMPARISON OF SCEPTICAL AND DIFFERENT LIE ANGLES
-    # labels=["SCEPTICAL 90 lie angle\nbimodal noise",f"{behaviour}, 0 lie angle\nbimodal noise",f"{behaviour}, 90 lie angle\nbimodal noise"]
-    # title=f"behaviour comparison\n22 honests, penalisation\n 3 saboteurs, ids:{22,23,24}"
-    # data_folder=f"../data/{behaviour}/"
-    # metric="items_collected"
-    # filenames=["../data/sceptical/","25tw_p_allavg.csv","22tw_p_allavg_90r.csv"]
-    # filenames=[data_folder+metric+"/"+filename for filename in filenames[1:]]
-
-    #INNER COMPARISON
-    # labels=["0 lie angle\nbimodal noise","90 lie angle\nbimodal noise"]
-    # title=f"{behaviour}({method} comparison) behaviour\n22 honests, penalisation\n 3 saboteurs, ids:{22,23,24}"
-    # filenames=["25vs_p_allavg05_ratiow_0r.csv","22vs_p_allavg08_ratiow_90r.csv"]
-    
-    ###############################################################################################################################################
-            
-    # metric,mode=parse_args()
-    # myboxplots()
-    # myttest(data_folder="../data/all/",compare="")
-    # myanovatest()
-    # sidebyside_boxplots()
-    # plot_evolution(compare="g")
-    # evolution_boxplot0()
-    # after_transitory_phase()
-    # boxplot_evo_pen_lie()
     # multi_boxplot(filenames=filenames,
     #             data_folder="../data/reputation_global/",
     #             metric="items_evolution",
     #             experiments_labels=labels,
     #             title=title,) 
-    # noise_vs_items(filenames,
-    #                 data_folder=f"../data/{behaviour}/",
-    #                 # metric=f"items_collected/{method}",
-    #                 metric=f"items_collected",
-    #                 experiments_labels=labels,
-    #                 title=title,
-    # )                
 
     # find_best_worst_seeds(filenames=[
                                     
@@ -2028,27 +2186,3 @@ if __name__ == '__main__':
     #                     base_seed=5684436,
     #                     amount_to_find=3,
     #                 )
-
-    filenames=[
-        "",
-        ""
-        "",
-        "",
-        "",
-        "",
-    ]
-    labels=["naive","sceptical","ranking (50%)","weight weighted naive","threshold (.8 average)","variable scepticism"]
-    title="comparison different behaviours"
-    # iterative_boxplot(filenames=filenames,
-    #                 data_folder=f"",
-    #                 metric="items_collected",
-    #                 experiments_labels=labels,
-    #                 title=title,
-    #                 )
-
-    # noise_level(saboteurs_noise="average",noise_average=0.051,noise_range=0.14,random_switch=True,random_seed=5684436*20)
-    # noise_level(saboteurs_noise="perfect",noise_average=0.051,noise_range=0.14,random_switch=True,random_seed=5684436*20)
-    # filename=["25Nv_P_0LIA_allmaxCM_05SC_025ST_ratioWM_005SMU_005SSD_005NSD.json"]
-    # filename=["25Nv_NP_0LIA_allavgCM_03SC_025ST_ratioWM_0051NMU_01NRANG_avgSAB"]
-    # _,_,_,_,_,_, message=get_file_params(filename[0])
-    # print(message)

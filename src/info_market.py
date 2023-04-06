@@ -9,21 +9,11 @@ from sys import argv
 import argparse
 # from json.decoder import JSONDecodeError
 
+import config as CONFIG_FILE
 from controllers.main_controller import MainController, Configuration
 from controllers.view_controller import ViewController
 # import data_analysis
 
-# GLOBAL VARIABLES ##################################################################
-RECORD_DATA:bool = True
-CONFIG_LOG:bool = True
-# VERBOSE:bool = True
-
-# PROJECT_DIR="/home/ing/tesi/information_market/"
-# ERRORS_CONFIG_DIR=f"{PROJECT_DIR}src/errors_config/"
-# ERRORS_LOG_FILE=f"{PROJECT_DIR}src/error.log"
-# "." should be considered as /src folder
-ERRORS_CONFIG_DIR="./errors_config/"
-ERRORS_LOG_FILE="./error.log"
 
 ### UTILITIES ######################################################################
 # #TODO
@@ -35,52 +25,6 @@ ERRORS_LOG_FILE="./error.log"
 #     if args.all:
 #         select_all=True
 #     return select_all
-
-BEHAVIORS_DICT = {  "n": "NaiveBeahvior",
-                    "Nn": "NewNaiveBehavior",
-                    "s": "ScepticalBehavior",
-                    "NS": "NewScepticalBehavior",
-                    "r": "ReputationRankingBehavior",
-                    "v": "ScepticalReputationBehavior",
-                    "Nv": "NewScepticalReputationBehavior",
-                    "t": "WealthThresholdBehavior",
-                    "w": "WealthWeightedBehavior",
-                    }
-BEHAVIORS_NAME_DICT = {  "n": "Naive",
-                        "Nn": "Naive",
-                        "s": "Sceptical",
-                        "NS": "Sceptical",
-                        "r": "Reputation Ranking",
-                        "v": "Variable Scepticism",
-                        "Nv": "Variable Scepticism",
-                        "t": "Reputation Threshold",
-                        "w": "Reputation Weighted",
-                    }
-SUB_FOLDERS_DICT={  "n": "naive",
-                    "Nn": "new_naive",
-                    "s": "sceptical",
-                    "NS": "new_sceptical",
-                    "r": "ranking",
-                    "v": "variable_scepticism",
-                    "Nv": "new_variable_scepticism",
-                    "t": "wealth_threshold",
-                    "w": "wealth_weighted",
-                    }
-PARAMS_NAME_DICT={  "ST": "scepticims threshold",
-                    "RT": "ranking threshold",
-                    "CM": "comparison method",
-                    "SC": "scaling",
-                    "WM": "weight method",
-                    "P": "penalization",
-                    "NP": "non penalization",
-                    "LIA": "lie angle",
-                    "SMU": "bimodal noise sampling mean",
-                    "SSD": "bimodal noise sampling stdev",
-                    "NSD": "bimodal noise stdev",
-                    "NMU": "uniform noise mean",
-                    "NRANG": "uniform noise range",
-                    "SAB": "saboteur performance",
-                }
 
 
 def check_filename_existence(output_directory,metric,filename):
@@ -107,15 +51,6 @@ def main():
                 config = Configuration(config_file=p)
                 if config.value_of("visualization")['activate']:
                     main_controller = MainController(config)
-                    # data_analysis.noise_level(
-                    #                             main_controller.environment.ROBOTS_AMOUNT,
-                    #                             main_controller.environment.DISHONEST_AMOUNT,
-                    #                             config.value_of("agent")['noise_sampling_mu'],
-                    #                             config.value_of("agent")['noise_sd'],
-                    #                             "average",
-                    #                             random_switch=True,
-                    #                             random_seed=main_controller.environment.SIMULATION_SEED,
-                    #                         )
                     view_controller = ViewController(main_controller,
                                                         config.value_of("width"),
                                                         config.value_of("height"),
@@ -129,9 +64,9 @@ def main():
         print(f"Running {len(filenames)} config"
                 f"{'s' if len(filenames)>1 else ''}: ",end="\t")
         print(*filenames, sep="\n\t\t\t");print("\n\n")
-        if not RECORD_DATA:
+        if not CONFIG_FILE.RECORD_DATA:
             print("##\t"*10+"\nWARNING: data recording is disabled."
-                " Set RECORD_DATA to True to enable it.\n"+"##\t"*10+"\n")
+                " Set src/config(.py).RECORD_DATA to True to enable it.\n"+"##\t"*10+"\n")
 
     except IndexError:
         print("ERROR: no config file specified. Exiting...")
@@ -140,20 +75,22 @@ def main():
     for i,f in enumerate(filenames):
         c = Configuration(config_file=f)
         print(f"Running config {i+1}/{len(filenames)}: {f}")
-        if CONFIG_LOG: log_config(c,f)
+        if CONFIG_FILE.CONFIG_LOG: log_config(c,f)
         # run_processes(c)# uncomment for better config debugging  
         try:# comment here if uncommenting above
             run_processes(c)
-            if exists(join(ERRORS_CONFIG_DIR,f.split('/')[-1])):
-                system(f"rm {join(ERRORS_CONFIG_DIR,f.split('/')[-1])}")
-                print("successfully removed file from errors_config folder")
+            if exists(join(CONFIG_FILE.CONFIG_ERRORS_DIR,f.split('/')[-1])):
+                system(f"rm {join(CONFIG_FILE.CONFIG_ERRORS_DIR,f.split('/')[-1])}")
+                print("successfully removed file from config_errors folder")
+        #TODO https://www.google.com/search?channel=fs&q=python+exception+handling+log+full+traceback
+        #import logging
         except Exception as e:
-        #TODO not working with JSONDecodeError
-            with open(ERRORS_LOG_FILE, "a+") as fe:
+        #TODO cannot catch JSONDecodeError
+            with open(CONFIG_FILE.ERRORS_LOG_FILE, "a+") as fe:
                 fe.write(f"{datetime.datetime.now()}, file {f} : \n"+str(e)+"\n\n")
             print(f"ERROR: {e}")
-            Path(ERRORS_CONFIG_DIR).mkdir(parents=True, exist_ok=True)
-            system(f"cp {f} {ERRORS_CONFIG_DIR}{f.split('/')[-1]}")
+            Path(CONFIG_FILE.CONFIG_ERRORS_DIR).mkdir(parents=True, exist_ok=True)
+            system(f"cp {f} {CONFIG_FILE.CONFIG_ERRORS_DIR}{f.split('/')[-1]}")
             continue
 
         
@@ -164,9 +101,9 @@ def run_processes(config: Configuration):
     start = time.time()
     with Pool() as pool:
         controllers = pool.starmap(run, [(config, i) for i in range(nb_runs)])
-        if RECORD_DATA: 
+        if CONFIG_FILE.RECORD_DATA: 
             record_data(config, controllers)
-            if CONFIG_LOG: log_config(config,generate_filename(config),output_log=True)
+            if CONFIG_FILE.CONFIG_LOG: log_config(config,generate_filename(config),output_log=True)
     print(f'###### {datetime.datetime.now()}\tFinished {nb_runs} runs in {time.time()-start: .02f} seconds.\n')
 
 
@@ -187,13 +124,10 @@ def record_data(config:Configuration, controllers):
     output_directory = config.value_of("data_collection")["output_directory"]
     filename=generate_filename(config)
     for metric in config.value_of("data_collection")["metrics"]:
-    #TODO reintroduce append option, remember SEED
-    #TODO rework with situation template
+    #TODO reintroduce append option, increment SEED by data already present
         if metric=="rewards":
             rewards_df = pd.DataFrame([controller.get_rewards() for controller in controllers])
             Path(join(output_directory, "rewards")).mkdir(parents=True, exist_ok=True)
-            #TODO fix append then use this
-            # if seed!='' and seed!='random':
             current_filename=check_filename_existence(output_directory,metric,filename)
             rewards_df.to_csv(join(output_directory, "rewards", current_filename), index=False, header=False)
         elif metric=="items_collected":
@@ -226,6 +160,18 @@ def record_data(config:Configuration, controllers):
             Path(join(output_directory, "items_evolution")).mkdir(parents=True, exist_ok=True)
             current_filename=check_filename_existence(output_directory,metric,filename)
             pd.concat(dataframes).to_csv(join(output_directory, "items_evolution", current_filename))
+        elif metric=="transactions":
+            Path(join(output_directory, "transactions")).mkdir(parents=True, exist_ok=True)
+            attempted_df = pd.DataFrame([controller.get_attempted_transactions_list() for controller in controllers])
+            validated_df = pd.DataFrame([controller.get_validated_transactions_list() for controller in controllers])
+            completed_df = pd.DataFrame([controller.get_completed_transactions_list() for controller in controllers])
+            combined_df = pd.DataFrame([controller.get_combined_transactions_list() for controller in controllers])
+            # current_filename=check_filename_existence(output_directory,metric,filename)
+            current_filename=filename
+            attempted_df.to_csv(join(output_directory, "transactions", current_filename+"_attempted"), index=False, header=False)
+            validated_df.to_csv(join(output_directory, "transactions", current_filename+"_validated"), index=False, header=False)
+            completed_df.to_csv(join(output_directory, "transactions", current_filename+"_completed"), index=False, header=False)
+            combined_df.to_csv(join(output_directory, "transactions", current_filename+"_combined"), index=False, header=False)
         else:
             print(f"[WARNING] Could not record metric: '{metric}'. Metric name is not valid.")
 
@@ -250,9 +196,8 @@ def log_config(c,f,output_log=False):
         log_message=f"{datetime.datetime.now()}: {f}"
     else:
         log_message=f"OUTPUT FILENAME: {f}"
-    #TODO check FOLDER EXISTS
-    # if not os.path.exists(output_directory):
-    Path(output_directory).mkdir(parents=True, exist_ok=True)
+    if not exists(output_directory):
+        Path(output_directory).mkdir(parents=True, exist_ok=True)
     with open(f"{output_directory}config_log.txt", "a+") as f:
         f.write(log_message+"\n")
 

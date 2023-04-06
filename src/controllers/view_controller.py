@@ -1,12 +1,10 @@
-import os
+# import os
 import tkinter as tk
 import time
-
-from PIL import Image, ImageTk
+# from PIL import Image, ImageTk
 
 
 class ViewController:
-
     def __init__(self, controller, width=500, height=500, fps_cap=60):
         self.controller = controller
         self.fps_cap = fps_cap
@@ -35,6 +33,8 @@ class ViewController:
         #TODO dynamic counter len based on number of robots
         self.selection_counters=[-1,-1,-1,-1]
         self.create_bindings()
+
+        #TODO statistics window
 
         self.last_frame_time = time.time()
         self.last_fps_check_time = time.time()
@@ -155,10 +155,11 @@ class ViewController:
 #TODO
 def statistics_window():
     """
-    must contain:
-    -statistics of robots wealth (bar plot with average, max, min)
-    -number of messages
-    -number of messages per robot
-    -statistic on messages
+    - means and deviation of usefull metrics (wealth,...), max and min
+    - histogram of usefull metrics (wealth,...)
+    - noise levels
+    - number of transactions, number of transactions per robot, slope, statistics
+    - number of messages, number of messages per robot, slope, statistics
+    - value and statistics on blockchain [database]
     """
     pass

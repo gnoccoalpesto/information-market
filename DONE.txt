@@ -12,8 +12,6 @@
 =========
 SIMULATOR=======================================================
 
--FIX BUG 25--------------OKOKOKOKOKOKOKOKOKOKOKOKOKOKOKOKOKOKOK
-
 -SIMULATION (VISUAL) CONTROLS, README-------------OKOKOKOKOKOKOK
 
 -PRECISE RECORDING OF ITEMS TOO------------------OKOKOKOKOKOKOK
@@ -33,13 +31,18 @@ SIMULATOR=======================================================
 -branch working on MAJORANA
 --gui removed
 
+
 -DOUBLE MODE OF NOISE ASSIGNATION----------------OKOKOKOKOKOK
 --drawing from a bimodal distribution
---fixed, increasing with robot_id/ROBOT_AMOUNT
----perfect dishonests
----average dishonests
---initialization respects the classical order, where dishonests have
-   the largest ids (conserves spawn position for a given seed)
+-- "      "     "  a uniform distribution
+---fiven mean and range, sample equispatially foreach agent
+---perfect dishonests (lowest noise)
+---average dishonests (mean noise)
+---still, seed is respected (same starting positions)
+-> uniform noise is a metric for BYZANTININESS
+-->the noisier, the "dishonestier" the agent is
+
+
 ============
 PENALISATION=========================================================
 
