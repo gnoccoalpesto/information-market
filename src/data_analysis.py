@@ -2122,7 +2122,6 @@ if __name__ == '__main__':
     #         "threshold: .5 of average",
     #         ]
 
-
     # noise_level(number_saboteurs=1,saboteurs_noise="average",noise_average=0.051,noise_range=0.1,random_switch=True,random_seed=5684436*20)
     # noise_level(number_saboteurs=1,saboteurs_noise="perfect",noise_average=0.051,noise_range=0.1,random_switch=True,random_seed=5684436*20)
     # exit()
