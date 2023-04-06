@@ -1225,6 +1225,8 @@ class NewScepticalReputationBehavior(NewScepticalBehavior):
         reputation_score=payment_database.get_reward(seller_id)
         # extension, metric=re.split("_",self.comparison_method)
         extension, metric=self.comparison_method[:-3],self.comparison_method[-3:]
+
+
         reputation_dict = {"all":{
                             "max":payment_database.get_highest_reward,
                             "avg":payment_database.get_average_reward,
