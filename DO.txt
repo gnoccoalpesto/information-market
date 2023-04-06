@@ -1,5 +1,7 @@
 LUDERIC DRIVE
 https://drive.google.com/drive/folders/16iAl7eeitXAf_gAv4wz5sreHP5u6hpPb
+MYDRIVE
+https://drive.google.com/drive/folders/1PlWc36lnJWACqnCIYEpYKVkDDaUndFvD
 
 
 ================================================================
@@ -12,8 +14,6 @@ ___  ___        _    ___
 
 =========
 SIMULATOR=======================================================
-
-- FIX wrong INIT OF BEHAVIOURS, causing some to have DEFAULT
 
 -NEW DATA ON BCHAIN:
 ->EVERY DATA IS NOW TRACKED, NOT POSSIBLE TO LIE ON AGE,...
@@ -28,10 +28,6 @@ SIMULATOR=======================================================
 
 #   #   #   #   #   #
 
--CLEAN FILENAME READING (REMOVE CONFIGS=[])
---RUN DIRECTLY
-
-
 -SIMULATION STATISTICS WINDOW
 
 
@@ -42,23 +38,8 @@ SIMULATOR=======================================================
 ?-how the -X flags works with argv?
 
 
--AUTO NAME GENERATOR
---MORE OPTIONS: DICT FOR ALL POSSIBLE COMBINATION
---INCREMENTAL NAME GENERATION: if "+" in param name->add before
----ADD IN README RESTRICTED SYMBOL
-
-
-
-
 =============
 DATA ANALYSIS=======================================================
-
--plot WEALTH vs NOISE OF EACH ROBOTS
-
--extract seeds of BEST/WORSE X runs from results and show thems
-    with GUI
-
-#   #   #   #   #   #
 
 -ITERATIVE BOX PLOTS
 --instead of recursive DataFrama, 
@@ -118,18 +99,9 @@ REPUTATION: SYSTEM-WISE protection
 
 -REPUTATION: WEALTH
 
---FILTER  BASED on SCALED AVERAGE
----wealth >scaling avg_wealth
----50%, 60%, 80%
----or could use AVG-scaledVAR 
-
 --FILTER on LAST 10 REDISTRIBUTIONS OF WEALTH -> SLOPE
 ---remember to IGNORE STACKING
 ---metrics could be INCOME-STACKING>=<0
-
---VARIABLE SKEPTICISM: TETA
----weighted on REPUTATION
----the POORER-> NARROWER THRESHOLD (smaller)
 
 --VARIABLE SKEPTICISM: WAITING TIME
 ---age of info used in COMBINING STRATEGY
@@ -150,52 +122,63 @@ REPUTATION: SYSTEM-WISE protection
 ---compare the wealth across the two neighbourhoods
 
 
---DYNAMIC THRESHOLD w WEALTH
---varying(increasing) with time
-
+--DYNAMIC THRESHOLD w WEALTH & AGE
+--varying(decreasing) with time
 
 
 -local info/gossip? (to reduce data on blockchain)
 --WHAT TO DO WITH NEWCOMERS? maybe use a more decentralid approach
 while using a centralized one for the first robots
 
+
 -GAME THEORY: can it be modeled this way?
 --inverted: i know equilibia (cooperation) -> find payoff matrix
 
+
 -papers: centralized/decentralized approach
+
 
 -fairness
 
+
 -musolesi
+
 
 GAMETHEORY ALSO FOR TASK ALLOCATION?
 
 
 ===============
 TASK ALLOCATION=================================================
+
 -use cost of motion
+
 - introduce both cost w/, w/out resource loaded
+
 -use stopping time (com stop time):stop cost
+
 !do not use request cooldown
+
 !offer-demand laws (intersectin point of linear characteristic) must regulate the sys
 !!robots must enroll themselves in the task they know are better suited for
 
 
-
 ======================================
 PATH PLANNING FOR COMPLEX ENVIRONMENTS===========================
+
 -complex environment (walls, obstacles, etc)
 !as for now is simple vectorial start-> end
+
 -introduce waypoint navigation
 -?how to take into account and recover from errors
-
 
 
 =============
 PENALISATION=========================================================
 
 -GAP WITHvsWITHOUT ----------------------------------
+
 --STABLE: items throughput (items/tick==slope)
+
 --TRANSITORY: number of SOLD MESSAGES (at the beginning), enough?
 ---use transactions logs to compute the distribution of sold messages wrt steps
 

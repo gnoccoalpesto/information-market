@@ -138,4 +138,24 @@ class MainController:
 
 
     def get_transaction_log(self):
-        return self.environment.payment_database.log_db
+        return self.environment.payment_database.completed_transactions_log
+
+
+    def get_attempted_transactions_list(self):
+        return [self.environment.payment_database.get_attempted_transactions(bot.id) \
+            for bot in self.environment.population]
+
+
+    def get_validated_transactions_list(self):
+        return [self.environment.payment_database.get_validated_transactions(bot.id) \
+            for bot in self.environment.population]
+
+
+    def get_completed_transactions_list(self):
+        return [self.environment.payment_database.get_completed_transactions(bot.id) \
+            for bot in self.environment.population]
+
+
+    def get_combined_transactions_list(self):
+        return [self.environment.payment_database.get_combined_transactions(bot.id) \
+            for bot in self.environment.population]

@@ -102,7 +102,7 @@ DATA_TRANSACTIONS_LOG=false
 
 #robots
 NUMBER_OF_ROBOTS=25
-HONEST_POPULATION_LIST=(25)
+HONEST_POPULATION_LIST=(24)
 DISHONEST_LIE_ANGLES=(90)
 
 
@@ -122,9 +122,9 @@ rRANKING_THRESHOLD_LIST=(0.3 0.5)
 
 # variable scepticism: v ; new variable scepticism: Nv
 # -params:{comparison_method,scaling,scepticism_threshold,weight_method}
-vSCEPTICISM_THRESHOLD_LIST=(0.25)
 vCOMPARISON_METHOD_LIST=("allavg" "allmax")
 vSCALING_LIST=(0.8 0.5 0.3)
+vSCEPTICISM_THRESHOLD_LIST=(0.25)
 vWEIGHT_METHOD_LIST=("ratio" "exponential")
 
 # wealth threshold: t
@@ -203,7 +203,7 @@ declare -A SUB_DIR_BEHAVIOR
 	SUB_DIR_BEHAVIOR[Ns]="new_sceptical/"
 	SUB_DIR_BEHAVIOR[r]="ranking/"
 	SUB_DIR_BEHAVIOR[v]="variable_scepticism/"
-	SUB_DIR_BEHAVIOR[Nv]="new_variable_scepticism/"
+	SUB_DIR_BEHAVIOR[Nv]="variable_scepticism/"
 	SUB_DIR_BEHAVIOR[t]="wealth_threshold/"
 	SUB_DIR_BEHAVIOR[w]="wealth_weighted/"
 
@@ -256,6 +256,8 @@ declare -A NOISE_FILENAME_ADDITIONAL_INFO
 COUNT=0
 
 #CONFIG FILE GENERATION ##	#######################################################################
+#TODO GIOVANNI's SUGGESTION: avoid copy-paste, to avoid debug when adding new stuff
+#TODO make a function call in the inner part
 for AGENT_NOISE_ASSIGNATION in ${AGENT_NOISE_ASSIGNATION_LIST[*]} ; do
 	#---------------- RANDOM NOISE EXPERIMENTS ----------------#
 	if [[ $AGENT_NOISE_ASSIGNATION == "bimodal" ]]; then

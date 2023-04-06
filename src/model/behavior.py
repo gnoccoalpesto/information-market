@@ -5,6 +5,7 @@ from enum import Enum
 from math import cos, radians, sin
 import numpy as np
 
+import config as CONFIG_FILE
 from model.payment import PaymentDB
 from model.communication import CommunicationSession
 from model.navigation import Location, NavigationTable, Target
@@ -12,7 +13,66 @@ from model.strategy import WeightedAverageAgeStrategy, strategy_factory
 from helpers.utils import get_orientation_from_vector, norm, InsufficientFundsException, NoInformationSoldException, \
     NoLocationSensedException
 
-VERBOSE=False
+
+BEHAVIORS_DICT = {  "n": "NaiveBeahvior",
+                    "Nn": "NewNaiveBehavior",
+                    "s": "ScepticalBehavior",
+                    "Ns": "NewScepticalBehavior",
+                    "r": "ReputationRankingBehavior",
+                    "v": "ScepticalReputationBehavior",
+                    "Nv": "NewScepticalReputationBehavior",
+                    "t": "WealthThresholdBehavior",
+                    "w": "WealthWeightedBehavior",
+                    }
+BEHAVIORS_NAME_DICT = {  "n": "Naive",
+                        "Nn": "Naive",
+                        "s": "Sceptical",
+                        "Ns": "Sceptical",
+                        "r": "Reputation Ranking",
+                        "v": "Variable Scepticism",
+                        "Nv": "Variable Scepticism",
+                        "t": "Reputation Threshold",
+                        "w": "Reputation Weighted",
+                    }
+SUB_FOLDERS_DICT={  "n": "naive",
+                    "Nn": "new_naive",
+                    "s": "sceptical",
+                    "Ns": "new_sceptical",
+                    "r": "ranking",
+                    "v": "variable_scepticism",
+                    "Nv": "variable_scepticism",
+                    "t": "wealth_threshold",
+                    "w": "wealth_weighted",
+                    }
+PARAMS_NAME_DICT={  "ST": "scepticims threshold",
+                    "RT": "ranking threshold",
+                    "CM": "comparison method",
+                    "SC": "scaling",
+                    "WM": "weight method",
+                    "P": "penalization",
+                    "NP": "non penalization",
+                    "LIA": "lie angle",
+                    "SMU": "bimodal noise sampling mean",
+                    "SSD": "bimodal noise sampling stdev",
+                    "NSD": "bimodal noise stdev",
+                    "NMU": "uniform noise mean",
+                    "NRANG": "uniform noise range",
+                    "SAB": "saboteur performance",
+                }
+NOISE_PARAMS_DICT={ "bimodal": ["SMU","SSD","NSD"],
+                    "uniform": ["NMU","NRANG","SAB"],
+                }
+BEHAVIOR_PARAMS_DICT = {"n": [],
+                        "Nn": [],
+                        "s": ["ST"],
+                        "Ns": ["ST"],
+                        "r": ["RT"],
+                        "v": ["CM","SC","ST","WM"],
+                        "Nv": ["CM","SC","ST","WM"],
+                        "t": ["CM","SC"],
+                        "w": [],
+                        }
+
 
 class State(Enum):
     EXPLORING = 1
@@ -35,6 +95,7 @@ def behavior_factory(behavior_params):
     behavior = eval(behavior_params['class'])(**behavior_params['parameters'])
     return behavior
 
+
 #TODO add, INFORMATION_ORDERING_METRICS, STRATEGY,...
 # def required_information_for_behavior(behavior):
 #     behaviors_list={
@@ -54,6 +115,7 @@ def behavior_factory(behavior_params):
 #         "SaboteurWealthWeightedBehavior": RequiredInformation.GLOBAL,
 #     }
 #     return behaviors_list[behavior]
+
 
 class Behavior(ABC):
     def __init__(self):
@@ -90,7 +152,7 @@ class TemplateBehaviour(Behavior):
 
 
     def get_ordered_metadata(self,location: Location, payment_database: PaymentDB,session: CommunicationSession):
-        #COULD JUST COMPLETELY OVERRIDE THIS
+        #TODO COULD JUST COMPLETELY OVERRIDE THIS
         metadata = session.get_metadata(location)
         if self.information_ordering_metric == "reputation":
             for bot_id in metadata:
@@ -149,6 +211,7 @@ class TemplateBehaviour(Behavior):
                         my_reputation,
                         seller_reputation)
         self.navigation_table.replace_information_entry(location, new_target)
+        # payment_database.record_completed_transaction(self.id)
 
 
     # @abstractmethod
@@ -171,14 +234,20 @@ class TemplateBehaviour(Behavior):
             sorted_metadata=self.get_ordered_metadata(location, payment_database, session)
 
             for seller_id, data in sorted_metadata:
-                if VERBOSE:print('trying')
+                # payment_database.record_attempted_transaction(self.id)
+                session.record_attempted_transaction()
+
                 if self.test_data_validity(location,data,payment_database,seller_id):
+                    # payment_database.record_validated_transaction(self.id)
+                    session.record_validated_transaction()
+
                     try:
                         target=self.navigation_table.get_information_entry(location)
                         other_target=self.acquire_referenced_info(location,session,seller_id)
 
                         if self.test_data_quality(location,other_target,payment_database,seller_id):
-                            if VERBOSE:print('combining')
+                            session.record_combined_transaction()
+
                             self.combine_data(location,target, other_target,payment_database,seller_id)
 
                         else:
@@ -300,12 +369,17 @@ class NaiveBehavior(Behavior):
             metadata = session.get_metadata(location)
             metadata_sorted_by_age = sorted(metadata.items(), key=lambda item: item[1]["age"])
             for bot_id, data in metadata_sorted_by_age:
+                session.record_attempted_transaction()
+
                 if data["age"] < self.navigation_table.get_age_for_location(location):
+                    session.record_validated_transaction()
+
                     try:
                         other_target = session.make_transaction(neighbor_id=bot_id, location=location)
                         new_target = self.strategy.combine(self.navigation_table.get_information_entry(location),
                                                            other_target,
                                                            session.get_distance_from(bot_id))
+                        session.record_combined_transaction()
                         self.navigation_table.replace_information_entry(location, new_target)
                         break
                     except InsufficientFundsException:
@@ -504,8 +578,12 @@ class ScepticalBehavior(NaiveBehavior):
             metadata = session.get_metadata(location)
             metadata_sorted_by_age = sorted(metadata.items(), key=lambda item: item[1]["age"])
             for bot_id, data in metadata_sorted_by_age:
+                session.record_attempted_transaction()
+
                 if data["age"] < self.navigation_table.get_age_for_location(location) and bot_id not in \
                         self.pending_information[location]:
+                    session.record_validated_transaction()
+
                     try:
                         other_target = session.make_transaction(neighbor_id=bot_id, location=location)
                         other_target.set_distance(other_target.get_distance() + session.get_distance_from(
@@ -518,6 +596,7 @@ class ScepticalBehavior(NaiveBehavior):
                             new_target = self.strategy.combine(self.navigation_table.get_information_entry(location),
                                                                other_target,
                                                                np.array([0, 0]))
+                            session.record_combined_transaction()
                             self.navigation_table.replace_information_entry(location, new_target)
                             self.pending_information[location].clear()
                         else:
@@ -528,6 +607,7 @@ class ScepticalBehavior(NaiveBehavior):
                                     new_target = self.strategy.combine(target,
                                                                        other_target,
                                                                        np.array([0, 0]))
+                                    session.record_combined_transaction()
                                     self.navigation_table.replace_information_entry(location, new_target)
                                     self.pending_information[location].clear()
                                     break
@@ -1033,7 +1113,7 @@ class ReputationRankingBehavior(TemplateBehaviour):
             return True
         return False
 
-    
+
     def compute_seller_percentile(self,payment_database:PaymentDB,seller_id):
         rank=payment_database.get_wallet_ranking(seller_id)
         percentile=1-rank/len(payment_database.database)
@@ -1079,7 +1159,7 @@ class WealthThresholdBehavior(TemplateBehaviour):
             return True
         return False
 
-    
+
     def stop_buying_process(self):
         return False
 
@@ -1128,7 +1208,7 @@ class SaboteurWealthThresholdBehavior(WealthThresholdBehavior):
     def sell_info(self, location):
         t = copy.deepcopy(self.navigation_table.get_information_entry(location))
         t.rotate(self.lie_angle)
-        return t 
+        return t
 
 
 class NewScepticalReputationBehavior(NewScepticalBehavior):

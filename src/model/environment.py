@@ -50,7 +50,7 @@ def generate_static_noise_list(n_robots,n_dishonest,dishonest_noise_performance,
                                     [_ for _ in range(rounded_n_honests+n_dishonest,n_robots)]+
                                     [_ for _ in range(rounded_n_honests,rounded_n_honests+n_dishonest)]]
     elif dishonest_noise_performance=="perfect":
-        #heuristic for perfect saboteur in conditions around nominal
+        #heuristic for perfect saboteur in conditions around nominal: mean=0.05, range=0.1-0.14
         ids_negative_value_dict={"0.1":int(200*(0.05-noise_mu)),
                                 "0.15":n_robots//7,
                                 "0.2":n_robots//5}
@@ -69,12 +69,13 @@ def generate_static_noise_list(n_robots,n_dishonest,dishonest_noise_performance,
                                     [_ for _ in range(ids_negative_value+n_dishonest,n_robots)]+
                                     [_ for _ in range(ids_negative_value,ids_negative_value+n_dishonest)]]
     random_seeder(random_seed)
-    return [generate_noise(noise_mu,
+    noise_list=[generate_noise(noise_mu,
                             noise_range,
                             robot_id,
                             n_robots,
                             random_switch) 
                 for robot_id in generation_list ]
+    return noise_list
     
 
 class Environment:
@@ -107,8 +108,10 @@ class Environment:
 
 
     def step(self):
-        # compute neighbors
         self.timestep += 1
+        for robot in self.population:
+            self.payment_database.increment_wallet_age(robot.id)
+        # compute neighbors
         pop_size = len(self.population)
         neighbors_table = [[] for i in range(pop_size)]
         for id1 in range(pop_size):

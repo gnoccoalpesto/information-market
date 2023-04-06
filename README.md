@@ -145,7 +145,6 @@ Robots can exhibit multiple behaviors. This sections briefly lists these behavio
       - `allmax`: threshold is .5 of maximum wealth, among all robots;
       - `allmin`: threshold is 2.5 of minimum wealth, among all robots;
       - `allavg`: threshold is .8 of average wealth, among all robots;
-      - `all_rise`: threshold varies with time; TODO;
 - ...
 - `SaboteurReputationStaticThresholdBehavior`: SaboteurBehaviour comparing wealth reputation with a dynamic threshold.
   - parameters:

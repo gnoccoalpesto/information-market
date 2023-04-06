@@ -1,16 +1,15 @@
 import copy
+import numpy as np
 
-from helpers import random_walk as rw
 from random import random, choices, gauss
 from math import sin, cos, radians
 # from tkinter import LAST
 from collections import deque
 
-from model.behavior import State, behavior_factory, RequiredInformation
+from helpers import random_walk as rw
+from model.behavior import State, behavior_factory, RequiredInformation, TemplateBehaviour
 from model.communication import CommunicationSession
 from model.navigation import Location
-import numpy as np
-
 from helpers.utils import get_orientation_from_vector, rotate, InsufficientFundsException, CommunicationState, norm, \
     NoLocationSensedException
 
@@ -27,11 +26,11 @@ class AgentAPI:
         self.get_levi_turn_angle = agent.get_levi_turn_angle
 
 
-"""
-NOTE: random numbers are discarded in case of non bimodal noise drawing to preserve the same sequence
-of the bimodal case, for spawn and following requests
-"""
 class Agent:
+    '''
+    NOTE: random numbers are discarded in case of non bimodal noise drawing to preserve the same sequence
+    of the bimodal case, for spawn and following requests
+    '''
     colors = {State.EXPLORING: "gray35", State.SEEKING_FOOD: "orange", State.SEEKING_NEST: "green"}
 
     def __init__(self,
@@ -86,7 +85,7 @@ class Agent:
 
         self.dr = np.array([0, 0])
         self.sensors = {}
-        self.behavior = behavior_factory(behavior_params)
+        self.behavior:TemplateBehaviour = behavior_factory(behavior_params)
         self.api = AgentAPI(self)
 
 
@@ -132,7 +131,6 @@ class Agent:
             #agents decides to query only neigh or bchain for info
             if self.behavior.required_information==RequiredInformation.LOCAL:
                 self.behavior.buy_info(None,session)
-                # self.behavior.buy_info(session)
             elif self.behavior.required_information==RequiredInformation.GLOBAL:    
                 self.behavior.buy_info(self.environment.payment_database,session)
         self.new_nav = self.behavior.navigation_table
@@ -310,9 +308,21 @@ class Agent:
         self.dr = dr
 
 
-    def record_transaction(self, transaction):
+    def record_attempted_transaction(self):
+        self.environment.payment_database.record_attempted_transaction(self.id)
+
+    
+    def record_validated_transaction(self):
+        self.environment.payment_database.record_validated_transaction(self.id)
+
+
+    def record_completed_transaction(self, transaction):
         transaction.timestep = self.environment.timestep
-        self.environment.payment_database.record_transaction(transaction)
+        self.environment.payment_database.record_completed_transaction(transaction)
+
+
+    def record_combined_transaction(self):
+        self.environment.payment_database.record_combined_transaction(self.id)
 
 
     def update_communication_state(self):

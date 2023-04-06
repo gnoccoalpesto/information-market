@@ -1,10 +1,6 @@
-data*/**/*.txt
-data*/**/*.csv
-data.*/
-data*
 **/__pycache__/*
-config*/*
-config_*/*
-!config/config_template
-!config/new_behaviors.json
+config*
+data*
+plots/*
 src/error*
+!src/config.py

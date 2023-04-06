@@ -29,23 +29,15 @@
     "communication_stop_time": 0,
     "communication_cooldown": 0,
     "fuel_cost": 0,
-    "noise2": {
-      "class": "BimodalNoise",
-      "parameters": {
-        "noise_sampling_mu": 0.0,
-        "noise_sampling_sigma": 0.05,
-        "noise_sd": 0.02
-        }
-      },
-      "noise": {
+    "noise": {
         "class": "UniformNoise",
         "parameters": {
           "dishonest_noise_performance": "average",
           "noise_mu":0.051,
           "noise_range": 0.1
         }
-    }
-  },
+      }
+    },
   "behaviors": [
     {
       "class": "NaiveBehavior",
@@ -180,7 +172,7 @@
     }
   },
   "data_collection": {
-    "output_directory": "../data/test/",
+    "output_directory": "../data/TEST/",
     "filename": "test.csv",
     "metrics": ["items_evolution","rewards_evolution","items_collected","rewards"],
     "precise_recording_interval": 100,
