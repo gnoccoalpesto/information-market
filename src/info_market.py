@@ -11,7 +11,7 @@ import argparse
 
 import config as CONFIG_FILE
 from controllers.main_controller import MainController, Configuration
-# from controllers.view_controller import ViewController
+from controllers.view_controller import ViewController
 # import data_analysis
 
 

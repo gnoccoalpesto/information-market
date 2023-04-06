@@ -1,5 +1,5 @@
 from math import cos, sin, radians
-# from PIL import ImageTk
+from PIL import ImageTk
 from model.agent import Agent
 from model.market import market_factory
 from model.navigation import Location
@@ -130,8 +130,8 @@ class Environment:
         self.market.step()
 
 
-    # def load_images(self):
-    #     self.img = ImageTk.PhotoImage(file="../assets/strawberry.png")
+    def load_images(self):
+        self.img = ImageTk.PhotoImage(file="../assets/strawberry.png")
 
 
     def create_robots(self, agent_params, behavior_params):
@@ -219,55 +219,55 @@ class Environment:
             return np.array([self.locations[location][0], self.locations[location][1]])
 
 
-    # def draw(self, canvas):
-    #     self.draw_zones(canvas)
-    #     self.draw_strawberries(canvas)
-    #     for robot in self.population:
-    #         robot.draw(canvas)
-    #     # self.draw_best_bot(canvas)
+    def draw(self, canvas):
+        self.draw_zones(canvas)
+        self.draw_strawberries(canvas)
+        for robot in self.population:
+            robot.draw(canvas)
+        # self.draw_best_bot(canvas)
 
 
-    # def draw_market_stats(self, stats_canvas):
-    #     margin = 15
-    #     width = stats_canvas.winfo_width() - 2 * margin
-    #     height = 20
-    #     stats_canvas.create_rectangle(margin, 50, margin + width, 50 + height, fill="light green", outline="")
-    #     target_demand = self.market.demand
-    #     max_theoretical_supply = self.market.demand/self.demand
-    #     demand_pos_x = width*target_demand/max_theoretical_supply
-    #     supply_pos_x = width*self.market.get_supply()/max_theoretical_supply
-    #     supply_bar_width = 2
-    #     stats_canvas.create_rectangle(margin + demand_pos_x, 50, margin + width, 50 + height, fill="salmon", outline="")
-    #     stats_canvas.create_rectangle(margin + supply_pos_x - supply_bar_width/2, 48, margin + supply_pos_x + supply_bar_width/2, 52 + height, fill="gray45", outline="")
-    #     stats_canvas.create_text(margin + supply_pos_x - 5, 50 + height + 5, fill="gray45", text=f"{round(self.market.get_supply())}", anchor="nw", font="Arial 10")
+    def draw_market_stats(self, stats_canvas):
+        margin = 15
+        width = stats_canvas.winfo_width() - 2 * margin
+        height = 20
+        stats_canvas.create_rectangle(margin, 50, margin + width, 50 + height, fill="light green", outline="")
+        target_demand = self.market.demand
+        max_theoretical_supply = self.market.demand/self.demand
+        demand_pos_x = width*target_demand/max_theoretical_supply
+        supply_pos_x = width*self.market.get_supply()/max_theoretical_supply
+        supply_bar_width = 2
+        stats_canvas.create_rectangle(margin + demand_pos_x, 50, margin + width, 50 + height, fill="salmon", outline="")
+        stats_canvas.create_rectangle(margin + supply_pos_x - supply_bar_width/2, 48, margin + supply_pos_x + supply_bar_width/2, 52 + height, fill="gray45", outline="")
+        stats_canvas.create_text(margin + supply_pos_x - 5, 50 + height + 5, fill="gray45", text=f"{round(self.market.get_supply())}", anchor="nw", font="Arial 10")
 
 
-    # def draw_zones(self, canvas):
-    #     food_circle = canvas.create_oval(self.food[0] - self.food[2],
-    #                                      self.food[1] - self.food[2],
-    #                                      self.food[0] + self.food[2],
-    #                                      self.food[1] + self.food[2],
-    #                                      fill="green",
-    #                                      outline="")
-    #     nest_circle = canvas.create_oval(self.nest[0] - self.nest[2],
-    #                                      self.nest[1] - self.nest[2],
-    #                                      self.nest[0] + self.nest[2],
-    #                                      self.nest[1] + self.nest[2],
-    #                                      fill="orange",
-    #                                      outline="")
+    def draw_zones(self, canvas):
+        food_circle = canvas.create_oval(self.food[0] - self.food[2],
+                                         self.food[1] - self.food[2],
+                                         self.food[0] + self.food[2],
+                                         self.food[1] + self.food[2],
+                                         fill="green",
+                                         outline="")
+        nest_circle = canvas.create_oval(self.nest[0] - self.nest[2],
+                                         self.nest[1] - self.nest[2],
+                                         self.nest[0] + self.nest[2],
+                                         self.nest[1] + self.nest[2],
+                                         fill="orange",
+                                         outline="")
 
 
-    # def draw_strawberries(self, canvas):
-    #     for bot_id, pos in self.foraging_spawns[Location.FOOD].items():
-    #         canvas.create_image(pos[0] - 8, pos[1] - 8, image=self.img, anchor='nw')
+    def draw_strawberries(self, canvas):
+        for bot_id, pos in self.foraging_spawns[Location.FOOD].items():
+            canvas.create_image(pos[0] - 8, pos[1] - 8, image=self.img, anchor='nw')
 
 
-    # def draw_best_bot(self, canvas):
-    #     circle = canvas.create_oval(self.population[self.best_bot_id].pos[0] - 4,
-    #                                 self.population[self.best_bot_id].pos[1] - 4,
-    #                                 self.population[self.best_bot_id].pos[0] + 4,
-    #                                 self.population[self.best_bot_id].pos[1] + 4,
-    #                                 fill="red")
+    def draw_best_bot(self, canvas):
+        circle = canvas.create_oval(self.population[self.best_bot_id].pos[0] - 4,
+                                    self.population[self.best_bot_id].pos[1] - 4,
+                                    self.population[self.best_bot_id].pos[0] + 4,
+                                    self.population[self.best_bot_id].pos[1] + 4,
+                                    fill="red")
 
 
     def get_best_bot_id(self):
