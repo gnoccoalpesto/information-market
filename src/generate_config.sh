@@ -8,27 +8,28 @@
 # OPTIONALLY, can pass a parameter to create a subdirectory in the data directory
 #             for the current experiment
 #
-# usage: ./generate_config.sh [subdirectory_name]
+# usage: ./generate_config.sh [experiment_subdirectory_name]
 
-PROJECT_HOME="${HOME}/information-market/"
+#TODO source this stuff in a file/bashrc,...
+PROJECT_HOME="${HOME}/ing/tesi/information-market/"
 CONFIG_DIR="${PROJECT_HOME}config/"
 ASSETS_DIR="${PROJECT_HOME}assets/"
 EXEC_FILE="${PROJECT_HOME}src/info_market.py"
-DATA_DIR="${PROJECT_HOME}data/CLUSTER/"
-# DATA_DIR="${PROJECT_HOME}data/"
+DATA_DIR="${PROJECT_HOME}data/TRANSACTION/"
 if [ $# -ne 0 ]; then
   DATA_DIR="${DATA_DIR}$1/"
 fi
 
 CONFIG_FILE_TEMPLATE="${ASSETS_DIR}config_template"
-# CONFIG_FILE_TEMPLATE="${CONFIG_DIR}config_template"
 
 
+#########################################################################
 # --- PLEASE REFER TO README FOR MORE INFORMATION ON THE PARAMETERS --- #
+#########################################################################
 
 
 #GENERAL PARAMETERS ####################################################
-# -- DO NOT MODIFY, UNLESS YOU WANT TO INTRODUCE ENVIRONMENT CHANGES - #
+# - DO NOT MODIFY,  UNLESS YOU WANT TO INTRODUCE ENVIRONMENT CHANGES - #
 
 #environment
 WIDTH=1200
@@ -43,7 +44,6 @@ FOOD_RADIUS=50
 NEST_X=1000
 NEST_Y=300
 NEST_RADIUS=50
-
 
 #visualisation
 VISUALISATION_FPS=60
@@ -81,7 +81,7 @@ NUMBER_RUNS=20
 VISUALISATION_ACTIVATE=false
 
 #noise
-AGENT_NOISE_ASSIGNATION_LIST=("bimodal" "average" "perfect")
+AGENT_NOISE_ASSIGNATION_LIST=("average" "perfect")
 # RANDOM: "bimodal"; FIXED: "average" "perfect" (saboteur performance)
 # bimodal:
 AGENT_NOISE_SAMPLING_MU_LIST=(0.05)
@@ -89,7 +89,7 @@ AGENT_NOISE_SAMPLING_SIGMA_LIST=(0.05)
 AGENT_NOISE_SD_LIST=(0.05)
 # average, perfect:
 AGENT_NOISE_MU_LIST=(0.051)
-AGENT_NOISE_RANGE_LIST=(0.1 0.14)
+AGENT_NOISE_RANGE_LIST=(0.1)
 
 #payment system
 # PAYMENT_SYSTEM_CLASS=("OutlierPenalisationPaymentSystem")
@@ -102,7 +102,7 @@ DATA_TRANSACTIONS_LOG=false
 
 #robots
 NUMBER_OF_ROBOTS=25
-HONEST_POPULATION_LIST=(24)
+HONEST_POPULATION_LIST=(25 24)
 DISHONEST_LIE_ANGLES=(90)
 
 

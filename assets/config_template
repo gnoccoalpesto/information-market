@@ -53,7 +53,7 @@
   "data_collection": {
     "output_directory": "DATA_OUTPUT_DIRECTORY",
     "filename": "DATA_FILENAME",
-    "metrics": ["items_evolution","rewards_evolution","items_collected","rewards"],
+    "metrics": ["items_evolution","rewards_evolution","items_collected","rewards","transactions"],
     "precise_recording_interval": DATA_PRECISE_RECORDING_INTERVAL,
     "transactions_log": DATA_TRANSACTIONS_LOG
       }

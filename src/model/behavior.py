@@ -1,17 +1,17 @@
 import copy
-import re
+# import re
 from abc import ABC, abstractmethod
 from enum import Enum
 from math import cos, radians, sin
 import numpy as np
 
-import config as CONFIG_FILE
+# import config as CONFIG_FILE
 from model.payment import PaymentDB
 from model.communication import CommunicationSession
 from model.navigation import Location, NavigationTable, Target
 from model.strategy import WeightedAverageAgeStrategy, strategy_factory
-from helpers.utils import get_orientation_from_vector, norm, InsufficientFundsException, NoInformationSoldException, \
-    NoLocationSensedException
+from helpers.utils import get_orientation_from_vector, norm, InsufficientFundsException, \
+    NoInformationSoldException, NoLocationSensedException
 
 
 BEHAVIORS_DICT = {  "n": "NaiveBeahvior",
@@ -72,6 +72,67 @@ BEHAVIOR_PARAMS_DICT = {"n": [],
                         "t": ["CM","SC"],
                         "w": [],
                         }
+BAD_COMBINATIONS={
+                    "n": [],
+                    "Nn": [],
+                    "s": [],
+                    "Ns": [],
+                    "r": [
+                        # ['', ['']],
+                        ],
+                    "v": [],
+                    "Nv": [
+                        ['NP', ['allavg', '03', '025', 'exponential']],
+                        ['NP', ['allavg', '05', '025', 'exponential']],
+                        ['NP', ['allavg', '08', '025', 'exponential']],
+                        ['NP', ['allmax', '03', '025', 'exponential']],
+                        ['NP', ['allmax', '08', '025', 'exponential']],
+                        ['NP', ['allavg', '08', '025', 'exponential']],
+                        ['P', ['allavg', '08', '025', 'exponential']],
+                        ['P', ['allavg', '08', '025', 'ratio']],
+                        ['P', ['allmax', '03', '025', 'exponential']],
+                        ['P', ['allmax', '03', '025', 'ratio']],
+                        ['P', ['allmax', '05', '025', 'exponential']],
+                        ['P', ['allmax', '05', '025', 'ratio']],
+                        ['P', ['allmax', '08', '025', 'exponential']],
+                        ['P', ['allmax', '08', '025', 'ratio']],
+                        ],
+                    "t": [
+                        ['NP', ['allavg', '03']],
+                        ['NP', ['allavg', '05']],
+                        ['NP', ['allavg', '08']],
+                        ['NP', ['allmax', '03']],
+                        ['NP', ['allmax', '05']],
+                        ['P', ['allmax', '05']],
+                        ['P', ['allmax', '08']],
+                        ],
+                    #TODO dots in filenames
+                    #     ['NP', ['allavg', '0.3', '0.25', 'exponential']],
+                    #     ['NP', ['allavg', '0.5', '0.25', 'exponential']],
+                    #     ['NP', ['allavg', '0.8', '0.25', 'exponential']],
+                    #     ['NP', ['allmax', '0.3', '0.25', 'exponential']],
+                    #     ['NP', ['allmax', '0.8', '0.25', 'exponential']],
+                    #     ['NP', ['allavg', '0.8', '0.25', 'exponential']],
+                    #     ['P', ['allavg', '0.8', '0.25', 'exponential']],
+                    #     ['P', ['allavg', '0.8', '0.25', 'ratio']],
+                    #     ['P', ['allmax', '0.3', '0.25', 'exponential']],
+                    #     ['P', ['allmax', '0.3', '0.25', 'ratio']],
+                    #     ['P', ['allmax', '0.5', '0.25', 'exponential']],
+                    #     ['P', ['allmax', '0.5', '0.25', 'ratio']],
+                    #     ['P', ['allmax', '0.8', '0.25', 'exponential']],
+                    #     ['P', ['allmax', '0.8', '0.25', 'ratio']],
+                    #     ],
+                    # "t": [
+                    #     ['NP', ['allavg', '0.3']],
+                    #     ['NP', ['allavg', '0.5']],
+                    #     ['NP', ['allavg', '0.8']],
+                    #     ['NP', ['allmax', '0.3']],
+                    #     ['NP', ['allmax', '0.5']],
+                    #     ['P', ['allmax', '0.5']],
+                    #     ['P', ['allmax', '0.8']],
+                    #     ],\\
+                    "w": [],
+                }
 
 
 class State(Enum):

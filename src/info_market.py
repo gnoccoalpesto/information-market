@@ -1,4 +1,5 @@
 import time
+import re
 import datetime
 import pandas as pd
 from multiprocessing import Pool
@@ -6,13 +7,14 @@ from pathlib import Path
 from os.path import join, exists, isfile
 from os import listdir, system
 from sys import argv
-import argparse
+# import argparse
 # from json.decoder import JSONDecodeError
 
 import config as CONFIG_FILE
 from controllers.main_controller import MainController, Configuration
 from controllers.view_controller import ViewController
-# import data_analysis
+from model.behavior import BAD_COMBINATIONS, BEHAVIORS_NAME_DICT, BEHAVIOR_PARAMS_DICT, \
+    PARAMS_NAME_DICT, NOISE_PARAMS_DICT
 
 
 ### UTILITIES ######################################################################
@@ -25,6 +27,101 @@ from controllers.view_controller import ViewController
 #     if args.all:
 #         select_all=True
 #     return select_all
+
+
+def params_from_filename(filename:str, compact_format:bool=False):
+    """
+    :param compact_format: if True, returns the initials, and only the values of the parameters instead of the label text
+    filename format:
+    nhonestHONESTBEHAVIOUR_PAYMENTSYSTEM_lieangleLIA_behaviorparams_noiseparams
+
+    HONESTBEHAVIOUR =   "n": "NaiveBeahvior",
+                        "Nn": "NewNaiveBehavior",
+                        "s": "ScepticalBehavior",
+                        "Ns": "NewScepticalBehavior",
+                        "r": "ReputationRankingBehavior",
+                        "v": "ScepticalReputationBehavior",
+                        "Nv": "NewScepticalReputationBehavior",
+                        "t": "WealthThresholdBehavior",
+                        "w": "WealthWeightedBehavior",
+
+    PAYMENTSYSTEM =     "NP": "No Penalization",
+                        "P": "Penalization",
+
+    lieangle =          [0, 90]
+
+    behaviorparams =    "n","Nn","w":   {},
+                        "s","Ns":       {"ST": "scepticims threshold"},
+                        "r":            {"RT": "ranking threshold"},
+                        "v","Nv":       {"CM": "comparison method",
+                                        "SC": "scaling",
+                                        "ST": "scepticims threshold",
+                                        "WM": "weight method"},
+                        "t":            {"CM": "comparison method",
+                                        "SC": "scaling"}
+                                            
+    noiseparams =       "bimodal":      {"SMU": "noise sampling mean",
+                                        "SSD": "noise sampling standard deviation",
+                                        "NSD": "noise standard deviation"},
+                        "uniform":      {"NMU": "noise mean",
+                                        "NRANG": "noise range",
+                                        "SAB": "saboteur performance" ={"avg": "average",
+                                                                        "perf": "perfect"}}
+    """
+    if "/" in filename: filename=filename.split("/")[-1]
+    if filename.endswith(".json"): filename=filename.split(".json")[0]
+    params=filename.split("_")
+
+    n_honest=re.search('[0-9]+', params[0]).group()
+    lie_angle=re.search('[0-9]+', params[2]).group()
+    behaviour_params_list=params[3:-3]
+    noise_params_list=params[-3:]
+
+    if compact_format:
+        honest_behavior="".join(re.findall('[a-zA-Z]+', params[0]))
+        payment=params[1]
+        behaviour_params=[]
+        for p in behaviour_params_list:
+            behaviour_params.append("".join(re.findall('[0-9a-z]+', p)))
+        noise_params=[]
+        for p in noise_params_list:
+            noise_params.append("".join(re.findall('[0-9a-z]+', p)))
+        return n_honest, honest_behavior, payment, lie_angle, behaviour_params, noise_params
+
+    honest_behavior=BEHAVIORS_NAME_DICT["".join(re.findall('[a-zA-Z]+', params[0]))]
+    payment=PARAMS_NAME_DICT[params[1]]
+    behaviour_params=""
+    for p in behaviour_params_list:
+        value="".join(re.findall('[0-9a-z]+', p))
+        behaviour_params+=f"{value} {PARAMS_NAME_DICT[''.join(re.findall('[A-Z]+', p))]},"
+    noise_params=""
+    for p in noise_params_list:
+        value="".join(re.findall('[0-9a-z]+', p))
+        noise_params+=f"{value} {PARAMS_NAME_DICT[''.join(re.findall('[A-Z]+', p))]},"
+    behaviour_params=behaviour_params[:-1]
+    noise_params=noise_params[:-1]
+    message=f"{n_honest} {honest_behavior},\n{payment}, lie_angle: {lie_angle},\n{behaviour_params},\n{noise_params}"
+    return n_honest, honest_behavior, payment, lie_angle, behaviour_params, noise_params, message
+        
+
+def filename_from_params(n_honests:int,
+                        behavior_initials:str,
+                        payment_system:str,
+                        lie_angle:int,
+                        behavior_params_values:list,
+                        noise_type:str,
+                        noise_params_values:list
+                        ):
+    behavior_params=""
+    if behavior_params_values:
+        for x,y in zip(behavior_params_values,BEHAVIOR_PARAMS_DICT[behavior_initials]):
+            behavior_params+=f"{x}{y}_"
+    noise_params=""
+    for x,y in zip(noise_params_values,NOISE_PARAMS_DICT[noise_type]):
+        noise_params+=f"{x}{y}_"
+    noise_params=noise_params[:-1]
+    filename=f"{n_honests}{behavior_initials}_{payment_system}_{lie_angle}LIA_{behavior_params}{noise_params}"
+    return filename
 
 
 def check_filename_existence(output_directory,metric,filename):
@@ -41,6 +138,17 @@ def generate_filename(config:Configuration,):
     return filename#.split(".csv")[0].replace(".","")+".csv"
 
     
+def prune_bad_combinations(filenames:list):
+    count=0
+    #BUG works only with reversed order (LOL)
+    for f in reversed(filenames):
+        _, h_behav, payment, _, behav_params, _ = params_from_filename(f,compact_format=True)
+        if [payment, behav_params] in BAD_COMBINATIONS[h_behav]:
+            filenames.remove(f)
+            # system(f"rm {f}")
+            count+=1
+    print(f"- - - - - ATTENTION: pruned {count} bad combinations of payment & behavioural parameters - - - - -\n")
+    return filenames
 ####################################################################################
 
 def main():
@@ -58,9 +166,10 @@ def main():
                     exit(0)
                 else:
                     filenames.append(p)
-
             else:
                 filenames.extend([join(p, f) for f in listdir(p) if isfile(join(p, f))])
+
+        filenames=prune_bad_combinations(filenames)
 
         print(f"Running {len(filenames)} config"
                 f"{'s' if len(filenames)>1 else ''}: ",end="\t")

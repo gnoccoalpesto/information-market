@@ -17,8 +17,8 @@ import config as CONFIG_FILE
 from model.market import exponential_model, logistics_model
 from model.navigation import Location
 from model.environment import generate_static_noise_list,generate_static_noise_list
-from model.behavior import BEHAVIORS_DICT, BEHAVIORS_NAME_DICT,\
-     SUB_FOLDERS_DICT, PARAMS_NAME_DICT, NOISE_PARAMS_DICT, BEHAVIOR_PARAMS_DICT
+from model.behavior import  BEHAVIORS_NAME_DICT, SUB_FOLDERS_DICT, PARAMS_NAME_DICT, BEHAVIOR_PARAMS_DICT
+from info_market import filename_from_params
 
 
 palette = {
@@ -75,85 +75,6 @@ def parse_args():
         mode="c"
     return metric, mode
 
-
-def params_from_filename(filename:str):
-    """
-    filename format:
-    nhonestHONESTBEHAVIOUR_PAYMENTSYSTEM_lieangleLIA_behaviorparams_noiseparams
-
-    HONESTBEHAVIOUR =   "n": "NaiveBeahvior",
-                        "Nn": "NewNaiveBehavior",
-                        "s": "ScepticalBehavior",
-                        "Ns": "NewScepticalBehavior",
-                        "r": "ReputationRankingBehavior",
-                        "v": "ScepticalReputationBehavior",
-                        "Nv": "NewScepticalReputationBehavior",
-                        "t": "WealthThresholdBehavior",
-                        "w": "WealthWeightedBehavior",
-
-    PAYMENTSYSTEM =     "NP": "No Penalization",
-                        "P": "Penalization",
-
-    lieangle =          [0, 90]
-
-    behaviorparams =    "n","Nn","w":   {},
-                        "s","Ns":       {"ST": "scepticims threshold"},
-                        "r":            {"RT": "ranking threshold"},
-                        "v","Nv":       {"CM": "comparison method",
-                                        "SC": "scaling",
-                                        "ST": "scepticims threshold",
-                                        "WM": "weight method"},
-                        "t":            {"CM": "comparison method",
-                                        "SC": "scaling"}
-                                            
-    noiseparams =       "bimodal":      {"SMU": "noise sampling mean",
-                                        "SSD": "noise sampling standard deviation",
-                                        "NSD": "noise standard deviation"},
-                        "uniform":      {"NMU": "noise mean",
-                                        "NRANG": "noise range",
-                                        "SAB": "saboteur performance" ={"avg": "average",
-                                                                        "perf": "perfect"}}
-    """
-    filename=filename.split(".json")[0]
-    params=filename.split("_")
-    n_honest=re.search('[0-9]+', params[0]).group()
-    honest_behavior=BEHAVIORS_NAME_DICT["".join(re.findall('[a-zA-Z]+', params[0]))]
-    payment=PARAMS_NAME_DICT[params[1]]
-    lie_angle=re.search('[0-9]+', params[2]).group()
-    behaviour_params_list=params[3:-3]
-    noise_params_list=params[-3:]
-    behaviour_params=""
-    for p in behaviour_params_list:
-        value="".join(re.findall('[0-9a-z]+', p))
-        behaviour_params+=f"{value} {PARAMS_NAME_DICT[''.join(re.findall('[A-Z]+', p))]},"
-    noise_params=""
-    for p in noise_params_list:
-        value="".join(re.findall('[0-9a-z]+', p))
-        noise_params+=f"{value} {PARAMS_NAME_DICT[''.join(re.findall('[A-Z]+', p))]},"
-    behaviour_params=behaviour_params[:-1]
-    noise_params=noise_params[:-1]
-    message=f"{n_honest} {honest_behavior},\n{payment}, lie_angle: {lie_angle},\n{behaviour_params},\n{noise_params}"
-    return n_honest, honest_behavior, payment, lie_angle, behaviour_params, noise_params, message
-        
-
-def filename_from_params(n_honests:int,
-                        behavior_initials:str,
-                        payment_system:str,
-                        lie_angle:int,
-                        behavior_params_values:list,
-                        noise_type:str,
-                        noise_params_values:list
-                        ):
-    behavior_params=""
-    if behavior_params_values:
-        for x,y in zip(behavior_params_values,BEHAVIOR_PARAMS_DICT[behavior_initials]):
-            behavior_params+=f"{x}{y}_"
-    noise_params=""
-    for x,y in zip(noise_params_values,NOISE_PARAMS_DICT[noise_type]):
-        noise_params+=f"{x}{y}_"
-    noise_params=noise_params[:-1]
-    filename=f"{n_honests}{behavior_initials}_{payment_system}_{lie_angle}LIA_{behavior_params}{noise_params}"
-    return filename
 
 def filenames_list_for_plotting(
                                 data_folder,
@@ -2103,9 +2024,6 @@ def after_transitory_phase():
 
 
 if __name__ == '__main__':
-
-
-
     # filenames=[ 
     #             # ["../data/naive/items_evolution/22n_p_0r.csv",
     #             # "../data/naive/items_evolution/22n_p_90r.csv"],
@@ -2162,14 +2080,14 @@ if __name__ == '__main__':
                                     ["allmax",0.8]],
                                 "w":[[]]   
                                 }
-    bimodal_uniform_noise_comparison(data_folder=CONFIG_FILE.DATA_FOLDER,
-                                    experiment=experiment,
-                                    metric=metric,
-                                    N_ROBOTS=N_ROBOTS,
-                                    n_honests=n_honests,
-                                    behaviors=behaviors,
-                                    behavior_params_experiments=behavior_params_experiments,
-                                    )
+    # bimodal_uniform_noise_comparison(data_folder=CONFIG_FILE.DATA_FOLDER,
+    #                                 experiment=experiment,
+    #                                 metric=metric,
+    #                                 N_ROBOTS=N_ROBOTS,
+    #                                 n_honests=n_honests,
+    #                                 behaviors=behaviors,
+    #                                 behavior_params_experiments=behavior_params_experiments,
+    #                                 )
 
     # multi_boxplot(filenames=filenames,
     #             data_folder="../data/reputation_global/",
