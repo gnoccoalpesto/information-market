@@ -1,19 +1,25 @@
 import re
 import os
-from time import perf_counter
+from os.path import join, isfile,exists
 import argparse
+from random import gauss, random
+import time
 
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.ticker as mtick # to plot percentage on axis for matplotlib
+from  matplotlib.ticker import FuncFormatter #to force axis to have integer ticks
 import seaborn as sns
 import scipy.stats as stats
 
-#percentage on axis for matplotlib
-import matplotlib.ticker as mtick
-
+import config as CONFIG_FILE
 from model.market import exponential_model, logistics_model
 from model.navigation import Location
+from model.environment import generate_static_noise_list,generate_static_noise_list
+from model.behavior import  BEHAVIORS_NAME_DICT, SUB_FOLDERS_DICT, PARAMS_NAME_DICT, BEHAVIOR_PARAMS_DICT
+from info_market import filename_from_params
+
 
 palette = {
     "naive": "tab:blue",
@@ -35,34 +41,9 @@ name_conversion = {
     "sceptical": "sceptical"
 }
 
-DATA_DIR="../data/"
-
-comparisons=["scaboteur_rotation"
-]
-
-metrics=[
-    "rewards",
-    "items_collected"
-]
-
-filenames = [
-            "25sceptical_3000th_0scaboteur_0rotation_nopenalisation.txt",
-            "24sceptical_3000th_1scaboteur_0rotation_nopenalisation.txt",
-            # "22sceptical_3000th_3scaboteur_0rotation_nopenalisation.txt",#SAME AS 24 ABOVE
-            "25sceptical_3000th_0scaboteur_0rotation_penalisation.txt",
-            "24sceptical_3000th_1scaboteur_0rotation_penalisation.txt",
-            # "22sceptical_3000th_3scaboteur_0rotation_penalisation.txt",#same as 24 above
-            "25sceptical_025th_0scaboteur_0rotation_nopenalisation.txt",
-            "24sceptical_025th_1scaboteur_0rotation_nopenalisation.txt",
-            "25sceptical_025th_0scaboteur_0rotation_penalisation.txt",
-            "24sceptical_025th_1scaboteur_0rotation_penalisation.txt",
-            # "22sceptical_025th_3scaboteur_0rotation_nopenalisation.txt",#SAME AS 24 ABOVE
-            # "22sceptical_025th_3scaboteur_0rotation_penalisation.txt"
-]
 
 #------------------------------------------------------------------------------------------------
-#---------------------------------------UTILITIES------------------------------------------------Ù
-
+#---------------------------------------UTILITIES------------------------------------------------
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-s', '--standalone',action='store_true',
@@ -95,30 +76,60 @@ def parse_args():
     return metric, mode
 
 
-def get_file_config(filename:str):
-    name_honest = re.search('[a-z]+', filename.split("_")[0]).group()
-    name_saboteur = re.search('[a-z]+', filename.split("_")[2]).group()
-    n_honest = int(re.search('[0-9]+', filename.split("_")[0]).group())
-    n_saboteur = int(re.search('[0-9]+', filename.split("_")[2]).group())
-    skepticism=re.search('[0-9]+', filename.split("_")[1]).group()
-    if int(skepticism)>1340:
-        if int(skepticism)>2000:
-            skepticism="naive"
-        else:
-            skepticism="threshold naive"
-    else:
-        if skepticism[0]=="0":
-            skepticism="0."+skepticism[1:]
-        skepticism="th "+skepticism
-    lie_angle=filename.split("_")[3]
-    lie_angle=re.search('[0-9]+', lie_angle).group()+" "+\
-        re.search('[a-z]+', lie_angle).group() \
-        if n_saboteur>0 else "no saboteurs"
-    penalisation=re.search('[a-z,0-9]+', filename.split("_")[4]).group()
-    penalisation= "no pen" if penalisation=="nopenalisation" else "pen"
-    return name_honest, n_honest,name_saboteur,n_saboteur,\
-                skepticism, lie_angle,penalisation
+def filenames_list_for_plotting(
+                                data_folder,
+                                experiment="",
+                                metric="",
+                                N_ROBOTS=25,
+                                n_honests=[25,24,22,],
+                                behaviors=["n","s","r","Nv","t","w"],
+                                behavior_params_experiments=dict(),
+                                payment_systems=["P","NP"],
+                                noise_mu=0.0051,
+                                noise_range=0.1,
+                                # saboteur_performance=["avg","perf"],
+                                noise_sampling_mu=0.05,
+                                noise_sampling_sd=0.05,
+                                noise_sd=0.05,
+                                ):
+    uniform_avg_noise_params_values=[noise_mu,noise_range,"avg"]
+    uniform_perf_noise_params_values=[noise_mu,noise_range,"perf"]
+    bimodal_noise_params_values=[noise_sampling_mu,noise_sampling_sd,noise_sd]
+    filenames_list=[]
+    for behavior_initials in behaviors:
+        for behavior_params_values in behavior_params_experiments[behavior_initials]:
+            for n_honest in n_honests:
+                for payment_system in payment_systems:
+                    lie_angle=0 if n_honest==N_ROBOTS else 90
 
+                    behavior_params_text=""
+                    for v,p in zip(behavior_params_values,BEHAVIOR_PARAMS_DICT[behavior_initials]):
+                        behavior_params_text+=f"{v} {PARAMS_NAME_DICT[p]},"
+                    filenames=[ filename_from_params(n_honest,
+                                            behavior_initials,
+                                            payment_system,
+                                            lie_angle,
+                                            behavior_params_values,
+                                            "bimodal",
+                                            bimodal_noise_params_values,),
+                                filename_from_params(n_honest,
+                                            behavior_initials,
+                                            payment_system,
+                                            lie_angle,
+                                            behavior_params_values,
+                                            "uniform",
+                                            uniform_avg_noise_params_values),
+                                filename_from_params(n_honest,
+                                            behavior_initials,
+                                            payment_system,
+                                            lie_angle,
+                                            behavior_params_values,
+                                            "uniform",
+                                            uniform_perf_noise_params_values)                       
+                            ]
+                    filenames=[data_folder+experiment+"/"+SUB_FOLDERS_DICT[behavior_initials]+"/"+metric+"/"+filename+".csv" for filename in filenames]
+                    filenames_list.append(filenames)
+    return filenames_list
 
 #------------------------------------------------------------------------------------------------
 #---------------------------------------STATISTICAL TESTS----------------------------------------
@@ -206,80 +217,343 @@ def myanovatest(
     print(f"F-statistic: {anova_test.statistic},\np-value: {anova_test.pvalue}\n")
 
 
+def find_best_worst_seeds(filenames=[],
+                        metric="",
+                        data_folder="",
+                        base_seed="",
+                        amount_to_find=1):
+    """
+    returns the AMOUNT_TO_FIND best and worst seeds, wrt given metric.
+    result computed assuminig a linear increare with the run number,
+    starting from BASE_SEED
+
+    if metric="" and data_folder="", filename in filenames is expected
+    in this shape /DATA_FOLDER/METRIC/FILENAME.csv
+    """
+    if amount_to_find<1:amount_to_find=1
+    data_folder=f"{data_folder}{metric}/" if data_folder!="" else ""
+    if not filenames:
+        filenames.extend([join(data_folder, f) 
+            for f in os.listdir(data_folder) if isfile(join(data_folder, f))])
+    else:
+        filenames=[f"{data_folder}{f}" for f in filenames]
+
+    for filename in filenames:
+        bests=[]
+        worsts=[]
+        df=pd.read_csv(filename,header=None)
+        df['items_sum']=df.apply(np.sum, axis=1)
+        average_sum=df["items_sum"].mean()
+
+        print(f"\nfile: {filename.split('/')[-1]}")
+        print(f"average sum: {average_sum} over {len(df)} runs")
+
+        for i in range(amount_to_find):
+            i_max=df["items_sum"].max()
+            i_id_max=df["items_sum"].idxmax()
+            i_min=df["items_sum"].min()
+            i_id_min=df["items_sum"].idxmin()
+            bests.append((base_seed+i_id_max, i_max))
+            worsts.append((base_seed+i_id_min, i_min))
+            df.drop(i_id_max, inplace=True)
+            df.drop(i_id_min, inplace=True)
+            
+        for i, best in enumerate(bests):
+            print(f"{1+i} best seed: {best[0]} (run {best[0]-base_seed}), value: {best[1]}")
+        for i, worst in enumerate(worsts):
+            print(f"{1+i} worst seed: {worst[0]} (run {worst[0]-base_seed}), value: {worst[1]}")
+
+
+def load_csv(filename,
+            data_folder_and_subfolder="../data/",
+            metric="items",
+            experiment_part="whole"):
+    '''
+    returns the appropriate DataFrame, given the filename and the experiment part
+    :param filename: the name of the file to load, must include the extension
+    :param data_folder_and_subfolder: the folder where the data is stored, must include up to the metric
+    :param metric: the metric to choose from.  Accepted values are:
+        "items": number of items collected by the robots
+        "rewards": rewards gained by the robots.
+    :param experiment_part: the part of the experiment to load. Accepted values are:
+         "whole": in this case the data from the end of the experiment is loaded;
+            selected metric folders will be "items_collected" or "rewards"
+         "stableN": in this case only the last N% of the experiment is considered;
+            selected metric folders will be "items_evolution" or "rewards_evolution".
+            Params ofr the loading will differe according to the different file format.
+
+    :return: the DataFrame containing the data, in a form of a vector
+    '''
+    if experiment_part=="whole":
+        if metric=="items": metric="items_collected"
+        df=pd.read_csv(f"{data_folder_and_subfolder}{metric}/{filename}")
+    elif experiment_part=="stableN":
+        if metric=="items": metric="items_evolution"
+        elif metric=="rewards": metric="rewards_evolution"
+        df=pd.read_csv(f"{data_folder_and_subfolder}{metric}_evolution/{filename}")
+        df=df.iloc[-int(len(df)*0.2):]
+
+
 #------------------------------------------------------------------------------------------------
 #---------------------------------------PLOTTING-------------------------------------------------
-def myboxplots(
-                filenames=[],
-                # comparison_method="s",
-                data_folder="../data/all",\
-                title="",\
-                compare="",\
-                # metric="rewards",
-                metric="items_collected",
-                mode="r",
-                by=1
+def bimodal_uniform_noise_comparison(
+                                        data_folder,
+                                        experiment="",
+                                        metric="",
+                                        N_ROBOTS=25,
+                                        n_honests=[25,24,22,],
+                                        behaviors=["n","s","r","Nv","t","w"],
+                                        behavior_params_experiments=dict(),
+                                        payment_systems=["P","NP"],
+                                        noise_mu=0.051,
+                                        noise_range=0.1,
+                                        saboteur_performance=["avg","perf"],
+                                        noise_sampling_mu=0.05,
+                                        noise_sampling_sd=0.05,
+                                        noise_sd=0.05,
+                                        MULTI_PLOT=True,
+                                        SAVE_PLOT=False,
+                                        save_folder=""
+                                ):
+        uniform_avg_noise_params_values=[noise_mu,noise_range,"avg"]
+        uniform_perf_noise_params_values=[noise_mu,noise_range,"perf"]
+        bimodal_noise_params_values=[noise_sampling_mu,noise_sampling_sd,noise_sd]
+
+        if MULTI_PLOT:fig_count=0
+        if SAVE_PLOT and not os.path.exists(save_folder+experiment):
+            os.makedirs(save_folder+experiment)
+        for behavior_initials in behaviors:
+            for behavior_params_values in behavior_params_experiments[behavior_initials]:
+                for n_honest in n_honests:
+                    for payment_system in payment_systems:
+                        lie_angle=0 if n_honest==N_ROBOTS else 90
+
+                        behavior_params_text=""
+                        for v,p in zip(behavior_params_values,BEHAVIOR_PARAMS_DICT[behavior_initials]):
+                            behavior_params_text+=f"{v} {PARAMS_NAME_DICT[p]},"
+
+                        penalisation=" no" if payment_system=="NP" else ""
+                        labels=[f"{lie_angle} lie angle\nbimodal noise",
+                                f"{lie_angle} lie angle\nnon b. noise\naverage saboteurs",
+                                f"{lie_angle} lie angle\nnon b. noise\nperfect saboteurs"]                    
+                        
+                        title=f"{BEHAVIORS_NAME_DICT[behavior_initials]} behaviour\n"\
+                        f"parameters: {behavior_params_text}\n"\
+                        f"{n_honest} honests,{penalisation} penalisation\n"\
+                        "different noise models"
+                        #TODO :
+                        # if n_SAB>0:
+                        # ["binormal","uniform,avg","uniform,perf"]
+                        # else:
+                        # ["bimodal","uniform, no SAB"]
+                        filenames=[ filename_from_params(n_honest,
+                                                behavior_initials,
+                                                payment_system,
+                                                lie_angle,
+                                                behavior_params_values,
+                                                "bimodal",
+                                                bimodal_noise_params_values,),
+                                    filename_from_params(n_honest,
+                                                behavior_initials,
+                                                payment_system,
+                                                lie_angle,
+                                                behavior_params_values,
+                                                "uniform",
+                                                uniform_avg_noise_params_values),
+                                    filename_from_params(n_honest,
+                                                behavior_initials,
+                                                payment_system,
+                                                lie_angle,
+                                                behavior_params_values,
+                                                "uniform",
+                                                uniform_perf_noise_params_values)                       
+                                ]
+                        filenames=[data_folder+experiment+"/"+SUB_FOLDERS_DICT[behavior_initials]+"/"+metric+"/"+filename+".csv" for filename in filenames]
+                        # print(filenames)
+                        # for f in filenames:
+                        #     print(exists(f))
+
+                        #TODO if all files exists:{{{
+
+                        #TODO: include all data instead
+                        # format: [experiment]/[n_honest][behavior]_[PAYMENT_SYSTEM]_[lie_angle]_[behavior_params_values]_[NOISE_UNIFORM]_[noise_params_values].csv
+                        save_name=filename_from_params(n_honest,
+                                                behavior_initials,
+                                                payment_system,
+                                                lie_angle,
+                                                behavior_params_values,
+                                                "uniform",
+                                                uniform_avg_noise_params_values)
+                        noise_vs_items(filenames,
+                                        data_folder=f"",
+                                        # metric=f"items_collected/{method}",
+                                        metric=f"",
+                                        experiments_labels=labels,
+                                        title=title,
+                                        multi_plot=MULTI_PLOT,
+                                        save_plot=SAVE_PLOT,
+                                        # save_folder=CONFIG_FILE.PLOT_FOLDER+experiment+"/"+SUB_FOLDERS_DICT[behavior_initials]+"/",
+                                        #TODO add subfolders for behaviours
+                                        save_folder=CONFIG_FILE.PLOT_FOLDER+experiment+"/",
+                                        save_name=save_name
+                        )                
+                        fig_count+=1
+                        #TODO (above) else:
+                        # warning, pass}}}
+        if MULTI_PLOT and not SAVE_PLOT:plt.show()
+        fig_count=0
+
+
+def noise_level(
+                number_agents=25,
+                number_saboteurs=3,
+                noise_average=0.05,
+                noise_range=0.05,
+                saboteurs_noise="", # bimodal:"", "average", "perfect"
+                random_switch=False,
+                random_seed=None
+            ):
+    noise_list=generate_static_noise_list(number_agents, number_saboteurs, saboteurs_noise,
+                                         noise_average, noise_range,random_switch,random_seed)
+    # img=plt.figure()
+    fig, ax = plt.subplots()
+    fig.set_size_inches(8,8)
+    plt.bar(range(len(noise_list)), noise_list)
+    plt.xticks(range(len(noise_list)))
+    # ax.tick_params(labelrotation=45)
+    plt.xlabel("agent id")
+    plt.ylabel("noise level")
+    plt.xticks(rotation=45)
+    noise_list=abs(np.array(noise_list))
+    values_below005=((0 < noise_list) & (noise_list<= 0.05)).sum()
+    values_between005and01=((0.05 < noise_list) & (noise_list<= 0.1)).sum()
+    values_between01and015=((0.1 < noise_list) & (noise_list<= 0.15)).sum()
+    values_between015and02=((0.15 < noise_list) & (noise_list<= 0.2)).sum()
+    # print("values below 0.05: ",((0 < noise_list) & (noise_list<= 0.05)).sum())
+    # print("values between 0.05 and 0.1: ",((0.05 < noise_list) & (noise_list<= 0.1)).sum())
+    # print("values between 0.1 and 0.15: ",((0.1 < noise_list) & (noise_list<= 0.15)).sum())
+    # print("values between 0.15 and 0.2: ",((0.15 < noise_list) & (noise_list<= 0.2)).sum())
+    plt.suptitle(f"agents' assigned noise distribution mean:{noise_average}, range:{noise_range},\n"
+    f"{number_saboteurs} {saboteurs_noise} noise level saboteurs (ids: {[i for i in range(number_agents-number_saboteurs,number_agents)]})\n"
+    f"values in [0,0.05]: {values_below005}, [0.05,0.1]: {values_between005and01}, [0.1,0.15]: {values_between01and015}, [0.15,0.2]: {values_between015and02}\n"
+    "(original distribution N(0.05,0.05): [0,0.05]: 12, [0.05,0.1]: 9, [0.1,0.15]: 3, [0.15,0.2]: 1)")
+    # plt.ion()
+    plt.show()
+    # plt.pause(0.001)
+
+
+def plot_results(filenames,
+                 data_folder="../data/DATA_SUBFOLDER/",
+                 metric="items",
+                 experiment_part="whole",
+                 type_of_plot="behaviour",
+                 params_to_iterate_on=None, 
+                 params_to_generate_labels=[]
+                 ):
+    '''
+    :param filenames: list of filenames to compare.
+        if absolute path is passed, data_folder and metric are ignored
+        shape must be [[filename1, filename2, ...], [filename1, filename2, ...], ...]
+        for type_of_plot="behaviour": [[b11,b12,...],[b21,b22,...],...], will compare bkj for each j,
+            producing k subplots, with j elements each
+        for type_of_plot="noise": [...,[bKref,bKavg,bKperf],...], will compare b1ref with b1avg and b1perf, for each K,
+            producing K different plots, each with 3 subplots, each one with N_ROBOTS elements
+        TODO: add automatic fetching from data folder + metric
+    :param data_folder: main data folder.
+        This is devided in SUBFOLDERS (different experiments,...); each one of this contains folders
+        for each tested behaviour (these are automatically retrived by filenames)
+        Each behaviour subfolder contains the data from each tested metric.
+    :param metric: the metric to plot. Accepted values:
+        "items": number of collected items in an experiments
+        "reward": reward in an experiments
+        wrt the experiment_part, this will load data from items_collected and reward or from
+        items_evolution and reward_evolution
+    :param experiment_part: decide if use data from the whole experiment or just a part of it. Accepted values:
+        "whole": use all the data; this will load data from items_collected and reward
+        "stableN", N:int =[50,100] || [0.5,1]: use only the data from the last N% of the experiment;
+         this will load data from intems_evolution and reward_evolution
+    :param type_of_plot: decide the type of plot to use. Accepted values:
+        "behaviour": compares result for same parameters for different behaviours
+        "noise": compares different noise levels (==agents ids) for same behaviour and parameters
+    :param params_to_iterate_on: TODO list of parameters to iterate on.
+        as for now, this uses the filenames arrays
+    :param params_to_generate_labels: list of params of data to include in the legend.
+        values must be keys of PARAMS_NAME_DICT     
+    '''
+    #1 GET METRIC
+    if experiment_part == "whole":
+        if metric=="items": metric="items_collected"
+        elif metric=="reward": metric="reward"
+    else:
+        metric+="_evolution"
+        stable_part = float(experiment_part[6:])
+    #2 CONSTRUCT THE COMPLETE FILENAMES
+    #if filenames are absolute paths, ignore data_folder and metric
+    #TODO, as for now, construct manually using the lists
+    # if filenames[0][0][0] != "/":
+    #     filenames = [[data_folder + f + "/" + metric + ".csv" \
+    #         for f in filenames[i]] for i in range(len(filenames))]
+
+    #3 ITERATE OVER VECTORS
+    #TODO
+
+
+def noise_vs_items(
+                    filenames=[],
+                    data_folder="../data/reputation/",
+                    metric="items_evolution",
+                    saboteurs_noise="",
+                    experiments_labels=[],
+                    title="",
+                    by=1,
+                    multi_plot=False,
+                    save_plot=False,
+                    save_folder="../plots/",
+                    save_name="noise_vs_items",
                 ):
     '''
     :param filenames: list of filenames to compare,
                     if empty all the files in the folder are fetched
-
-    TODO: if filenames is a list of lists, each sublist is a group of files to compare with different hue
-            should introduce a param to understand if must compare withing a group or between groups
-    :param comparison_method: "s" for single, "w" for within, "b" for between
-
-    :param mode: "s" for standalone, "c" for cumulative, "r" for relative
+    :param saboteurs_noise: the mode the noise was generated. Accepted values:
+                            "bimodal","b": agents have random noise. Otherwise is fixed and
+                            "average","a": saboteurs have average noise among all,
+                            "perfect","p": saboteurs have lowest noise among all.
+    :param multi_plot: if True, .show() performed outside, after creation of all plots
     '''
-    BASE_BOX_WIDTH=3
-    BASE_BOX_HEIGHT=7
-    filenames = [
-                "24sceptical_3000th_1scaboteur_0rotation_nopenalisation.txt"
-    ]
-    if filenames==[]:
-        filenames=os.listdir(f"{data_folder}{compare}/{metric}/")
-        #TODO is the following better?
-        # filenames=[f for f in os.listdir(use_dir) if os.path.isfile(os.path.join(use_dir, f))]
+    BASE_BOX_WIDTH=5
+    BASE_BOX_HEIGHT=8
     n_boxes=len(filenames)// by
     fig, axs = plt.subplots(by, n_boxes, sharey=True)
     fig.set_size_inches(BASE_BOX_WIDTH*n_boxes,BASE_BOX_HEIGHT)
-    # fig.supxlabel()
-    sns.set_style("whitegrid")
-    for idx,filename in enumerate(filenames):
-        name_honest, n_honest,name_saboteur,n_saboteur,\
-            skepticism, lie_angle,penalisation=get_file_config(filename)
-        params=f"{n_honest} honests,\n{skepticism},\n {lie_angle},\n {penalisation}"
-        # axs[idx].set_xlabel(params)
-        filename=f"{data_folder}{compare}/{metric}/{filename}"
-        match mode:
-            case "r":
-            #RELATIVE DATA
-                #TODO correct?
-                data=pd.read_csv(filename, header=None).to_numpy()
-                print(type(data))
-                data=(100*data/np.sum(data,axis=1)[:,None]).flatten()
-                #TODO could use title functions inside plot calls
-                sns.boxplot(data=data,ax=axs[idx]).set(xticklabels=[],xticks=[])
-                data_title=metric+ " (relative)"
-                axs[idx].yaxis.set_major_formatter(mtick.PercentFormatter())
-            case "c":
-            #CUMULATIVE DATA
-                data=pd.read_csv(filename, header=None)
-                datatot = data.apply(np.sum, axis=1)
-                sns.boxplot(data=datatot,ax=axs[idx]).set(xticklabels=[],xticks=[])
-                # angle = 10 * (idx + 0)
-                # sns.boxplot(x=[angle for _ in batch_total], y=data, ax=axs[idx], linewidth=2)
-                data_title=metric+ " (cumulative)"
-            case "s":
-            #STANDALONE DATA
-                data=pd.read_csv(filename, header=None).values.flatten()
-                sns.boxplot(data=data.flatten(),ax=axs[idx]).set(xticklabels=[],xticks=[])
-                data_title=metric+ " (standalone)"
-    sns.despine(fig, axs[idx], trim=False)#removes borders
-    fig.supylabel(data_title.replace("_"," "))
-    title=title if title!="" else f"compare: {compare}".replace("_"," ")
-    # title=title if title!="" else f"compare: {compare}\n{n_honest} {name_honest} vs {n_saboteur} {name_saboteur}".replace("_"," ")
-    fig.suptitle(title,fontweight="bold")
-    plt.ylim(bottom=0)
-    plt.show()
+    #READ FILE, ONLY FINAL DATA IS NEEDED
+    if metric!="":
+        data_folder+=f"{metric}/"
+    for i,f in enumerate(filenames):
+        if not data_folder=="" and not data_folder==None:
+            f=f"{data_folder}{f}"
+        df=pd.read_csv(f, header=None)
+        if len(filenames)>1:
+            if i==0:
+                sns.boxplot(df,ax=axs[i]).set(xlabel="agent id", ylabel="items collected")
+            else:
+                sns.boxplot(df,ax=axs[i]).set(xlabel="agent id")
+        else:   
+            sns.boxplot(df,ax=axs).set(xlabel="agent id", ylabel="items collected")
+        plt.suptitle(f"{title}")
+        if len(filenames)>1:
+            axs[i].set_xlabel(experiments_labels[i])
+        else:
+            axs.set_xlabel(experiments_labels) 
+    sns.despine(offset=0, trim=True)
+    for ax in axs:
+        ax.tick_params(labelrotation=45)
+        # plt.xticks(rotation=45) 
+    plt.gca().yaxis.set_major_formatter(FuncFormatter(lambda x, _: int(x)))
+    plt.ylim(0,25)
+    if not multi_plot:plt.show()
+    if save_plot:
+        plt.savefig(f"{save_folder}{save_name}.png", bbox_inches='tight')
+
 
 
 def boxplots_pen_lie(
@@ -289,57 +563,16 @@ def boxplots_pen_lie(
                 by=1
                 ):
     '''
-    this function uses as input not headed, numeric rows, csv files
+    this function uses as input not headed, numeric rows, csv files, containing the final values for each run
+    for the data analysis at others steps use the function below
+    TODO: unify with the one below
     '''
     BASE_BOX_WIDTH=3
     BASE_BOX_HEIGHT=7
     filenames=[
                 [
-                "24s_np_7500tr_0r.csv",
-                "24s_np_7500tr_10r.csv",
-                "24s_np_7500tr_20r.csv",
-                "24s_np_7500tr_30r.csv",
-                "24s_np_7500tr_40r.csv",
-                "24s_np_7500tr_50r.csv",
-                "24s_np_7500tr_60r.csv",
-                "24s_np_7500tr_70r.csv",
-                "24s_np_7500tr_80r.csv",
-                "24s_np_7500tr_90r.csv",
                 ],[
-                "24s_p_7500tr_0r.csv",
-                "24s_p_7500tr_10r.csv",
-                "24s_p_7500tr_20r.csv",
-                "24s_p_7500tr_30r.csv",
-                "24s_p_7500tr_40r.csv",
-                "24s_p_7500tr_50r.csv",
-                "24s_p_7500tr_60r.csv",
-                "24s_p_7500tr_70r.csv",
-                "24s_p_7500tr_80r.csv",
-                "24s_p_7500tr_90r.csv",
                 ]
-                # [
-                # "22s_np_7500tr_0r.csv",
-                # "22s_np_7500tr_10r.csv",
-                # "22s_np_7500tr_20r.csv",
-                # "22s_np_7500tr_30r.csv",
-                # "22s_np_7500tr_40r.csv",
-                # "22s_np_7500tr_50r.csv",
-                # "22s_np_7500tr_60r.csv",
-                # "22s_np_7500tr_70r.csv",
-                # "22s_np_7500tr_80r.csv",
-                # "22s_np_7500tr_90r.csv",
-                # ],[
-                # "22s_p_7500tr_0r.csv",
-                # "22s_p_7500tr_10r.csv",
-                # "22s_p_7500tr_20r.csv",
-                # "22s_p_7500tr_30r.csv",
-                # "22s_p_7500tr_40r.csv",
-                # "22s_p_7500tr_50r.csv",
-                # "22s_p_7500tr_60r.csv",
-                # "22s_p_7500tr_70r.csv",
-                # "22s_p_7500tr_80r.csv",
-                # "22s_p_7500tr_90r.csv",
-                # ]
             ]
     labels=["no penalisation","penalisation"]
     columns_labels=["items collected", "lie angle"]
@@ -377,101 +610,255 @@ def boxplots_pen_lie(
     plt.show()
 
 
-def boxplot_evo_pen_lie(
+
+def multi_boxplot(
                 filenames=[],
-                data_folder="../data/penalisation_seed/",\
+                data_folder="../data/reputation/",
                 metric="items_evolution",
+                experiments_labels=[],
+                title="",
                 by=1
                 ):
+    #TODO if metrics=="items_evolution": use this method (or test active text conversion)
+    #       else: use the method from above
     '''
     this function uses as input not headed, numeric rows, csv files
     '''
     BASE_BOX_WIDTH=3
     BASE_BOX_HEIGHT=7
-    filenames=[
-                [
-                "24s_np_7500tr_0r.csv",
-                "24s_np_7500tr_10r.csv",
-                "24s_np_7500tr_20r.csv",
-                "24s_np_7500tr_30r.csv",
-                "24s_np_7500tr_40r.csv",
-                "24s_np_7500tr_50r.csv",
-                "24s_np_7500tr_60r.csv",
-                "24s_np_7500tr_70r.csv",
-                "24s_np_7500tr_80r.csv",
-                "24s_np_7500tr_90r.csv",
-                ],[
-                "24s_p_7500tr_0r.csv",
-                "24s_p_7500tr_10r.csv",
-                "24s_p_7500tr_20r.csv",
-                "24s_p_7500tr_30r.csv",
-                "24s_p_7500tr_40r.csv",
-                "24s_p_7500tr_50r.csv",
-                "24s_p_7500tr_60r.csv",
-                "24s_p_7500tr_70r.csv",
-                "24s_p_7500tr_80r.csv",
-                "24s_p_7500tr_90r.csv",
-                ]
-                # [
-                # "22s_np_7500tr_0r.csv",
-                # "22s_np_7500tr_10r.csv",
-                # "22s_np_7500tr_20r.csv",
-                # "22s_np_7500tr_30r.csv",
-                # "22s_np_7500tr_40r.csv",
-                # "22s_np_7500tr_50r.csv",
-                # "22s_np_7500tr_60r.csv",
-                # "22s_np_7500tr_70r.csv",
-                # "22s_np_7500tr_80r.csv",
-                # "22s_np_7500tr_90r.csv",
-                # ],[
-                # "22s_p_7500tr_0r.csv",
-                # "22s_p_7500tr_10r.csv",
-                # "22s_p_7500tr_20r.csv",
-                # "22s_p_7500tr_30r.csv",
-                # "22s_p_7500tr_40r.csv",
-                # "22s_p_7500tr_50r.csv",
-                # "22s_p_7500tr_60r.csv",
-                # "22s_p_7500tr_70r.csv",
-                # "22s_p_7500tr_80r.csv",
-                # "22s_p_7500tr_90r.csv",
-                # ]
-            ]
-    labels=["no penalisation","penalisation"]
-    columns_labels=["items collected", "lie angle"]
+    new_labels=["items collected", "protection type"]
     n_boxes=len(filenames[0])// by
     fig, axs = plt.subplots(by, n_boxes, sharey=True)
-    fig.set_size_inches(BASE_BOX_WIDTH*n_boxes,BASE_BOX_HEIGHT+1)
-    for idx,(f_nopen,f_pen) in enumerate(zip(filenames[0],filenames[1])):
-        filename_nopen=f"{data_folder}{metric}/{f_nopen}"
-        filename_pen=f"{data_folder}{metric}/{f_pen}"
+    fig.suptitle(title,fontweight="bold")
+    #for all lie angles available
+    # filename_naive,
+    for idx,(filename_scept,f_1,f_2,f_3,f_4,f_5,f_6,f_7,f_8,f_9) in enumerate(zip(
+                                                                            filenames[0],
+                                                                            filenames[1],
+                                                                            filenames[2],
+                                                                            filenames[3],
+                                                                            filenames[4],
+                                                                            filenames[5],
+                                                                            filenames[6],
+                                                                            filenames[7],
+                                                                            filenames[8],
+                                                                            filenames[9],
+                                                                            # filenames[10]
+                                                                        )):
+        filename_1=f"{data_folder}{metric}/{f_1}"
+        filename_2=f"{data_folder}{metric}/{f_2}"
+        filename_3=f"{data_folder}{metric}/{f_3}"
+        filename_4=f"{data_folder}{metric}/{f_4}"
+        filename_5=f"{data_folder}{metric}/{f_5}"
+        filename_6=f"{data_folder}{metric}/{f_6}"
+        filename_7=f"{data_folder}{metric}/{f_7}"
+        filename_8=f"{data_folder}{metric}/{f_8}"
+        filename_9=f"{data_folder}{metric}/{f_9}"
         #TODO OPTIMIZE THIS IS SO SLOW
-        nopen_df = pd.read_csv(filename_nopen,converters={'items_list': pd.eval})
-        per_df = pd.read_csv(filename_pen,converters={'items_list': pd.eval})
-        labels=nopen_df.columns.to_list()
-        selected_runs=nopen_df[labels[0]].unique()
-        nopen_data=[]
-        pen_data=[]
+        # df_naive=pd.read_csv(filename_naive, converters={'items_list': pd.eval})
+        df_scept=pd.read_csv(filename_scept, converters={'items_list': pd.eval})
+        df_1=pd.read_csv(filename_1, converters={'items_list': pd.eval})
+        df_2=pd.read_csv(filename_2, converters={'items_list': pd.eval})
+        df_3=pd.read_csv(filename_3, converters={'items_list': pd.eval})
+        df_4=pd.read_csv(filename_4, converters={'items_list': pd.eval})
+        df_5=pd.read_csv(filename_5, converters={'items_list': pd.eval})
+        df_6=pd.read_csv(filename_6, converters={'items_list': pd.eval})
+        df_7=pd.read_csv(filename_7, converters={'items_list': pd.eval})
+        df_8=pd.read_csv(filename_8, converters={'items_list': pd.eval})
+        df_9=pd.read_csv(filename_9, converters={'items_list': pd.eval})
+        # data_naive=[]
+        data_scept=[]
+        data_1=[]
+        data_2=[]
+        data_3=[]
+        data_4=[]
+        data_5=[]
+        data_6=[]
+        data_7=[]
+        data_8=[]
+        data_9=[]
+        labels=df_1.columns.to_list()
+        selected_runs=df_1[labels[0]].unique()
         for run in selected_runs:
-            nopen_run_row=nopen_df.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
-            pen_run_row=per_df.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
-            nopen_last=nopen_run_row.iloc[-1]
-            pen_last=pen_run_row.iloc[-1]
-            nopen_end_transitory=nopen_run_row.iloc[2*len(nopen_run_row)//3]
-            pen_end_transitory=pen_run_row.iloc[2*len(pen_run_row)//3]
-            delta_nopen=nopen_last-nopen_end_transitory
-            delta_pen=pen_last-pen_end_transitory
-            nopen_data.append([delta_nopen.sum()])
-            pen_data.append([delta_pen.sum()])
-        list_nopen_flat = pd.DataFrame(nopen_data)
-        list_pen_flat = pd.DataFrame(pen_data)
-        ttest_pv=stats.ttest_ind(list_nopen_flat,list_pen_flat)[1][0]
-        list_nopen= pd.DataFrame(np.full(list_nopen_flat.shape, labels[0]))
-        list_pen= pd.DataFrame(np.full(list_pen_flat.shape, labels[1]))
-        list_nopen_flat = pd.concat([list_nopen_flat, list_nopen], axis=1)
-        list_pen_flat = pd.concat([list_pen_flat, list_pen], axis=1)
-        data = pd.concat([list_nopen_flat, list_pen_flat])
+            # run_row_naive=df_naive.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
+            run_row_scept=df_scept.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
+            run_row_1=df_1.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
+            run_row_2=df_2.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
+            run_row_3=df_3.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
+            run_row_4=df_4.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
+            run_row_5=df_5.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
+            run_row_6=df_6.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
+            run_row_7=df_7.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
+            run_row_8=df_8.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
+            run_row_9=df_9.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
+            # last_row_naive=run_row_naive.iloc[-1]
+            last_row_scept=run_row_scept.iloc[-1]
+            last_1=run_row_1.iloc[-1]
+            last_2=run_row_2.iloc[-1]
+            last_3=run_row_3.iloc[-1]
+            last_4=run_row_4.iloc[-1]
+            last_5=run_row_5.iloc[-1]
+            last_6=run_row_6.iloc[-1]
+            last_7=run_row_7.iloc[-1]
+            last_8=run_row_8.iloc[-1]
+            last_9=run_row_9.iloc[-1]
+            # end_transitory_naive=run_row_naive.iloc[2*len(run_row_naive)//3]
+            end_transitory_scept=run_row_scept.iloc[2*len(run_row_scept)//3]
+            end_transitory_1=run_row_1.iloc[2*len(run_row_1)//3]
+            end_transitory_2=run_row_2.iloc[2*len(run_row_2)//3]
+            end_transitory_3=run_row_3.iloc[2*len(run_row_3)//3]
+            end_transitory_4=run_row_4.iloc[2*len(run_row_4)//3]
+            end_transitory_5=run_row_5.iloc[2*len(run_row_5)//3]
+            end_transitory_6=run_row_6.iloc[2*len(run_row_6)//3]
+            end_transitory_7=run_row_7.iloc[2*len(run_row_7)//3]
+            end_transitory_8=run_row_8.iloc[2*len(run_row_8)//3]
+            end_transitory_9=run_row_9.iloc[2*len(run_row_9)//3]
+            # delta_naive=last_row_naive-end_transitory_naive
+            delta_scept=last_row_scept#-end_transitory_scept
+            delta_1=last_1#-end_transitory_1
+            delta_2=last_2#-end_transitory_2
+            delta_3=last_3#-end_transitory_3
+            delta_4=last_4#-end_transitory_4
+            delta_5=last_5#-end_transitory_5
+            delta_6=last_6#-end_transitory_6
+            delta_7=last_7#-end_transitory_7
+            delta_8=last_8#-end_transitory_8
+            delta_9=last_9#-end_transitory_9
+            # data_naive.append([delta_naive.sum()])
+            data_scept.append([delta_scept.sum()])
+            data_1.append([delta_1.sum()])
+            data_2.append([delta_2.sum()])
+            data_3.append([delta_3.sum()])
+            data_4.append([delta_4.sum()])
+            data_5.append([delta_5.sum()])
+            data_6.append([delta_6.sum()])
+            data_7.append([delta_7.sum()])
+            data_8.append([delta_8.sum()])
+            data_9.append([delta_9.sum()])
+        # list_naive_flat=pd.DataFrame(data_naive)
+        list_scept_flat=pd.DataFrame(data_scept)
+        list_1_flat=pd.DataFrame(data_1)
+        list_2_flat=pd.DataFrame(data_2)
+        list_3_flat=pd.DataFrame(data_3)
+        list_4_flat=pd.DataFrame(data_4)
+        list_5_flat=pd.DataFrame(data_5)
+        list_6_flat=pd.DataFrame(data_6)
+        list_7_flat=pd.DataFrame(data_7)
+        list_8_flat=pd.DataFrame(data_8)
+        list_9_flat=pd.DataFrame(data_9)
+        # ttest_pv=stats.ttest_ind(list_nopen_flat,list_pen_flat)[1][0]
+        # list_naive= pd.DataFrame(np.full(list_naive_flat.shape, experiments_labels[0]))
+        list_scept= pd.DataFrame(np.full(list_scept_flat.shape, experiments_labels[1]))
+        list_1= pd.DataFrame(np.full(list_1_flat.shape, experiments_labels[0]))
+        list_2= pd.DataFrame(np.full(list_2_flat.shape, experiments_labels[1]))
+        list_3= pd.DataFrame(np.full(list_3_flat.shape, experiments_labels[2]))
+        list_4= pd.DataFrame(np.full(list_4_flat.shape, experiments_labels[3]))
+        list_5= pd.DataFrame(np.full(list_5_flat.shape, experiments_labels[4]))
+        list_6= pd.DataFrame(np.full(list_6_flat.shape, experiments_labels[5]))
+        list_7= pd.DataFrame(np.full(list_7_flat.shape, experiments_labels[6]))
+        list_8= pd.DataFrame(np.full(list_8_flat.shape, experiments_labels[7]))
+        list_9= pd.DataFrame(np.full(list_9_flat.shape, experiments_labels[8]))
+        # list_naive_flat = pd.concat([list_naive_flat, list_naive], axis=1)
+        list_scept_flat = pd.concat([list_scept_flat, list_scept], axis=1)
+        list_1_flat = pd.concat([list_1_flat, list_1], axis=1)
+        list_2_flat = pd.concat([list_2_flat, list_2], axis=1)
+        list_3_flat = pd.concat([list_3_flat, list_3], axis=1)
+        list_4_flat = pd.concat([list_4_flat, list_4], axis=1)
+        list_5_flat = pd.concat([list_5_flat, list_5], axis=1)
+        list_6_flat = pd.concat([list_6_flat, list_6], axis=1)
+        list_7_flat = pd.concat([list_7_flat, list_7], axis=1)
+        list_8_flat = pd.concat([list_8_flat, list_8], axis=1)
+        list_9_flat = pd.concat([list_9_flat, list_9], axis=1)
+        data = pd.concat([  
+                        # list_naive_flat,
+                        list_scept_flat,
+                        list_1_flat,
+                        list_2_flat,
+                        list_3_flat,
+                        list_4_flat,
+                        list_5_flat,
+                        list_6_flat,
+                        list_7_flat,
+                        list_8_flat,
+                        list_9_flat,
+                        ])
+        data.columns = new_labels
+        # ttest_th=0.05
+        lie_angle=idx*90
+        params=f"{lie_angle}"#,\nT-test (thr={ttest_th})\np-value: \n{np.round(ttest_pv,5)}"
+        try:
+            if idx==0:
+                sns.boxplot(data=   data,y=data.columns[0],x=new_labels[1],hue=new_labels[1],linewidth=1, dodge=False, ax=axs[idx]).set(
+                        xlabel=None,ylabel=None,xticklabels=[],xticks=[]) 
+                axs[idx].set_ylabel("totat items collected")
+            else:
+                sns.boxplot(data=data,y=data.columns[0],x=new_labels[1],linewidth=1, dodge=False, ax=axs[idx]).set(
+                        xlabel=None, ylabel=None,xticklabels=[],xticks=[])
+            axs[idx].set_xlabel(params)
+            sns.despine(fig, axs[idx], trim=False)
+        except TypeError:
+            if idx==0:
+                sns.boxplot(data=   data,y=data.columns[0],x=new_labels[1],hue=new_labels[1],linewidth=1, dodge=False, ax=axs).set(
+                        xlabel=None,ylabel=None,xticklabels=[],xticks=[]) 
+                axs.set_ylabel("totat items collected")
+            else:
+                sns.boxplot(data=data,y=data.columns[0],x=new_labels[1],linewidth=1, dodge=False, ax=axs).set(
+                        xlabel=None, ylabel=None,xticklabels=[],xticks=[])
+            axs.set_xlabel(params)
+            sns.despine(fig, axs, trim=False)
+    fig.set_size_inches(BASE_BOX_WIDTH*n_boxes,BASE_BOX_HEIGHT+1)
+    plt.ylim(bottom=0)
+    # plt.legend(loc='upper right', bbox_to_anchor=(1.3, 1.0), ncol=1)
+    plt.show()
+
+
+#TODO
+def new_iterative_boxplot(
+                    filenames,
+                    data_folder="../data/reputation/",\
+                    metric="items_evolution",
+                    columns_labels=["run","items_list"],
+                    ):
+    pass
+    #IMG PARAMETERS AND INIT
+    #CREATE BOXPLOT
+    ## TEST METRICS FOR METHOD TO USE
+    ## CYCLE FOR ALL ELEMENTS
+    ###CREATE BEHAVIOUR DF
+    ###ADD TO DATAFRAME
+    #SHOW PARAMS AND SHOW
+
+def iterative_boxplot(
+                    filenames,
+                    data_folder="../data/reputation/",\
+                    metric="items_evolution",
+                    columns_labels=["run","items_list"],
+                    ):
+    BASE_BOX_WIDTH=3
+    BASE_BOX_HEIGHT=7
+    n_boxes=len(filenames[0])
+    fig, axs = plt.subplots(1, n_boxes, sharey=True)
+    for idx in range(len(filenames[0])):#for all lie angles
+        datalist=[]#TODO 1
+        # data=pd.DataFrame([])
+        for f in filenames:#for all idx-th elements of nested level
+            filename=f"{data_folder}{metric}/{f[idx]}"
+            df = pd.read_csv(filename,converters={'items_list': pd.eval})
+            labels=df.columns.to_list()
+            selected_runs=df[labels[0]].unique()
+            file_data=[]
+            for run in selected_runs:
+                file_run_row=df.loc[lambda df: df[labels[0]] == run].iloc[:,-1]
+                file_last_row=file_run_row.iloc[-1]
+                file_data.append([file_last_row.sum()])
+            list_file_flat = pd.DataFrame(file_data)
+            # ttest_pv=stats.ttest_ind(list_file_flat,list_pen_flat)[1][0]
+            list_file= pd.DataFrame(np.full(list_file_flat.shape, labels[0]))
+            list_file_flat = pd.concat([list_file_flat, list_file], axis=1)
+            datalist.append(list_file_flat)#TODO 1
+            # data = pd.concat([data,list_file_flat])
+        data=pd.DataFrame(datalist)#TODO 1
         data.columns = columns_labels
-        #TODO FIX LEGEND
         if idx==0:
             sns.boxplot(data=data,y=data.columns[0],x=columns_labels[1],hue=columns_labels[1],linewidth=1, dodge=False, ax=axs[idx]).set(
                  xlabel=None,ylabel=None,xticklabels=[],xticks=[])
@@ -481,71 +868,13 @@ def boxplot_evo_pen_lie(
                 xlabel=None, ylabel=None,xticklabels=[],xticks=[])
         lie_angle=idx*10
         ttest_th=0.05
-        params=f"{lie_angle},\nT-test (thr={ttest_th})\np-value: \n{np.round(ttest_pv,5)}"
+        params=f"{lie_angle}"#,\nT-test (thr={ttest_th})\np-value: \n{np.round(ttest_pv,5)}"
         axs[idx].set_xlabel(params)
-    sns.despine(fig, axs[idx], trim=False)
+    fig.set_size_inches(BASE_BOX_WIDTH*n_boxes,BASE_BOX_HEIGHT+1)
     fig.suptitle("COMPARING PENALISATION (WITH AND WITHOUT)\nAT DIFFERENT LIE ANGLES\n"\
     "FOR 24 SCEPTICALS AND 1 SCABOTEUR\nFOR LAST 5000 STEPS OF THE EXPERIMENT, SEEDED",fontweight="bold")
     plt.ylim(bottom=0)
-    plt.show()
-
-
-def sidebyside_boxplots(
-                filenames=[],
-                data_folder="../data/old",\
-                title="",\
-                metric="items_collected",
-                by=1
-                ):
-    BASE_BOX_WIDTH=3
-    BASE_BOX_HEIGHT=7
-    filenames=[[
-                "24sceptical_3000th_1scaboteur_0rotation_nopenalisation.txt",
-                "24sceptical_3000th_1scaboteur_0rotation_penalisation.txt"
-                ],[
-                "24sceptical_025th_1scaboteur_0rotation_nopenalisation.txt",
-                "24sceptical_025th_1scaboteur_0rotation_penalisation.txt"
-                ]]
-    labels=["naive","threshold 0.25"]
-    ttestspv=np.round([0.0,0.0],4)
-    #TODO auto generate comparison by sublists in filenames, and test of lenght
-    #       of labels, in loops
-    filenames1=filenames[0]
-    filenames2=filenames[1]
-    n_boxes=len(filenames1)// by
-    sns.set_style("whitegrid")
-    fig, axs = plt.subplots(by, n_boxes, sharey=True)
-    fig.set_size_inches(BASE_BOX_WIDTH*n_boxes,BASE_BOX_HEIGHT+1)
-    fig.suptitle(title)
-    for idx,(filename1,filename2) in enumerate(zip(filenames1,filenames2)):
-        list1=pd.read_csv(f"{data_folder}/{metric}/{filename1}", header=None).apply(np.sum, axis=1)
-        list2=pd.read_csv(f"{data_folder}/{metric}/{filename2}", header=None).apply(np.sum, axis=1)
-        #SHORTER VERSION, BUT HOW CAN I ADD LABELS WITHOUT EXPLICITLY PASSING FIELD NAME?
-        # list1 = pd.DataFrame(list1).assign(n_agents=labels[0])#do i need list1.to_numpy().flatten()?
-        # list2 = pd.DataFrame(list2).assign(n_agents=labels[1])#<- how to remove n_agents=?
-        # data=pd.concat([list1,list2])
-        #should melt be used? data_final=pd.melt(data_final, id_vars=, value_vars=)
-        list1_flat = pd.DataFrame(list1.to_numpy().flatten())
-        list2_flat = pd.DataFrame(list2.to_numpy().flatten())
-        list1= pd.DataFrame(np.full(list1_flat.shape, labels[0]))
-        list2= pd.DataFrame(np.full(list2_flat.shape, labels[1]))
-        list1_flat = pd.concat([list1_flat, list1], axis=1)
-        list2_flat = pd.concat([list2_flat, list2], axis=1)
-        data = pd.concat([list1_flat, list2_flat])
-        data.columns = ["items collected", "scepticism"]
-        if idx==0:
-            sns.boxplot(data=data,y=data.columns[0],x='scepticism',hue='scepticism',linewidth=1, dodge=False, ax=axs[idx]).set(
-                 xlabel=None,ylabel=None,xticklabels=[],xticks=[])
-            axs[idx].set_ylabel("totat items collected")
-        else:
-            sns.boxplot(data=data,y=data.columns[0],x='scepticism',linewidth=1, dodge=False, ax=axs[idx]).set(
-                xlabel=None, ylabel=None,xticklabels=[],xticks=[])
-        _, _ ,_,_,_, lie_angle,_=get_file_config(filename1)
-        params=f"{lie_angle},\nT-test (threshold=0.05)\np-value: {ttestspv[idx]}"
-        axs[idx].set_xlabel(params)
     sns.despine(fig, axs[idx], trim=False)
-    fig.suptitle("TOTAL ITEMS COLLECTED, COMPARISON ON SCEPTICISM\n"
-                "EXPERIMENTS WITH SIMILAR PARAMETERS.\nCORRELATION TEST FOR THE PAIRS",fontweight="bold")
     plt.show()
 
 
@@ -630,67 +959,6 @@ def plot_evolution( filename=[],
     plt.show()
 
 
-def evolution_boxplot0(
-                filenames=[],
-                data_folder="../data/new",\
-                title="",\
-                metric="items_evolution",
-                by=1
-                ):
-    filename_pen="pen.csv"
-    pen_df=pd.read_csv(f"{data_folder}/{metric}/{filename_pen}", header=None)
-    labels=[_ for _ in pen_df.iloc[0]]
-    pen_df=pen_df.iloc[1:]
-    pen_df.columns=labels
-    selected_runs=pen_df[labels[0]].unique()[:128]
-    run_data=[]
-    run_x=[]
-    run_labels=[]
-    for run in selected_runs:
-        run_pen_data=[]
-        run_pen_df=pen_df.loc[lambda df: df[labels[0]] == run]
-        steps=run_pen_df[labels[1]].unique()
-        steps=steps[2*len(steps)//4:]
-        # steps=steps[:1*len(steps)//4]
-        for step in steps:
-            step_df=run_pen_df.loc[lambda df: df[labels[1]] == step].iloc[:,-1]
-            step_df=np.asarray([float(_) for _ in step_df.values[0][1:-1].split(", ")])
-            run_pen_data.append(np.sum(step_df))
-        run_data=np.concatenate([run_data,run_pen_data])
-        run_x=np.concatenate([run_x,np.asarray([int(_) for _ in steps])])
-        run_labels=run_labels+['nopen' for _ in run_pen_data]
-
-    filename_nopen="nopen.csv"
-    nopen_df=pd.read_csv(f"{data_folder}/{metric}/{filename_nopen}", header=None)
-    labels=[_ for _ in nopen_df.iloc[0]]
-    nopen_df=nopen_df.iloc[1:]
-    nopen_df.columns=labels
-    selected_runs=nopen_df[labels[0]].unique()[:128]
-    nopen_run_data=[]
-    nopen_run_x=[]
-    nopen_run_labels=[]
-    for run in selected_runs:
-        run_nopen_data=[]
-        run_nopen_df=nopen_df.loc[lambda df: df[labels[0]] == run]
-        steps=run_nopen_df[labels[1]].unique()
-        steps=steps[2*len(steps)//4:]
-        # steps=steps[:1*len(steps)//4]
-        for step in steps:
-            step_df=run_nopen_df.loc[lambda df: df[labels[1]] == step].iloc[:,-1]
-            step_df=np.asarray([float(_) for _ in step_df.values[0][1:-1].split(", ")])
-            run_nopen_data.append(np.sum(step_df))
-        nopen_run_data=np.concatenate([nopen_run_data,run_nopen_data])
-        nopen_run_x=np.concatenate([nopen_run_x,np.asarray([int(_) for _ in steps])])
-        nopen_run_labels=nopen_run_labels+['nopen' for _ in run_nopen_data]
-    run_nopen_data-=np.min(run_nopen_data)
-    run_data=run_data/np.max(run_data)
-    nopen_run_data=nopen_run_data/np.max(nopen_run_data)
-    img,axs=plt.subplots(1,2)
-    sns.boxplot(run_data,ax=axs[0])
-    sns.boxplot(nopen_run_data,ax=axs[1])
-    t_test=stats.ttest_ind(run_data, nopen_run_data, equal_var=False,)
-    print(f"t-test: {t_test.statistic},\n p-value: {t_test.pvalue} << 0.05 \n CAN REJECT SIMILARITY HYPOTHESIS")
-
 #######################################################################################
 #######################################################################################
 
@@ -760,13 +1028,16 @@ def compare_strats():
             df["Strategy"] = strategies_tot
 
             title = ""
-            match f1:
-                case "mu":
-                    title = f"m = 0.{f2.split('_')[1]}, s = 0.05, N = 25"
-                case "sd":
-                    title = f"m = 0.05, s = 0.{f2.split('_')[1]}, N = 25"
-                case "popsize":
-                    title = f"m = 0.05, s = 0.05, N = {f2.split('_')[1]}"
+            # match f1:
+            if f1=="mu":
+            # case "mu":
+                title = f"m = 0.{f2.split('_')[1]}, s = 0.05, N = 25"
+            # case "sd":
+            elif f1=="sd":
+                title = f"m = 0.05, s = 0.{f2.split('_')[1]}, N = 25"
+            # case "popsize":
+            elif f1=="popsize":
+                title = f"m = 0.05, s = 0.05, N = {f2.split('_')[1]}"
 
             sns.boxplot(data=df, x="Strategy", y="Number of Items Collected", linewidth=2, ax=axs[i])
             axs[i].set_title(title)
@@ -1579,7 +1850,7 @@ def correlation_plot(filename, directory, suptitle=None):
 # ]
 
 
-def correlation_plots():
+def correlation_plots(filenames):
     for i, filename in enumerate(filenames):
         correlation_plot(filename, "../data/correlation/", chr(i + 65))
 
@@ -1734,7 +2005,6 @@ def penalisation_vs_stake_items_collected(n_scaboteurs=3):
     plt.show()
 
 
-
 def after_transitory_phase():
     withoutpen = pd.read_csv("../data/new/items_evolution/nopen.csv", converters={"items_list": pd.eval})
     withpen = pd.read_csv('../data/new/items_evolution/pen.csv', converters={"items_list": pd.eval})
@@ -1754,41 +2024,82 @@ def after_transitory_phase():
 
 
 if __name__ == '__main__':
-    # supply_demand_simulation()
-    # compare_behaviors()
-    # compare_payment_types()
-    # compare_stop_time()
-    # show_run_proportions(["20smart_t25_5freerider_10+10"], comparison_on="stop_time")
-    # make_violin_plots(["20smart_t25_5saboteur", "22smart_t25_3saboteur"], by=2)
-    # powerpoint_plots()
-    # time = perf_counter()
-    # for i in range(1):
-    #     test_windowdev()
-    # dt1 = perf_counter()-time
-    # time = perf_counter()
-    # for i in range(1):
-    #     test_np_windowdev()
-    # dt2 = perf_counter()-time
-    # print(f"pd: {dt1}, np:{dt2}")
-    # test_timedev()
-    # thesis_plots()
-    # compare_strats()
-    # paper_plots()
-    # reward_evolution()
-    # correlation_plots()
-    # scaboteur_rotation((1, 3))
-    # penalisation_vs_stake_items_collected(3)
-    # penalisation_vs_stake_items_collected(1)
-    # scaboteur_rotation(3)
+    # filenames=[ 
+    #             # ["../data/naive/items_evolution/22n_p_0r.csv",
+    #             # "../data/naive/items_evolution/22n_p_90r.csv"],
+    #             ["../data/sceptical/items_evolution/22s_p_0r.csv",
+    #             "../data/sceptical/items_evolution/22s_p_90r.csv"],
+    #             [
+    #             "22c_p_allavg05_0r.csv",
+    #             "22c_p_allavg05_90r.csv",
+    #             ],
+    #         ]
+    # labels=[
+    #         # "naive penalisation",
+    #         "sceptical",
+    #         "threshold: .5 of average",
+    #         ]
 
-    # metric,mode=parse_args()
-    # myboxplots()
-    # myttest(data_folder="../data/all/",compare="")
-    # myanovatest()
-    # sidebyside_boxplots()
-    # plot_evolution(compare="g")
-    evolution_boxplot0()
-    # after_transitory_phase()
-    # boxplots_pen_lie()
-    # boxplot_evo_pen_lie()
-    pass
+    # noise_level(number_saboteurs=1,saboteurs_noise="average",noise_average=0.051,noise_range=0.1,random_switch=True,random_seed=5684436*20)
+    # noise_level(number_saboteurs=1,saboteurs_noise="perfect",noise_average=0.051,noise_range=0.1,random_switch=True,random_seed=5684436*20)
+    # exit()
+
+    # UNIFORM NOISE ANALYSIS ############################################################################################################
+
+
+        
+    experiment="CLUSTER"
+    metric="items_collected"
+
+    N_ROBOTS=25
+    n_honests=[25]
+    
+    behaviors=["n","s","r","Nv","t","w"]
+
+    #TODO: create this as a summary from config generation / running
+    behavior_params_experiments={"n":[[]],
+                                "s":[[0.25]],
+                                "r":[[0.3],[0.5]],
+                                "Nv":[["allavg",0.3,0.25,"exponential"],
+                                    ["allavg",0.5,0.25,"exponential"],
+                                    ["allavg",0.8,0.25,"exponential"],
+                                    ["allavg",0.3,0.25,"ratio"],
+                                    ["allavg",0.5,0.25,"ratio"],
+                                    ["allavg",0.8,0.25,"ratio"],
+                                    ["allmax",0.3,0.25,"exponential"],
+                                    ["allmax",0.5,0.25,"exponential"],
+                                    ["allmax",0.8,0.25,"exponential"],
+                                    ["allmax",0.3,0.25,"ratio"],
+                                    ["allmax",0.5,0.25,"ratio"],
+                                    ["allmax",0.8,0.25,"ratio"]],
+                                "t":[["allavg",0.3],
+                                    ["allavg",0.5],
+                                    ["allavg",0.8],
+                                    ["allmax",0.3],
+                                    ["allmax",0.5],
+                                    ["allmax",0.8]],
+                                "w":[[]]   
+                                }
+    # bimodal_uniform_noise_comparison(data_folder=CONFIG_FILE.DATA_FOLDER,
+    #                                 experiment=experiment,
+    #                                 metric=metric,
+    #                                 N_ROBOTS=N_ROBOTS,
+    #                                 n_honests=n_honests,
+    #                                 behaviors=behaviors,
+    #                                 behavior_params_experiments=behavior_params_experiments,
+    #                                 )
+
+    # multi_boxplot(filenames=filenames,
+    #             data_folder="../data/reputation_global/",
+    #             metric="items_evolution",
+    #             experiments_labels=labels,
+    #             title=title,) 
+
+    # find_best_worst_seeds(filenames=[
+                                    
+    #                                 ],
+    #                     data_folder="../data/sceptical/",
+    #                     metric="items_collected",
+    #                     base_seed=5684436,
+    #                     amount_to_find=3,
+    #                 )

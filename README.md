@@ -1,9 +1,14 @@
-# Master's Thesis: An Information Market for Social Navigation in Robots
+# Master's Thesis: Task allocation in open robot swarms: 
+perspectives for blockchain-based algorithms in hostile environments
+
 ## Requirements
+
 To be able to run information-market, you must have:
 - A recent version of Linux, MacOSX or Windows
 - **Python** 3.10 or newer
+
 ## Installation
+
 First clone the git repository into a given folder on your computer:
 ```bash
 git clone https://github.com/ludericv/information-market.git
@@ -15,20 +20,52 @@ python -m venv infomarket-env
 source infomarket-env/bin/activate
 pip install -r requirements.txt
 ```
-## Run
-First, edit the `config.json` file inside the config folder with the parameters you want to use. Then, to run information-market, simply open a terminal, cd to the src folder and run the program.
-```bash
-cd path/to/src
-python info_market.py ../config/config.json
-```
 
-## Running Multiple Experiments
-To conduct multiple experiments with different configurations, one can specify multiple configuration file paths as arguments when running the `info_market.py` script, interposing a space between the selected files. Example:
+## Automatic configurations generator
+
+You can automatically generate the config file by :
+```bash
+bash src/generate_config.sh
+```
+The parameters shall be modified inside the script itself:
+- (optionally) chenge the directories of source and destination;
+- `GENERAL PARAMATERS`section must be modified only to introduce deep changes to the environment;
+- change `EXPERIMENT PARAMETERS` according to your needs.
+The section relative to behaviours has specific lists for each one to specify the combinations of parameters to generate.
+
+## Run single or multiple experiments
+
+It is possible to run a single or multiple experiments using information-market. First, edit the config file(s) inside the config folder with the parameter you want to use; you can start from `config.json`. Then open a terminal, cd to the src folder and run the program.
 ```bash
 cd path/to/src
-python info_market.py path/to/config1.json path/to/config2.json path/to/config99.json
+python info_market.py ARGS
 ```
-This is mostly useful to run simulations without the GUI (set `activate` to false in the visualization parameters in the config files, as well as the `number_runs` parameter for the number of simulations you wish to perform with this configuration)
+If ARGS us a single file, it will check if the GUI simulation is requested (set `activate` to true in the visualization parameters in the config files).<br />
+ Otherwise a folder, or multiple filenames can be specified. In the last case, interpose a space between the selected files.
+This is mostly useful to run simulations without the GUI (set `activate` to false in the visualization parameters in the config files, as well as the `number_runs` parameter for the number of simulations you wish to perform with this configuration).
+
+# Error
+Errors and config file generating them can be retrieved in ```src/error.log```. Config files who generated an error are copied in ```src/errors/```;
+you can run the whole folder once fixed
+
+## Randomisation
+
+Seeding the random number generator is useful when repeating experiments is needed.<br />
+If empty string ("") or "random" is passed in the configuration, the simulation utilizes a different seed for each time a random function is called.<br /> Otherwise, the passed seed is used as base, increased by the number of the run.
+
+## Visual Simulation and Hotkeys
+
+During a simulation with GUI (`activate` : true in the configuration file), you can select a robot (left click on its image) and observe useful datas about it.
+
+You can also use your keyboard to control the course of the simulation:
+- `SPACE`: pause/resume simulation;
+- `N`: perform one step of the simulation (useful when paused);
+- `0`: cycles selection between robots with id in the range 0-9;
+- `1`: cycles selection between robots with id in the range 10-19;
+- `2`: cycles selection between robots with id in the range 20-MAX_ID_ROBOT;
+- `+`: selects the robot with +1 id with respect to the current selection;
+- `-`: selects the robot with -1 id with respect to the current selection;
+- `c`: selects back the robot in the +/- keys counter;
 
 ## Configuration
 
@@ -43,7 +80,7 @@ A simulation's parameters are defined in a json configuration file (such as `con
 - simulation_seed: the base seed for the simulation. Accepted values are:
   - an integer, or a string (seeder activated)
   - empty string ("") or keyword "random" (seeder deactivated)<br />
-For more informations, refer to the [Randomization](#randomization) section.
+For more informations, refer to the [Randomisation](#randomisation) section.
 - visualization: parameters related to the visualization
   - activate: whether to activate the simulation GUI
   - fps: maximum framerate of the simulation
@@ -56,6 +93,9 @@ For more informations, refer to the [Randomization](#randomization) section.
   - communication_radius: communication range
   - communication_stop_time: duration a robot must stop moving when communicating
   - communication_cooldown: how long a robot must wait between communications
+  - bimodal_noise_sampling: determines how odomotry noise is computed. If:
+    - false: noise has a fixed value equal no noise_mu+2.33*noise_sd*robot_id_i/max(robot_id_j);
+    - true: noise is drawn from a bimodal probability distribution.
   - noise_sampling_mu: odometric noise sampling distribution mu
   - noise_sampling_sigma: odometric noise sampling distribution sigma
   - noise_sd: odometric noise standard deviation (in degrees), i.e. how different the odometric noise at different time steps
@@ -87,14 +127,29 @@ Robots can exhibit multiple behaviors. This sections briefly lists these behavio
 - `NaiveBehavior`: Most basic robot behavior. Simply exchanges information with everyone and uses the most recent information available.
 - `SaboteurBehavior`: Basic dishonest robot behavior. Rotates information vectors sold to other robots by a given angle.
   - parameters: 
-    - `rotation_angle`: angle (in degrees) with which information vectors are rotated when sold.
+    - `lie_angle`: angle (in degrees) with which information vectors are rotated when sold.
 - `ScepticalBehavior`: Honest robot behavior implementing basic outlier detection. If information is too different from previous belief is bought, the robot will wait until receiving information confirming the new statement or the old belief before accepting or rejecting the new information.
   - parameters:
     - `threshold`: controls how much new information can be different from previous belief before being considered suspicious and needing confirmation.
 - `ScaboteurBehavior`: Saboteur behavior implementing the outlier detection from the ScepticalBehavior
   - parameters:
     - `threshold`: see ScepticalBehavior
-    - `rotation_angle`: see SaboteurBehavior
+    - `lie_angle`: see SaboteurBehavior
+- `ReputationStaticThresholdBehavior`: honest robot which uses seller's reputation (function of wealth) to decide if it should buy its information. Outlier detection method is based on comparison of wealth with a static threshold.
+- `SaboteurReputationStaticThresholdBehavior`: SaboteurBehaviour comparing wealth reputation with a static threshold.
+  - parameters:
+    - `lie_angle`: see SaboteurBehavior
+- `ReputationDynamicThresholdBehavior`: as for Static, but in this case threshold depends on some runtime information
+  - parameters:
+    - `method`: method used to compute the threshold. Accepted values are:
+      - `allmax`: threshold is .5 of maximum wealth, among all robots;
+      - `allmin`: threshold is 2.5 of minimum wealth, among all robots;
+      - `allavg`: threshold is .8 of average wealth, among all robots;
+- ...
+- `SaboteurReputationStaticThresholdBehavior`: SaboteurBehaviour comparing wealth reputation with a dynamic threshold.
+  - parameters:
+    - `lie_angle`: see SaboteurBehavior;
+    - `method`: see ReputationDynamicThresholdBehavior.
 
 ## Payment Systems
 
@@ -103,21 +158,3 @@ Payment systems implement the logic responsible for controlling the price of inf
 - `DelayedPaymentPaymentSystem`: information is exchanged for a token that is redeemed for a fixed share of the reward the buying robot receives when it completes a round trip.
 - `OutlierPenalisationPaymentSystem`: similar to the DelayedPaymentPayment system, but the share of the reward is proportional to how similar the information sold is to other information that was sold to the buying robot.
 
-## Randomization
-
-Seeding the random number generator is useful when repeating experiments is needed.<br />
-If empty string ("") or "random" is passed in the configuration, the simulation utilizes a different seed for each time a random function is called.<br /> Otherwise, the passed seed is used as base, increased by the number of the run.
-
-## Visual Simulation and Hotkeys
-
-During a simulation with GUI (`activate` : true in the configuration file), you can select a robot (left click on its image) and observe useful datas about it.
-
-You can also use your keyboard to control the course of the simulation:
-- `SPACE`: pause/resume simulation;
-- `N`: perform one step of the simulation (useful when paused);
-- `0`: cycles selection between robots with id in the range 0-9;
-- `1`: cycles selection between robots with id in the range 10-19;
-- `2`: cycles selection between robots with id in the range 20-MAX_ID_ROBOT;
-- `+`: selects the robot with +1 id with respect to the current selection;
-- `-`: selects the robot with -1 id with respect to the current selection;
-- `c`: selects back the robot in the +/- keys counter;

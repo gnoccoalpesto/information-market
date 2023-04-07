@@ -1,0 +1,60 @@
+{
+  "width": WIDTH,
+  "height": HEIGHT,
+  "food": {
+    "x": FOOD_X,
+    "y": FOOD_Y,
+    "radius": FOOD_RADIUS
+  },
+  "nest": {
+    "x": NEST_X,
+    "y": NEST_Y,
+    "radius": NEST_RADIUS
+  },
+  "simulation_steps": SIMULATION_STEPS,
+  "simulation_seed": SIMULATION_SEED,
+  "number_runs": NUMBER_RUNS,
+  "visualization": {
+    "activate": VISUALISATION_ACTIVATE,
+    "fps": VISUALISATION_FPS
+  },
+  "random_walk": {
+    "random_walk_factor": RANDOM_WALK_FACTOR,
+    "levi_factor": RANDOM_WALK_LEVI_FACTOR
+  },
+  "agent": {
+    "radius": AGENT_RADIUS,
+    "speed": AGENT_SPEED,
+    "communication_radius": AGENT_COMMUNICATION_RADIUS,
+    "communication_stop_time": AGENT_COMMUNICATION_STOP_TIME,
+    "communication_cooldown": AGENT_COMMUNICATION_COOLDOWN,
+    "noise": {
+      "class": "AGENT_NOISE_CLASS",
+      "parameters": AGENT_NOISE_PARAMETERS
+    },
+    "fuel_cost": AGENT_FUEL_COST
+  },
+  "behaviors":[
+    BEHAVIOURS
+  ],
+  "payment_system": {
+    "class": "PAYMENT_SYSTEM_CLASS",
+    "initial_reward": PAYMENT_SYSTEM_INITIAL_REWARD,
+    "parameters": {
+      "information_share": PAYMENT_SYSTEM_INFORAMTION_SHARE
+    }
+  },
+  "market": {
+    "class": "MARKET_CLASS",
+    "parameters": {
+      "reward": MARKET_REWARD
+    }
+  },
+  "data_collection": {
+    "output_directory": "DATA_OUTPUT_DIRECTORY",
+    "filename": "DATA_FILENAME",
+    "metrics": ["items_evolution","rewards_evolution","items_collected","rewards","transactions"],
+    "precise_recording_interval": DATA_PRECISE_RECORDING_INTERVAL,
+    "transactions_log": DATA_TRANSACTIONS_LOG
+      }
+}

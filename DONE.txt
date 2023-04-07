@@ -1,0 +1,182 @@
+================================================================
+================================================================
+ _    ___           ___
+| \  |   |  |\  |  |
+|  \ |   |  | \ |  |___ 
+|  / |   |  |  \|  |
+|_/  |___|  |   \  |___   
+
+
+
+
+=========
+SIMULATOR=======================================================
+
+-SIMULATION (VISUAL) CONTROLS, README-------------OKOKOKOKOKOKOK
+
+-PRECISE RECORDING OF ITEMS TOO------------------OKOKOKOKOKOKOK
+--READ PRECISE RECORDING USING PANDAS------------------------OK
+
+-RND SEED to recreate PARITCULAR RUN---------------------------
+--seed is added to filename
+--uses random.seed(SEED)
+--seed once, in environment
+--increses by the number of a particular run, starting from a based
+
+-pass single config files and/or single folders, will read all files
+--will ignore files in subfolders
+--will stop at the first one having visual output
+--error if none of the above is passed
+
+-branch working on MAJORANA
+--gui removed
+
+
+-DOUBLE MODE OF NOISE ASSIGNATION----------------OKOKOKOKOKOK
+--drawing from a bimodal distribution
+-- "      "     "  a uniform distribution
+---fiven mean and range, sample equispatially foreach agent
+---perfect dishonests (lowest noise)
+---average dishonests (mean noise)
+---still, seed is respected (same starting positions)
+-> uniform noise is a metric for BYZANTININESS
+-->the noisier, the "dishonestier" the agent is
+
+
+============
+PENALISATION=========================================================
+
+-STATISTICAL TESTS TO VERYFY 24vs25, w vs w.o-------OKOKOKOKOKOK
+---->>>BOOK REFERENCE probability-random-variables-and-stochastic-processes--papoulis--pillai--2002
+
+--T-TEST (student)
+testing (no) indepence between two distributions
+threshld=.05,
+H0: no significant mean difference between the groups
+if not pvalue < threshld: can't reject H0 -> DEPENDENT
+--24vs25
+---24n vs 25n no pen t-statistic: 0.009873462737552111
+                    two-tailed p-value: 0.9921241165035417....OK
+---24n vs 2n pen    t-statistic: 1.2121000136848668
+                    two-tailed p-value: 0.2257462531902903....OK
+---25s vs 24s no pen t-statistic: 0.017072622319665203
+                    two-tailed p-value: 0.9863819172024308....OK
+---25s vs 24s no pen t-statistic: 0.9371860499126132
+                    two-tailed p-value: 0.34887796226657275...OK
+--with vs without penalisation
+--- 25n np/p        t-statistic: 17.80775689233145
+                    two-tailed p-value: 0.0..................OK
+--- 24n np/p        t-statistic: 19.865495492052023
+                    two-tailed p-value: 0.0..................OK
+--- 25s np/p        t-statistic: 14.064746834967652
+                    two-tailed p-value: 0.0..................OK
+--- 24s np/p        t-statistic: 13.50679847230787
+                    two-tailed p-value: 0.0..................OK
+
+--- 24 NvsS no pen  t-test: 25.044542532612322,
+                    p-value: 9.153413441487886e-104..................OK
+--- 24 NvsS pen     t-test: 17.424976173653757,
+                    p-value: 8.94633596730185e-60..................OK
+
+--ANOVA (kruskal-wallis)
+---also all OK for ANOVA
+
+
+--NAIVES AND SKEPTICALS WITH FIXED NOISE
+---WITH AND WITHOUT PENALISATION
+---FOR PERFECT OR AVERAGE DISHONESTS
+
+
+
+-PLOTS--------------------------------------OKOKOKOKOKOKOKOKOKOKOKK
+   "similar" results are clearly visible
+--24vs25
+---24n vs 25n no pen :similar
+---24n vs 25n pen    :similar
+---25s vs 24s no pen    :similar
+---25s vs 24s no pen    :similar
+--with vs without penalisation
+--- 25n np/p        :dissimilar
+--- 24n np/p        :dissimilar
+--- 25s np/p        :dissimilar
+--- 24s np/p        :dissimilar
+--24n w w.o, 24s w w.o  :full comparison
+
+
+-STABLE PART OF EXPERIMENT (considered steps 7500-15000)--OKOKOKOK
+
+--stable part: collected items appear similar with and without pen
+---linear increment
+
+--comparison no pen/pen for lie angle 0-90 shows:
+---24scepticals: similar Performance
+
+--NOISE seems to be a minor cause
+---DENOISING makes stable part start EARLIER
+---stronger effect over non pen
+
+--INITIAL WEALTH seems to be a MAJOR cause
+---enough mesasges at the beginning?
+->need to show that this does not advantag the bad guys
+---POOR agents (STARTING *.33):
+----small inpact no pen
+----huge impact pen
+---RICH agents (START *1.7):
+----same as poor on nopen
+----IMPROVEMENT FOR PEN
+
+------------> APPARENTLY INITIAL MONEY IS THE ISSUE
+
+
+--STACKING AMOUNT
+---confirms above
+
+
+=========
+BEHAVIOR=========================================================
+
+-NEW BEH TEMPLATE
+--tests OK
+--FASTER THAN MY PREVIOUS BEHAVIOURS
+
+
+==========
+REPUTATION======================================================
+
+-WEALTH AS REPUTATION:
+
+--STATIC THRESHOLD
+---tested 30%,50%,80%,110%,130%,160% of initial wealth
+---AWFUL results with penalisation
+---BAD results without penalisation
+
+--DYNAMIC THRESHOLD
+--- LOCAL INFO: AWFUL
+--->remember that EACH agent has a copy of blockchain (hence, not slower adn safer)
+
+--- GLOBAL INFO:
+----REALLY GOOD performance using .5-1.1 *avg_wealth
+----WORSE with max, AWFUL min
+---still SOME RUNS ARE REALLY BAD
+
+--WEATLH WEIGHTED NAIVE:
+---NEW wealth weighted STRATEGY
+
+--RANKING REPUTATION:
+---based on threshold of ranking wrt max colelcted items
+
+
+
+
+
+================
+TASK ALLOCATION=================================================
+
+
+
+
+======================================
+PATH PLANNING FOR COMPLEX ENVIRONMENTS===========================
+
+
+

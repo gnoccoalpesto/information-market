@@ -1,12 +1,10 @@
-import os
+# import os
 import tkinter as tk
 import time
-
-from PIL import Image, ImageTk
+# from PIL import Image, ImageTk
 
 
 class ViewController:
-
     def __init__(self, controller, width=500, height=500, fps_cap=60):
         self.controller = controller
         self.fps_cap = fps_cap
@@ -35,6 +33,8 @@ class ViewController:
         #TODO dynamic counter len based on number of robots
         self.selection_counters=[-1,-1,-1,-1]
         self.create_bindings()
+
+        #TODO statistics window
 
         self.last_frame_time = time.time()
         self.last_fps_check_time = time.time()
@@ -120,20 +120,26 @@ class ViewController:
         if c is passed it keeps the counter of the last selected robot
         """
         #TODO test if resetting the counters when another one is selected is better
-        match counter:
-            case 0:
-                counter = self.selection_counters[0] = (self.selection_counters[0] + 1) % 10
-            case 1:
-                counter=self.selection_counters[1] = (self.selection_counters[1] + 1) % 10 +10
-            case 2:
-                #TODO dynamic range
-                counter=self.selection_counters[2] = (self.selection_counters[2] + 1) % (25-20) +20
-            case "+":
-                counter=self.selection_counters[-1]=(self.selection_counters[-1] + 1) % 25
-            case "-":
-                counter=self.selection_counters[-1]=(self.selection_counters[-1] - 1) % 25
-            case "c":
-                counter=self.selection_counters[-1]
+        # match counter:
+        # case 0:
+        if counter == 0:
+            counter = self.selection_counters[0] = (self.selection_counters[0] + 1) % 10
+        # case 1:
+        elif counter == 1:
+            counter=self.selection_counters[1] = (self.selection_counters[1] + 1) % 10 +10
+        # case 2:
+        elif counter == 2:
+            #TODO dynamic range
+            counter=self.selection_counters[2] = (self.selection_counters[2] + 1) % (25-20) +20
+        # case "+":
+        elif counter == "+":
+            counter=self.selection_counters[-1]=(self.selection_counters[-1] + 1) % 25
+        # case "-":
+        elif counter == "-":
+            counter=self.selection_counters[-1]=(self.selection_counters[-1] - 1) % 25
+        # case "c":
+        elif counter == "c":
+            counter=self.selection_counters[-1]
         self.selected_robot = self.controller.get_robot_by_id(counter)
 
     def select_robot_by_id(self, id):
@@ -145,3 +151,15 @@ class ViewController:
             self.debug_text = self.debug_canvas.create_text(5, 25, fill="gray45", text=self.selected_robot, anchor="nw", font="Arial 10")
         else:
             self.debug_text = self.debug_canvas.create_text(5, 25, fill="gray45", text=f"No robot selected", anchor="nw", font="Arial 10")
+
+#TODO
+def statistics_window():
+    """
+    - means and deviation of usefull metrics (wealth,...), max and min
+    - histogram of usefull metrics (wealth,...)
+    - noise levels
+    - number of transactions, number of transactions per robot, slope, statistics
+    - number of messages, number of messages per robot, slope, statistics
+    - value and statistics on blockchain [database]
+    """
+    pass

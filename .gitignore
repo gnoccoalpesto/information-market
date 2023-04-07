@@ -1,6 +1,6 @@
-data/**/*.txt
-data/**/*.csv
 **/__pycache__/*
-TODO.txt
-DO.txt
-DONE.txt
+config*
+data*
+plots/*
+src/error*
+!src/config.py

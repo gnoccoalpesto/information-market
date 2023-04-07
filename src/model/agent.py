@@ -1,16 +1,15 @@
 import copy
+import numpy as np
 
-from helpers import random_walk as rw
-from random import random, choices, gauss, seed as random_seed
+from random import random, choices, gauss
 from math import sin, cos, radians
 from tkinter import LAST
 from collections import deque
 
-from model.behavior import State, behavior_factory
+from helpers import random_walk as rw
+from model.behavior import State, behavior_factory, RequiredInformation, TemplateBehaviour
 from model.communication import CommunicationSession
 from model.navigation import Location
-import numpy as np
-
 from helpers.utils import get_orientation_from_vector, rotate, InsufficientFundsException, CommunicationState, norm, \
     NoLocationSensedException
 
@@ -28,8 +27,11 @@ class AgentAPI:
 
 
 class Agent:
+    '''
+    NOTE: random numbers are discarded in case of non bimodal noise drawing to preserve the same sequence
+    of the bimodal case, for spawn and following requests
+    '''
     colors = {State.EXPLORING: "gray35", State.SEEKING_FOOD: "orange", State.SEEKING_NEST: "green"}
-
 
     def __init__(self,
                  robot_id,
@@ -39,15 +41,12 @@ class Agent:
                  behavior_params,
                  speed,
                  radius,
-                 noise_sampling_mu,
-                 noise_sampling_sigma,
-                 noise_sd,
+                 noise,
                  fuel_cost,
                  communication_radius,
                  communication_cooldown,
                  communication_stop_time
                  ):
-
         self.id = robot_id
         self.pos = np.array([x, y]).astype('float64')
 
@@ -62,21 +61,31 @@ class Agent:
         self._time_since_last_comm = self._comm_stop_time + self._communication_cooldown + 1
         self.comm_state = CommunicationState.OPEN
 
-        self.orientation = random() * 360  # 360 degree angle
-        self.noise_mu = gauss(noise_sampling_mu, noise_sampling_sigma)
-        if random() >= 0.5:
-            self.noise_mu = -self.noise_mu
-        self.noise_sd = noise_sd
+        self.environment = environment
+        #TODO move this in env, CHECK if correct rand sequence for same spawn
+        self.orientation = random() * 360
+
+        if noise["class"] == "BimodalNoise":
+            self.bimodal_noise = True
+            noise_sampling_mu = noise["parameters"]["noise_sampling_mu"]
+            noise_sampling_sigma = noise["parameters"]["noise_sampling_sigma"]
+            self.noise_mu = gauss(noise_sampling_mu, noise_sampling_sigma)
+            if random() >= 0.5:
+                self.noise_mu = -self.noise_mu
+            self.noise_sd = noise["parameters"]["noise_sd"]
+        else:
+            gauss(0,0);random()#discard r.n. from the sequence
+            self.bimodal_noise=False
+            self.noise_mu = noise["parameters"]["noise_mu"]
 
         self.fuel_cost = fuel_cost
-        self.environment = environment
 
         self.levi_counter = 1
         self.trace = deque(self.pos, maxlen=100)
 
         self.dr = np.array([0, 0])
         self.sensors = {}
-        self.behavior = behavior_factory(behavior_params)
+        self.behavior:TemplateBehaviour = behavior_factory(behavior_params)
         self.api = AgentAPI(self)
 
 
@@ -118,7 +127,12 @@ class Agent:
         self.previous_nav = copy.deepcopy(self.behavior.navigation_table)
         if self.comm_state == CommunicationState.OPEN:
             session = CommunicationSession(self, neighbors)
-            self.behavior.buy_info(session)
+            #TODO IS THIS WORTH THE EFFICIENCY GAIN?
+            #agents decides to query only neigh or bchain for info
+            if self.behavior.required_information==RequiredInformation.LOCAL:
+                self.behavior.buy_info(None,session)
+            elif self.behavior.required_information==RequiredInformation.GLOBAL:    
+                self.behavior.buy_info(self.environment.payment_database,session)
         self.new_nav = self.behavior.navigation_table
         self.behavior.navigation_table = self.previous_nav
 
@@ -154,8 +168,18 @@ class Agent:
 
 
     def move(self):
+        """
+        if self.bimodal_noise: sample motion angle from a probability distribution
+        else: linearly incremented motion angle wrt robot_id_i/max(robot_id_j), starting from mean,
+             with slope such that last one has 99% value of a normal distribution with same mean and sd
+               
+        """
         wanted_movement = rotate(self.dr, self.orientation)
-        noise_angle = gauss(self.noise_mu, self.noise_sd)
+        if self.bimodal_noise:
+            noise_angle = gauss(self.noise_mu, self.noise_sd)
+        else:
+            gauss(0,0)  # discard this r.n.
+            noise_angle = self.noise_mu
         noisy_movement = rotate(wanted_movement, noise_angle)
         self.orientation = get_orientation_from_vector(noisy_movement)
         self.pos = self.clamp_to_map(self.pos + noisy_movement)
@@ -284,9 +308,21 @@ class Agent:
         self.dr = dr
 
 
-    def record_transaction(self, transaction):
+    def record_attempted_transaction(self):
+        self.environment.payment_database.record_attempted_transaction(self.id)
+
+    
+    def record_validated_transaction(self):
+        self.environment.payment_database.record_validated_transaction(self.id)
+
+
+    def record_completed_transaction(self, transaction):
         transaction.timestep = self.environment.timestep
-        self.environment.payment_database.record_transaction(transaction)
+        self.environment.payment_database.record_completed_transaction(transaction)
+
+
+    def record_combined_transaction(self):
+        self.environment.payment_database.record_combined_transaction(self.id)
 
 
     def update_communication_state(self):

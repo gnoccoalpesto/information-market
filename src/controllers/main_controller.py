@@ -57,7 +57,7 @@ class MainController:
             if "items_evolution" in self.config.value_of("data_collection")["metrics"]:
                 self.items_evolution += f"{self.tick},{self.get_items_collected_stats()}"
                 self.items_evolution_list.append([self.tick, self.get_items_collected()])
-        #TODO is this needed since we use a limited cycle?
+        #TODO is this test needed since we use a limited cycle?
         if self.tick < self.config.value_of("simulation_steps"):
             self.tick += 1
             self.environment.step()
@@ -82,7 +82,7 @@ class MainController:
         res = ""
         for bot in self.environment.population:
             res += str(bot.reward()) + ","
-        res = res[:-1]  # remove last comma
+        res = res[:-1]
         res += "\n"
         return res
 
@@ -103,7 +103,7 @@ class MainController:
         res = ""
         for bot in self.environment.population:
             res += str(bot.items_collected) + ","
-        res = res[:-1]  # remove last comma
+        res = res[:-1]
         res += "\n"
         return res
 
@@ -112,7 +112,7 @@ class MainController:
         res = ""
         for bot in self.environment.population:
             res += str(bot.noise_mu) + ","
-        res = res[:-1]  # remove last comma
+        res = res[:-1]
         res += "\n"
         return res
 
@@ -138,4 +138,24 @@ class MainController:
 
 
     def get_transaction_log(self):
-        return self.environment.payment_database.log_db
+        return self.environment.payment_database.completed_transactions_log
+
+
+    def get_attempted_transactions_list(self):
+        return [self.environment.payment_database.get_attempted_transactions(bot.id) \
+            for bot in self.environment.population]
+
+
+    def get_validated_transactions_list(self):
+        return [self.environment.payment_database.get_validated_transactions(bot.id) \
+            for bot in self.environment.population]
+
+
+    def get_completed_transactions_list(self):
+        return [self.environment.payment_database.get_completed_transactions(bot.id) \
+            for bot in self.environment.population]
+
+
+    def get_combined_transactions_list(self):
+        return [self.environment.payment_database.get_combined_transactions(bot.id) \
+            for bot in self.environment.population]

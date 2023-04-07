@@ -1,0 +1,181 @@
+{
+  "width": 1200,
+  "height": 600,
+  "food": {
+    "x": 200,
+    "y": 300,
+    "radius": 50
+  },
+  "nest": {
+    "x": 1000,
+    "y": 300,
+    "radius": 50
+  },
+  "simulation_steps": 15000,
+  "simulation_seed": 5684436,
+  "number_runs": 64,
+  "visualization": {
+    "activate": true,
+    "fps": 60
+  },
+  "random_walk": {
+    "random_walk_factor": 0.9,
+    "levi_factor": 1.4
+  },
+  "agent": {
+    "radius": 8,
+    "speed": 2.5,
+    "communication_radius": 50,
+    "communication_stop_time": 0,
+    "communication_cooldown": 0,
+    "fuel_cost": 0,
+    "noise": {
+        "class": "UniformNoise",
+        "parameters": {
+          "dishonest_noise_performance": "average",
+          "noise_mu":0.051,
+          "noise_range": 0.1
+        }
+      }
+    },
+  "behaviors": [
+    {
+      "class": "NaiveBehavior",
+      "population_size": 22,
+      "parameters": {
+      }
+    },
+    {
+      "class": "NewNaiveBehavior",
+      "population_size": 0,
+      "parameters": {
+      }
+    },
+    {
+      "class": "NewScepticalBehavior",
+      "population_size": 0,
+      "parameters": {
+        "scepticism_threshold": 0.25
+      }
+    },
+    {
+      "class": "WealthWeightedBehavior",
+      "population_size": 0,
+      "parameters": {
+      }
+    },
+    {
+      "class": "ReputationRankingBehavior",
+      "population_size": 0,
+      "parameters": {
+        "ranking_threshold": 0.3
+      }
+    },
+    {
+      "class": "ScepticalReputationBehavior",
+      "population_size": 0,
+      "parameters": {
+        "method":"allavg",
+        "scaling": 0.5,
+        "base_scepticism":0.25,
+        "weight_method":"exponential"
+      }
+    },
+    {
+      "class": "WealthThresholdBehavior",
+      "population_size": 0,
+      "parameters": {
+        "comparison_method":"allmax",
+        "scaling": 0.5
+      }
+    },
+    {
+      "class": "NewScepticalReputationBehavior",
+      "population_size": 0,
+      "parameters": {
+        "comparison_method":"allavg",
+        "scaling": 0.5,
+        "scepticism_threshold":0.25,
+        "weight_method":"exponential"
+      }
+    },
+    {
+      "class": "NewSaboteurBehavior",
+      "population_size": 0,
+      "parameters": {
+        "lie_angle": 90
+      }
+    },
+    {
+      "class": "NewScaboteurBehavior",
+      "population_size": 3,
+      "parameters": {
+        "scepticism_threshold": 0.25,
+        "lie_angle": 90
+      }
+    },
+    {
+      "class": "SaboteurScepticalReputationBehavior",
+      "population_size": 0,
+      "parameters": {
+        "lie_angle": 0,
+        "method":"allavg",
+        "scaling": 0.5,
+        "base_scepticism":0.25,
+        "weight_method":"exponential"
+      }
+    },
+    {
+      "class": "SaboteurWealthWeightedBehavior",
+      "population_size": 0,
+      "parameters": {
+      }
+    },
+    {
+      "class": "SaboteurReputationRankingBehavior",
+      "population_size": 0,
+      "parameters": {
+        "ranking_threshold": 0.3,
+        "lie_angle": 90
+      }
+    },
+    {
+      "class": "SaboteurWealthThresholdBehavior",
+      "population_size": 0,
+      "parameters": {
+        "comparison_method":"allmax",
+        "scaling": 0.5
+      }
+    },
+    {
+      "class": "NewSaboteurScepticalReputationBehavior",
+      "population_size": 0,
+      "parameters": {
+        "comparison_method":"allavg",
+        "scaling": 0.5,
+        "scepticism_threshold":0.25,
+        "weight_method":"exponential"
+      }
+    }
+  ],
+  "payment_system": {
+    "class": "OutlierPenalisationPaymentSystem",
+    "initial_reward": 1,
+    "parameters": {
+      "information_share": 0.5
+    }
+  },
+  "market": {
+    "class": "FixedPriceMarket",
+    "parameters": {
+      "reward": 1
+    }
+  },
+  "data_collection": {
+    "output_directory": "../data/TEST/",
+    "filename": "test.csv",
+    "metrics": ["items_evolution","rewards_evolution","items_collected","rewards"],
+    "precise_recording_interval": 100,
+    "transactions_log": false
+      }
+}
