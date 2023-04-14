@@ -57,11 +57,6 @@ ns          P > 0.05 (not significant)
 ---best: above the boxplot
 
 
--FASTER ANALYSIS OF ITEMS LISTS:
---could select all last elements for each run using iloc on the specific label
--->JUST USE THE ITEMS_COLLECTED FILE
-
-
 -TEST: 
 --SHORTER boxplot PAIRING
 ---HOW CAN I ADD LABELS WITHOUT EXPLICITLY PASSING FIELD NAME?
@@ -69,21 +64,6 @@ list1 = pd.DataFrame(list1).assign(n_agents=labels[0])#do i need list1.to_numpy(
 list2 = pd.DataFrame(list2).assign(n_agents=labels[1])#<- how to remove n_agents=?
 data=pd.concat([list1,list2])
 ---should melt be used? data_final=pd.melt(data_final, id_vars=, value_vars=)
-
---ITEMS LIST PARSING for shapes "[1, 2, ...]"
-    run_data=[]; run_x=[]; run_labels=[]
-    for run in selected_runs:
-        run_pen_data=[]
-        run_pen_df=pen_df.loc[lambda df: df[labels[0]] == run]
-        steps=run_pen_df[labels[1]].unique()
-        for step in steps:
-            step_df=run_pen_df.loc[lambda df: df[labels[1]] == step].iloc[:,-1]
-            step_df=np.asarray([float(_) for _ in step_df.values[0][1:-1].split(", ")])
-            run_pen_data.append(np.sum(step_df))
-        run_data=np.concatenate([run_data,run_pen_data])
-        run_x=np.concatenate([run_x,np.asarray([int(_) for _ in steps])])
-        run_labels=run_labels+['nopen' for _ in run_pen_data]
-    sns.boxplot(run_data)
 
 
 ==========

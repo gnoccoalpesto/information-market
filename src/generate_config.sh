@@ -15,7 +15,7 @@ PROJECT_HOME="${HOME}/ing/tesi/information-market/"
 CONFIG_DIR="${PROJECT_HOME}config/"
 ASSETS_DIR="${PROJECT_HOME}assets/"
 EXEC_FILE="${PROJECT_HOME}src/info_market.py"
-DATA_DIR="${PROJECT_HOME}data/TRANSACTION/"
+DATA_DIR="${PROJECT_HOME}data/"
 if [ $# -ne 0 ]; then
   DATA_DIR="${DATA_DIR}$1/"
 fi
@@ -107,7 +107,7 @@ DISHONEST_LIE_ANGLES=(90)
 
 
 # behaviors ----------------------------------------------------
-BEHAVIOR_LIST=("n" "s" "r" "Nv" "t" "w")
+BEHAVIOR_LIST=("r" "Nv" "t")
 
 # naive: n ; new naive: Nn ; wealth weighted: w
 # -params:{}

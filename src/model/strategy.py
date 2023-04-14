@@ -71,6 +71,26 @@ class WeightedAverageAgeStrategy(InformationStrategy):
         return new_target
 
 
+class WeightedAverageReputationAgeStrategy(InformationStrategy):
+    def should_combine(self, my_target: Target, other_target: Target):
+        if other_target.valid and my_target.age > other_target.age:
+            return True
+        return False
+        
+    def combine(self, my_target: Target, other_target: Target, bots_distance, mean_reputation, seller_reputation) -> Target:
+        new_target = copy.deepcopy(other_target)
+        ages_sum = my_target.age + other_target.age
+        reputation_ratio=seller_reputation/mean_reputation
+        reputation_sum=1+reputation_ratio
+        new_distance = (my_target.age / (reputation_sum*ages_sum)) * (other_target.get_distance() + bots_distance) + \
+             ((other_target.age * reputation_ratio) / (reputation_sum*ages_sum)) * my_target.get_distance()  
+        if not my_target.is_valid():
+            new_distance = other_target.get_distance() + bots_distance
+        new_target.set_distance(new_distance)
+        new_target.age = ages_sum // 2
+        return new_target
+
+
 class FullWeightedAverageReputationStrategy(InformationStrategy):
     def __init__(self,robots_amount):
         self.purchased_targets = {
@@ -127,6 +147,23 @@ class RunningWeightedAverageReputationStrategy(InformationStrategy):
                         (my_reputation+seller_reputation)
         new_age=(my_target.get_age()*my_reputation+other_target.get_age()*seller_reputation)/\
                         (my_reputation+seller_reputation)
+        new_target.set_distance(new_distance)
+        new_target.set_age(new_age)
+        return new_target
+
+
+class NewRunningWeightedAverageReputationStrategy(InformationStrategy):
+    def should_combine(self, _ , other_target: Target):
+        if other_target.is_valid():
+            return True
+        return False
+
+    def combine(self, my_target: Target, other_target: Target, mean_reputation, seller_reputation) -> Target:
+        new_target = copy.deepcopy(other_target)
+        reputation_ratio=seller_reputation/mean_reputation
+        reputation_sum=1+reputation_ratio
+        new_distance=(my_target.get_distance()/reputation_sum +other_target.get_distance()*reputation_ratio/reputation_sum)
+        new_age=(my_target.get_age()/reputation_sum+other_target.get_age()*seller_reputation/reputation_sum)
         new_target.set_distance(new_distance)
         new_target.set_age(new_age)
         return new_target

@@ -1,6 +1,6 @@
 **/__pycache__/*
 config*
 data*
-plots/*
+plots*
 src/error*
 !src/config.py

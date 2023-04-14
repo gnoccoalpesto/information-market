@@ -13,8 +13,8 @@ from sys import argv
 import config as CONFIG_FILE
 from controllers.main_controller import MainController, Configuration
 from controllers.view_controller import ViewController
-from model.behavior import BAD_COMBINATIONS, BEHAVIORS_NAME_DICT, BEHAVIOR_PARAMS_DICT, \
-    PARAMS_NAME_DICT, NOISE_PARAMS_DICT
+from model.behavior import BAD_PARAM_COMBINATIONS_DICT, BEHAVIORS_NAME_DICT, BEHAVIOR_PARAMS_DICT, \
+    PARAMS_NAME_DICT, NOISE_PARAMS_DICT, BEST_PARAM_COMBINATIONS_DICT
 
 
 ### UTILITIES ######################################################################
@@ -51,11 +51,11 @@ def params_from_filename(filename:str, compact_format:bool=False):
     lieangle =          [0, 90]
 
     behaviorparams =    "n","Nn","w":   {},
-                        "s","Ns":       {"ST": "scepticims threshold"},
+                        "s","Ns":       {"ST": "scepticism threshold"},
                         "r":            {"RT": "ranking threshold"},
                         "v","Nv":       {"CM": "comparison method",
                                         "SC": "scaling",
-                                        "ST": "scepticims threshold",
+                                        "ST": "scepticism threshold",
                                         "WM": "weight method"},
                         "t":            {"CM": "comparison method",
                                         "SC": "scaling"}
@@ -67,9 +67,13 @@ def params_from_filename(filename:str, compact_format:bool=False):
                                         "NRANG": "noise range",
                                         "SAB": "saboteur performance" ={"avg": "average",
                                                                         "perf": "perfect"}}
+
+    :return if compact_format: n_honest, honest_behavior, payment, lie_angle, behaviour_params, noise_params
+            else: n_honest, honest_behavior, payment, lie_angle, behaviour_params, noise_params, message
     """
     if "/" in filename: filename=filename.split("/")[-1]
     if filename.endswith(".json"): filename=filename.split(".json")[0]
+    elif filename.endswith(".csv"): filename=filename.split(".csv")[0]
     params=filename.split("_")
 
     n_honest=re.search('[0-9]+', params[0]).group()
@@ -90,17 +94,22 @@ def params_from_filename(filename:str, compact_format:bool=False):
 
     honest_behavior=BEHAVIORS_NAME_DICT["".join(re.findall('[a-zA-Z]+', params[0]))]
     payment=PARAMS_NAME_DICT[params[1]]
+    
     behaviour_params=""
     for p in behaviour_params_list:
+        #TODO do not search again, use the ones for compact format and make the msgs
         value="".join(re.findall('[0-9a-z]+', p))
         behaviour_params+=f"{value} {PARAMS_NAME_DICT[''.join(re.findall('[A-Z]+', p))]},"
+    behaviour_params=behaviour_params[:-1]
+    
     noise_params=""
     for p in noise_params_list:
         value="".join(re.findall('[0-9a-z]+', p))
         noise_params+=f"{value} {PARAMS_NAME_DICT[''.join(re.findall('[A-Z]+', p))]},"
-    behaviour_params=behaviour_params[:-1]
     noise_params=noise_params[:-1]
+    
     message=f"{n_honest} {honest_behavior},\n{payment}, lie_angle: {lie_angle},\n{behaviour_params},\n{noise_params}"
+    
     return n_honest, honest_behavior, payment, lie_angle, behaviour_params, noise_params, message
         
 
@@ -137,17 +146,32 @@ def generate_filename(config:Configuration,):
     filename = config.value_of("data_collection")["filename"]
     return filename#.split(".csv")[0].replace(".","")+".csv"
 
+
+def is_bad_param_combination(filename:str):
+    _, h_behav, payment, _, behav_params, _ = params_from_filename(filename,compact_format=True)
+    if [payment, behav_params] in BAD_PARAM_COMBINATIONS_DICT[h_behav]:
+        return True
+    return False
     
-def prune_bad_combinations(filenames:list):
+
+def is_best_param_combination(filename:str):
+    _, h_behav, payment, _, behav_params, _ = params_from_filename(filename,compact_format=True)
+    if [payment, behav_params] in BEST_PARAM_COMBINATIONS_DICT[h_behav]:
+        return True
+    return False
+
+
+def prune_bad_params_combinations(filenames:list,best_mode=False):
     count=0
     #BUG works only with reversed order (LOL)
     for f in reversed(filenames):
-        _, h_behav, payment, _, behav_params, _ = params_from_filename(f,compact_format=True)
-        if [payment, behav_params] in BAD_COMBINATIONS[h_behav]:
+        if (not best_mode and is_bad_param_combination(f)) or \
+                (best_mode and not is_best_param_combination(f)):
             filenames.remove(f)
             # system(f"rm {f}")
             count+=1
-    print(f"- - - - - ATTENTION: pruned {count} bad combinations of payment & behavioural parameters - - - - -\n")
+    if count>0:
+        print(f"- - - - - ATTENTION: pruned {count} bad combinations of payment & behavioural parameters - - - - -\n")
     return filenames
 ####################################################################################
 
@@ -169,7 +193,7 @@ def main():
             else:
                 filenames.extend([join(p, f) for f in listdir(p) if isfile(join(p, f))])
 
-        filenames=prune_bad_combinations(filenames)
+        filenames=prune_bad_params_combinations(filenames,best_mode=True)
 
         print(f"Running {len(filenames)} config"
                 f"{'s' if len(filenames)>1 else ''}: ",end="\t")
@@ -192,13 +216,14 @@ def main():
             if exists(join(CONFIG_FILE.CONFIG_ERRORS_DIR,f.split('/')[-1])):
                 system(f"rm {join(CONFIG_FILE.CONFIG_ERRORS_DIR,f.split('/')[-1])}")
                 print("successfully removed file from config_errors folder")
+        #TODO improved logger
         #TODO https://www.google.com/search?channel=fs&q=python+exception+handling+log+full+traceback
         #import logging
         except Exception as e:
-        #TODO cannot catch JSONDecodeError
+        #BUG cannot catch JSONDecodeError
             with open(CONFIG_FILE.ERRORS_LOG_FILE, "a+") as fe:
                 fe.write(f"{datetime.datetime.now()}, file {f} : \n"+str(e)+"\n\n")
-            print(f"ERROR: {e}")
+            print(f"LOGGED ERROR: {e}")
             Path(CONFIG_FILE.CONFIG_ERRORS_DIR).mkdir(parents=True, exist_ok=True)
             system(f"cp {f} {CONFIG_FILE.CONFIG_ERRORS_DIR}{f.split('/')[-1]}")
             continue
@@ -230,7 +255,6 @@ def run(config:Configuration, i):
 
 
 def record_data(config:Configuration, controllers):
-    #TODO check if passed folder arg in terminal, otherwise use this
     output_directory = config.value_of("data_collection")["output_directory"]
     filename=generate_filename(config)
     for metric in config.value_of("data_collection")["metrics"]:
@@ -277,15 +301,16 @@ def record_data(config:Configuration, controllers):
             completed_df = pd.DataFrame([controller.get_completed_transactions_list() for controller in controllers])
             combined_df = pd.DataFrame([controller.get_combined_transactions_list() for controller in controllers])
             # current_filename=check_filename_existence(output_directory,metric,filename)
-            current_filename=filename
-            attempted_df.to_csv(join(output_directory, "transactions", current_filename+"_attempted"), index=False, header=False)
-            validated_df.to_csv(join(output_directory, "transactions", current_filename+"_validated"), index=False, header=False)
-            completed_df.to_csv(join(output_directory, "transactions", current_filename+"_completed"), index=False, header=False)
-            combined_df.to_csv(join(output_directory, "transactions", current_filename+"_combined"), index=False, header=False)
+            current_filename=filename.split(".csv")[0]
+            attempted_df.to_csv(join(output_directory, "transactions", current_filename+"_attempted"+".csv"), index=False, header=False)
+            validated_df.to_csv(join(output_directory, "transactions", current_filename+"_validated"+".csv"), index=False, header=False)
+            completed_df.to_csv(join(output_directory, "transactions", current_filename+"_completed"+".csv"), index=False, header=False)
+            combined_df.to_csv(join(output_directory, "transactions", current_filename+"_combined"+".csv"), index=False, header=False)
         else:
             print(f"[WARNING] Could not record metric: '{metric}'. Metric name is not valid.")
 
     if config.value_of("data_collection")["transactions_log"]:
+    #NOTE this files can easily reach 200MB each
         transaction_logs=[]
         for i, controller in enumerate(controllers):
             df = pd.DataFrame(controller.get_transaction_log(), columns=["tick", "buyer", "seller"])

@@ -17,7 +17,7 @@ def random_seeder(seed,n=None):
     if seed!="" and seed!="random" and seed is not None:
         random_seed(seed+n if n is not None else seed)
 
-def generate_static_noise_list(n_robots,n_dishonest,dishonest_noise_performance,
+def generate_uniform_noise_list(n_robots,n_dishonest,dishonest_noise_performance,
                                 noise_mu, noise_range,
                                 random_switch=False,random_seed=None):
     """
@@ -140,7 +140,7 @@ class Environment:
         self.DISHONEST_AMOUNT = int(np.sum([behavior['population_size'] for behavior in behavior_params
                                      if "teur" in behavior['class']]))#TODO check instead in a list of saboteurs behav
         if agent_params["noise"]["class"]=="UniformNoise":
-            generated_fixed_noise=generate_static_noise_list(self.ROBOTS_AMOUNT,
+            generated_fixed_noise=generate_uniform_noise_list(self.ROBOTS_AMOUNT,
                                                          self.DISHONEST_AMOUNT,
                                                             agent_params["noise"]["parameters"]["dishonest_noise_performance"],
                                                             agent_params["noise"]["parameters"]["noise_mu"],
