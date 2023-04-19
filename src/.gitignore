@@ -1,0 +1,7 @@
+**/__pycache__/*
+config*
+data*
+plots*
+src/error*
+!src/config.py
+!data_analysis.py
