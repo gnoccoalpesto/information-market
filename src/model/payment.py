@@ -145,29 +145,25 @@ class PaymentDB:
     - n_transactions_trend (?): the trend of the number of transactions of the robot.
     """
     def __init__(self, population_ids, payment_system_params):
-        #NOTE nb_transactions stays as convenience variable
-        self.nb_transactions = 0
         self.database = {}
-        #TODO which is the best one?
-        # self.completed_transactions_log=set()
-        # self.completed_transactions_log=""
         self.completed_transactions_log=[]
         # self.info_share = info_share
+        robots_number=len(population_ids)
         for robot_id in population_ids:
             self.database[robot_id] = {"reward": payment_system_params["initial_reward"],
                                        "payment_system": eval(payment_system_params['class'])(
                                                 **payment_system_params['parameters']),
                                         #TODO new bchain data
                                         "wallet_age": 0,
-                                        "n_attempted_transactions": 0,
-                                        "n_validated_transactions": 0,
-                                        "n_completed_transactions": 0,
-                                        "n_combined_transactions" : 0,
+                                        "n_attempted_transactions": [0]*robots_number,
+                                        #UNUSED "n_validated_transactions": 0,
+                                        "n_completed_transactions": [0]*robots_number,
+                                        #UNUSED "n_combined_transactions" : 0,
                                         # "reward_trend": 0,
                                         # "n_transactions_trend": 0,
-                                        # LOCATIONS COULD PUT TOO MUCH STRESS BC CONTINUOUS UPDATE
+                                        # LOCATIONS COULD PUT TOO MUCH STRESS <- CONTINUOUS UPDATE
                                         #->TODO COULD USE A DATE INSTEAD
-                                        # "locations_age": {Location.FOOD: 0,
+                                        # "locations_acquisition": {Location.FOOD: 0,
                                         #                  Location.NEST: 0
                                         #                 }
                                 }
@@ -188,23 +184,20 @@ class PaymentDB:
         self.apply_gains(to_id, amount)
 
 
-    def record_attempted_transaction(self, buyer_id):
-        self.database[buyer_id]["n_attempted_transactions"] += 1
-
-
-    def record_validated_transaction(self, buyer_id):
-        self.database[buyer_id]["n_validated_transactions"] += 1
-
-
-    def record_completed_transaction(self, transaction: Transaction):
-        self.nb_transactions += 1
-        self.database[transaction.buyer_id]["n_completed_transactions"] += 1
-        self.database[transaction.buyer_id]["payment_system"].new_transaction(transaction, PaymentAPI(self))
-        if CONFIG_FILE.LOG_COMPLETED_TRANSATIONS: self.log_completed_transaction(transaction)
-
-
-    def record_combined_transaction(self, buyer_id):
-        self.database[buyer_id]["n_combined_transactions"] += 1
+    def record_transaction(self,type:str,buyer_id:int,seller_id:int,transaction:Transaction=None):
+        #TODO make this more similar to self.get_transactions()
+        if type=="completed" or type=="C" or type=="c":
+            self.database[transaction.buyer_id]["n_completed_transactions"][seller_id] += 1
+            self.database[transaction.buyer_id]["payment_system"].new_transaction(transaction, PaymentAPI(self))
+            if CONFIG_FILE.LOG_COMPLETED_TRANSATIONS: self.log_completed_transaction(transaction)
+        elif type=="attempted" or type=="A" or type=="a":
+            self.database[buyer_id]["n_attempted_transactions"][seller_id] += 1
+        # elif type=="validated" or type=="V" or type=="v":
+        #     self.database[buyer_id]["n_validated_transactions"][seller_id] += 1
+        # elif type=="combined" or type=="X" or type=="x":
+        #     self.database[buyer_id]["n_combined_transactions"][seller_id] += 1
+        else:
+            raise ValueError("Transaction type not recognized")
 
 
     def pay_creditors(self, debitor_id, total_reward=1):
@@ -244,6 +237,10 @@ class PaymentDB:
         return list(sorted_database.keys()).index(robot_id)
 
 
+    def number_of_wallets(self):
+        return len(self.database)
+
+
     def apply_cost(self, robot_id, cost):
         if cost < 0:
             raise ValueError("Cost must be positive")
@@ -260,27 +257,19 @@ class PaymentDB:
 
 
     def log_completed_transaction(self,transaction:Transaction):
-        # self.completed_transactions_log.add(transaction)
-        # self.completed_transactions_log+=f"buyer:{transaction.buyer_id}, seller:{transaction.seller_id}, at:{transaction.timestep}"\
-        #                "#####################\n"
         self.completed_transactions_log.append([transaction.timestep,transaction.buyer_id,transaction.seller_id])
 
 
-    # def get_database(self):
-    #     return self.database, self.completed_transactions_log
+    def get_transactions(self,type:str,robot_id:int):
+        if type=="attempted" or type=="A" or type=="a":
+            type="attempted"
+        elif type=="validated" or type=="V" or type=="v":
+            type="validated"
+        elif type=="completed" or type=="C" or type=="c":
+            type="completed"
+        elif type=="combined" or type=="X" or type=="x":
+            type="combined"
+        else:
+            raise ValueError("Transaction type not recognized")
+        return self.database[robot_id][f"n_{type}_transactions"]
 
-
-    def get_attempted_transactions(self, robot_id):
-        return self.database[robot_id]["n_attempted_transactions"]
-
-
-    def get_validated_transactions(self, robot_id):
-        return self.database[robot_id]["n_validated_transactions"]
-
-
-    def get_completed_transactions(self, robot_id):
-        return self.database[robot_id]["n_completed_transactions"]
-
-
-    def get_combined_transactions(self, robot_id):
-        return self.database[robot_id]["n_combined_transactions"]

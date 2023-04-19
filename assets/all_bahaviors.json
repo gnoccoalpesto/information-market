@@ -158,6 +158,10 @@
       }
     }
   ],
+  "combine_strategy": {
+    "class": "WeightedAverageAgeStrategy",
+    "parameters": {}
+  },
   "payment_system": {
     "class": "OutlierPenalisationPaymentSystem",
     "initial_reward": 1,

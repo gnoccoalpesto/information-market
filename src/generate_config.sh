@@ -10,17 +10,17 @@
 #
 # usage: ./generate_config.sh [experiment_subdirectory_name]
 
-#TODO source this stuff in a file/bashrc,...
-PROJECT_HOME="${HOME}/ing/tesi/information-market/"
-CONFIG_DIR="${PROJECT_HOME}config/"
-ASSETS_DIR="${PROJECT_HOME}assets/"
-EXEC_FILE="${PROJECT_HOME}src/info_market.py"
-DATA_DIR="${PROJECT_HOME}data/"
+#NOTE -- ATTENTION: IF YOU MOVE THE FILE generate_config.sh, YOU MUST UPDATE THE FOLLOWING LINES
+PROJECT_HOME=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )/..
+CONFIG_DIR="${PROJECT_HOME}/config"
+ASSETS_DIR="${PROJECT_HOME}/assets"
+EXEC_FILE="${PROJECT_HOME}/src/info_market.py"
+DATA_DIR="${PROJECT_HOME}/data"
 if [ $# -ne 0 ]; then
-  DATA_DIR="${DATA_DIR}$1/"
+  DATA_DIR="${DATA_DIR}/$1"
 fi
 
-CONFIG_FILE_TEMPLATE="${ASSETS_DIR}config_template"
+CONFIG_FILE_TEMPLATE="${ASSETS_DIR}/config_template"
 
 
 #########################################################################
@@ -69,8 +69,12 @@ MARKET_CLASS="FixedPriceMarket"
 MARKET_REWARD=1
 
 
+############################################################################################
+############################################################################################
+############################################################################################
 #EXPERIMENT PARAMETERS: MODIFY AS YOU WILL #################################################
 # ----------------- NOTE LISTS MUST BE IN THIS FORMAT: (value1 ... valueN) --------------- #
+# ----------------- NOTE BOOLs = {true, false} ------------------------------------------- #
 
 #simulation
 SIMULATION_STEPS=15000
@@ -81,20 +85,31 @@ NUMBER_RUNS=20
 VISUALISATION_ACTIVATE=false
 
 #noise
-AGENT_NOISE_ASSIGNATION_LIST=("average" "perfect")
-# RANDOM: "bimodal"; FIXED: "average" "perfect" (saboteur performance)
+AGENT_NOISE_ASSIGNATION_LIST=("average" 
+							"perfect"
+							)
 # bimodal:
 AGENT_NOISE_SAMPLING_MU_LIST=(0.05)
 AGENT_NOISE_SAMPLING_SIGMA_LIST=(0.05)
 AGENT_NOISE_SD_LIST=(0.05)
-# average, perfect:
+# (uniform:) average, perfect:
 AGENT_NOISE_MU_LIST=(0.051)
 AGENT_NOISE_RANGE_LIST=(0.1)
 
+#combine_strategy
+COMBINE_STRATEGY_LIST=(
+						"waa"
+						# "nfwar" 
+						# "fwar" 
+						# "nrwar" 
+						# "wara"
+						)
+
 #payment system
-# PAYMENT_SYSTEM_CLASS=("OutlierPenalisationPaymentSystem")
-# PAYMENT_SYSTEM_CLASS=("DelayedPaymentPaymentSystem")
-PAYMENT_SYSTEM_CLASS_LIST=("OutlierPenalisationPaymentSystem" "DelayedPaymentPaymentSystem")
+PAYMENT_SYSTEM_CLASS_LIST=(
+							"OutlierPenalisationPaymentSystem" 
+							"DelayedPaymentPaymentSystem"
+							)
 
 #data collection
 DATA_PRECISE_RECORDING_INTERVAL=100
@@ -102,12 +117,18 @@ DATA_TRANSACTIONS_LOG=false
 
 #robots
 NUMBER_OF_ROBOTS=25
-HONEST_POPULATION_LIST=(25 24)
+HONEST_POPULATION_LIST=(24)
 DISHONEST_LIE_ANGLES=(90)
 
 
 # behaviors ----------------------------------------------------
-BEHAVIOR_LIST=("r" "Nv" "t")
+BEHAVIOR_LIST=(
+				"n" "s"
+				"r" 
+				"t" 
+				"Nv"
+				"w"
+			)
 
 # naive: n ; new naive: Nn ; wealth weighted: w
 # -params:{}
@@ -118,7 +139,10 @@ sSCEPTICISM_THRESHOLD_LIST=(0.25)
 
 # ranking: r
 # -params:{ranking_threshold}
-rRANKING_THRESHOLD_LIST=(0.3 0.5)
+rRANKING_THRESHOLD_LIST=(
+						0.3 
+						0.5
+						)
 
 # variable scepticism: v ; new variable scepticism: Nv
 # -params:{comparison_method,scaling,scepticism_threshold,weight_method}
@@ -197,15 +221,15 @@ declare -A BEHAVIOR_INITIALS
 	BEHAVIOR_INITIALS[w]="w"
 
 declare -A SUB_DIR_BEHAVIOR
-	SUB_DIR_BEHAVIOR[n]="naive/"
-	SUB_DIR_BEHAVIOR[Nn]="new_naive/"
-	SUB_DIR_BEHAVIOR[s]="sceptical/"
-	SUB_DIR_BEHAVIOR[Ns]="new_sceptical/"
-	SUB_DIR_BEHAVIOR[r]="ranking/"
-	SUB_DIR_BEHAVIOR[v]="variable_scepticism/"
-	SUB_DIR_BEHAVIOR[Nv]="variable_scepticism/"
-	SUB_DIR_BEHAVIOR[t]="wealth_threshold/"
-	SUB_DIR_BEHAVIOR[w]="wealth_weighted/"
+	SUB_DIR_BEHAVIOR[n]="naive"
+	SUB_DIR_BEHAVIOR[Nn]="new_naive"
+	SUB_DIR_BEHAVIOR[s]="sceptical"
+	SUB_DIR_BEHAVIOR[Ns]="new_sceptical"
+	SUB_DIR_BEHAVIOR[r]="ranking"
+	SUB_DIR_BEHAVIOR[v]="variable_scepticism"
+	SUB_DIR_BEHAVIOR[Nv]="variable_scepticism"
+	SUB_DIR_BEHAVIOR[t]="wealth_threshold"
+	SUB_DIR_BEHAVIOR[w]="wealth_weighted"
 
 declare -A BEHAVIOUR_FILENAME_ADDITIONAL_INFO
 	BEHAVIOUR_FILENAME_ADDITIONAL_INFO[n]=""
@@ -217,6 +241,25 @@ declare -A BEHAVIOUR_FILENAME_ADDITIONAL_INFO
 	BEHAVIOUR_FILENAME_ADDITIONAL_INFO[Nv]="_COMPARISON_METHODCM_SCALINGSC_SCEPTICISM_THRESHOLDST_WEIGHT_METHODWM"
 	BEHAVIOUR_FILENAME_ADDITIONAL_INFO[t]="_COMPARISON_METHODCM_SCALINGSC"
 	BEHAVIOUR_FILENAME_ADDITIONAL_INFO[w]=""
+
+
+# information combine strategy
+declare -A COMBINE_STRATEGIES
+	COMBINE_STRATEGIES[waa]="WeightedAverageAgeStrategy"
+	COMBINE_STRATEGIES[wara]="WeightedAverageReputationAgeStrategy"
+	COMBINE_STRATEGIES[rwar]="RunningWeightedAverageReputationStrategy"
+	COMBINE_STRATEGIES[nrwar]="NewRunningWeightedAverageReputationStrategy"
+	COMBINE_STRATEGIES[fwar]="FullWeightedAverageReputationStrategy"
+	COMBINE_STRATEGIES[nfwar]="NewFullWeightedAverageReputationStrategy"
+
+declare -A COMBINE_STRATEGIES_INITIALS
+	COMBINE_STRATEGIES_INITIALS[waa]="waa"
+	COMBINE_STRATEGIES_INITIALS[wara]="wara"
+	COMBINE_STRATEGIES_INITIALS[rwar]="rwar"
+	COMBINE_STRATEGIES_INITIALS[nrwar]="nrwar"
+	COMBINE_STRATEGIES_INITIALS[fwar]="fwar"
+	COMBINE_STRATEGIES_INITIALS[nfwar]="nfwar"
+
 
 # payment system
 declare -A PAYMENT_SYSTEM_NAME
@@ -232,7 +275,6 @@ declare -A NOISE_FILENAME_ADDITIONAL_INFO
 	NOISE_FILENAME_ADDITIONAL_INFO[bimodal]="_AGENT_NOISE_SAMPLING_MUSMU_AGENT_NOISE_SAMPLING_SIGMASSD_AGENT_NOISE_SDNSD"
 	NOISE_FILENAME_ADDITIONAL_INFO[average]="_AGENT_NOISE_MUNMU_AGENT_NOISE_RANGENRANG_avgSAB"
 	NOISE_FILENAME_ADDITIONAL_INFO[perfect]="_AGENT_NOISE_MUNMU_AGENT_NOISE_RANGENRANG_perfSAB"
-
 
 
 #SUMMARY #########################################################################
@@ -253,9 +295,10 @@ declare -A NOISE_FILENAME_ADDITIONAL_INFO
 # 	-e "s|TEST_NAME_LIST|${TEST_NAME_LIST}|" \
 # 		${SUMMARY_TEMPLATE} > ${CONF_FILE_SUMMARY}
 
-COUNT=0
 
 #CONFIG FILE GENERATION ##	#######################################################################
+COUNT=0
+declare -a GENERATED_FILENAMES=()
 #TODO GIOVANNI's SUGGESTION: avoid copy-paste, to avoid debug when adding new stuff
 #TODO make a function call in the inner part
 for AGENT_NOISE_ASSIGNATION in ${AGENT_NOISE_ASSIGNATION_LIST[*]} ; do
@@ -271,144 +314,157 @@ for AGENT_NOISE_ASSIGNATION in ${AGENT_NOISE_ASSIGNATION_LIST[*]} ; do
 					DISHONEST_POPULATION=$((NUMBER_OF_ROBOTS-HONEST_POPULATION))
 					for PAYMENT_SYSTEM_CLASS in ${PAYMENT_SYSTEM_CLASS_LIST[*]} ; do
 						for DISHONEST_LIE_ANGLE in ${DISHONEST_LIE_ANGLES[*]} ; do
-							HONEST_CLASS=${HONEST_DICTIONARY[${BEHAVIOR}]}
-							DISHONEST_CLASS=${DISHONEST_DICTIONARY[${BEHAVIOR}]}
-							HONEST_PARAMS=${HONEST_PARAMETERS[${BEHAVIOR}]}
-							DISHONEST_PARAMS=${DISHONEST_PARAMETERS[${BEHAVIOR}]}
-							FILENAME_ADDITIONAL_INFO=${BEHAVIOUR_FILENAME_ADDITIONAL_INFO[${BEHAVIOR}]}${NOISE_FILENAME_ADDITIONAL_INFO[${AGENT_NOISE_ASSIGNATION}]}
-							SUB_DIR=${SUB_DIR_BEHAVIOR[${BEHAVIOR}]}
-							DATA_OUTPUT_DIRECTORY="${DATA_DIR}${SUB_DIR}"
-							CONFIG_OUTPUT_DIRECTORY="${CONFIG_DIR}${SUB_DIR}"
-							if [[ ${DISHONEST_POPULATION} -eq 0 ]]; then
-								FILENAME_BASE="${HONEST_POPULATION}${BEHAVIOR_INITIALS[${BEHAVIOR}]}_${PAYMENT_SYSTEM_NAME[${PAYMENT_SYSTEM_CLASS}]}_0LIA"
-							else
-								FILENAME_BASE="${HONEST_POPULATION}${BEHAVIOR_INITIALS[${BEHAVIOR}]}_${PAYMENT_SYSTEM_NAME[${PAYMENT_SYSTEM_CLASS}]}_${DISHONEST_LIE_ANGLE}LIA"
-							fi
-							FILENAME="${FILENAME_BASE}${FILENAME_ADDITIONAL_INFO}"
-							DATA_FILENAME="${FILENAME}"
-							TEMP_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}temp.json"
-
-							mkdir -p ${CONFIG_OUTPUT_DIRECTORY}
-
-							sed -e "s|DATA_FILENAME|${DATA_FILENAME}.csv|" \
-								-e "s|WIDTH|${WIDTH}|" \
-								-e "s|HEIGHT|${HEIGHT}|" \
-								-e "s|FOOD_X|${FOOD_X}|" \
-								-e "s|FOOD_Y|${FOOD_Y}|" \
-								-e "s|FOOD_RADIUS|${FOOD_RADIUS}|" \
-								-e "s|NEST_X|${NEST_X}|" \
-								-e "s|NEST_Y|${NEST_Y}|" \
-								-e "s|NEST_RADIUS|${NEST_RADIUS}|" \
-								-e "s|SIMULATION_STEPS|${SIMULATION_STEPS}|" \
-								-e "s|SIMULATION_SEED|${SIMULATION_SEED}|" \
-								-e "s|NUMBER_RUNS|${NUMBER_RUNS}|" \
-								-e "s|VISUALISATION_ACTIVATE|${VISUALISATION_ACTIVATE}|" \
-								-e "s|VISUALISATION_FPS|${VISUALISATION_FPS}|" \
-								-e "s|RANDOM_WALK_FACTOR|${RANDOM_WALK_FACTOR}|" \
-								-e "s|RANDOM_WALK_LEVI_FACTOR|${RANDOM_WALK_LEVI_FACTOR}|" \
-								-e "s|AGENT_RADIUS|${AGENT_RADIUS}|" \
-								-e "s|AGENT_SPEED|${AGENT_SPEED}|" \
-								-e "s|AGENT_COMMUNICATION_RADIUS|${AGENT_COMMUNICATION_RADIUS}|" \
-								-e "s|AGENT_COMMUNICATION_STOP_TIME|${AGENT_COMMUNICATION_STOP_TIME}|" \
-								-e "s|AGENT_COMMUNICATION_COOLDOWN|${AGENT_COMMUNICATION_COOLDOWN}|" \
-								-e "s|AGENT_NOISE_CLASS|${AGENT_NOISE_CLASS}|" \
-								-e "s|AGENT_NOISE_PARAMETERS|${AGENT_NOISE_PARAMETERS}|" \
-								-e "s|AGENT_NOISE_SAMPLING_MU|${AGENT_NOISE_SAMPLING_MU}|" \
-								-e "s|AGENT_NOISE_SAMPLING_SIGMA|${AGENT_NOISE_SAMPLING_SIGMA}|" \
-								-e "s|AGENT_NOISE_SD|${AGENT_NOISE_SD}|" \
-								-e "s|AGENT_FUEL_COST|${AGENT_FUEL_COST}|" \
-								-e "s|BEHAVIOURS|${BEHAVIOUR_TEMPLATE}|" \
-								-e "s|DISHONEST_CLASS|${DISHONEST_CLASS}|" \
-								-e "s|HONEST_CLASS|${HONEST_CLASS}|" \
-								-e "s|DISHONEST_POPULATION|${DISHONEST_POPULATION}|" \
-								-e "s|HONEST_POPULATION|${HONEST_POPULATION}|" \
-								-e "s|DISHONEST_PARAMS|${DISHONEST_PARAMS}|" \
-								-e "s|HONEST_PARAMS|${HONEST_PARAMS}|" \
-								-e "s|DISHONEST_LIE_ANGLE|${DISHONEST_LIE_ANGLE}|" \
-								-e "s|PAYMENT_SYSTEM_CLASS|${PAYMENT_SYSTEM_CLASS}|" \
-								-e "s|PAYMENT_SYSTEM_INITIAL_REWARD|${PAYMENT_SYSTEM_INITIAL_REWARD}|" \
-								-e "s|PAYMENT_SYSTEM_INFORAMTION_SHARE|${PAYMENT_SYSTEM_INFORAMTION_SHARE}|" \
-								-e "s|MARKET_CLASS|${MARKET_CLASS}|" \
-								-e "s|MARKET_REWARD|${MARKET_REWARD}|" \
-								-e "s|DATA_OUTPUT_DIRECTORY|${DATA_OUTPUT_DIRECTORY}|" \
-								-e "s|DATA_PRECISE_RECORDING_INTERVAL|${DATA_PRECISE_RECORDING_INTERVAL}|" \
-								-e "s|DATA_TRANSACTIONS_LOG|${DATA_TRANSACTIONS_LOG}|" \
-									${CONFIG_FILE_TEMPLATE} > ${TEMP_CONFIG_FILENAME}
-
-							DATA_FILENAME=$( echo ${DATA_FILENAME} | 
-							 				sed -e "s|AGENT_NOISE_SAMPLING_MU|${AGENT_NOISE_SAMPLING_MU}|"\
-							 				-e "s|AGENT_NOISE_SAMPLING_SIGMA|${AGENT_NOISE_SAMPLING_SIGMA}|"\
-							 				-e "s|AGENT_NOISE_SD|${AGENT_NOISE_SD}|" )
-							
-							# 	BEHAVIOUR PARAMS_SUBSTITUTION
-							if [[ ${BEHAVIOR} == "n" ]] || [[ ${BEHAVIOR} == "Nn" ]] || [[ ${BEHAVIOR} == "w" ]]; then
-								CURRENT_DATA_FILENAME=$( echo ${DATA_FILENAME} | 
-											sed -e "s|[\.]||g" )
-								FINAL_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}${CURRENT_DATA_FILENAME}.json"
-								cp ${TEMP_CONFIG_FILENAME} ${FINAL_CONFIG_FILENAME}
-							else
-								if [[ ${BEHAVIOR} == "s" ]] || [[ ${BEHAVIOR} == "Ns" ]]; then
-									for SCEPTICISM_THRESHOLD in ${sSCEPTICISM_THRESHOLD_LIST[*]} ; do
-										CURRENT_DATA_FILENAME=$( echo ${DATA_FILENAME} | 
-													sed -e "s|SCEPTICISM_THRESHOLD|${SCEPTICISM_THRESHOLD}|"  \
-																-e "s|[\.]||g")
-										FINAL_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}${CURRENT_DATA_FILENAME}.json"
-										sed -e "s|SCEPTICISM_THRESHOLD|${SCEPTICISM_THRESHOLD}|" \
-											${TEMP_CONFIG_FILENAME} > ${FINAL_CONFIG_FILENAME}
-									done
+							for COMBINE_STRATEGY in ${COMBINE_STRATEGY_LIST[*]} ; do
+								HONEST_CLASS=${HONEST_DICTIONARY[${BEHAVIOR}]}
+								DISHONEST_CLASS=${DISHONEST_DICTIONARY[${BEHAVIOR}]}
+								HONEST_PARAMS=${HONEST_PARAMETERS[${BEHAVIOR}]}
+								DISHONEST_PARAMS=${DISHONEST_PARAMETERS[${BEHAVIOR}]}
+								COMBINE_STRATEGY_CLASS=${COMBINE_STRATEGIES[${COMBINE_STRATEGY}]}
+								FILENAME_ADDITIONAL_INFO=${BEHAVIOUR_FILENAME_ADDITIONAL_INFO[${BEHAVIOR}]}${NOISE_FILENAME_ADDITIONAL_INFO[${AGENT_NOISE_ASSIGNATION}]}
+								SUB_DIR=${SUB_DIR_BEHAVIOR[${BEHAVIOR}]}
+								DATA_OUTPUT_DIRECTORY="${DATA_DIR}/${SUB_DIR}"
+								CONFIG_OUTPUT_DIRECTORY="${CONFIG_DIR}/${SUB_DIR}"
+								if [[ ${DISHONEST_POPULATION} -eq 0 ]]; then
+									FILENAME_BASE="${HONEST_POPULATION}${BEHAVIOR_INITIALS[${BEHAVIOR}]}_${COMBINE_STRATEGIES_INITIALS[${COMBINE_STRATEGY}]}CS_${PAYMENT_SYSTEM_NAME[${PAYMENT_SYSTEM_CLASS}]}_0LIA"
 								else
-									if [[ ${BEHAVIOR} == "r" ]]; then
-										for RANKING_THRESHOLD in ${rRANKING_THRESHOLD_LIST[*]} ; do
+									FILENAME_BASE="${HONEST_POPULATION}${BEHAVIOR_INITIALS[${BEHAVIOR}]}_${COMBINE_STRATEGIES_INITIALS[${COMBINE_STRATEGY}]}CS_${PAYMENT_SYSTEM_NAME[${PAYMENT_SYSTEM_CLASS}]}_${DISHONEST_LIE_ANGLE}LIA"
+								fi
+								FILENAME="${FILENAME_BASE}${FILENAME_ADDITIONAL_INFO}"
+								DATA_FILENAME="${FILENAME}"
+								TEMP_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}/temp.json"
+
+								mkdir -p ${CONFIG_OUTPUT_DIRECTORY}
+
+								sed -e "s|DATA_FILENAME|${DATA_FILENAME}.csv|" \
+									-e "s|WIDTH|${WIDTH}|" \
+									-e "s|HEIGHT|${HEIGHT}|" \
+									-e "s|FOOD_X|${FOOD_X}|" \
+									-e "s|FOOD_Y|${FOOD_Y}|" \
+									-e "s|FOOD_RADIUS|${FOOD_RADIUS}|" \
+									-e "s|NEST_X|${NEST_X}|" \
+									-e "s|NEST_Y|${NEST_Y}|" \
+									-e "s|NEST_RADIUS|${NEST_RADIUS}|" \
+									-e "s|SIMULATION_STEPS|${SIMULATION_STEPS}|" \
+									-e "s|SIMULATION_SEED|${SIMULATION_SEED}|" \
+									-e "s|NUMBER_RUNS|${NUMBER_RUNS}|" \
+									-e "s|VISUALISATION_ACTIVATE|${VISUALISATION_ACTIVATE}|" \
+									-e "s|VISUALISATION_FPS|${VISUALISATION_FPS}|" \
+									-e "s|RANDOM_WALK_FACTOR|${RANDOM_WALK_FACTOR}|" \
+									-e "s|RANDOM_WALK_LEVI_FACTOR|${RANDOM_WALK_LEVI_FACTOR}|" \
+									-e "s|AGENT_RADIUS|${AGENT_RADIUS}|" \
+									-e "s|AGENT_SPEED|${AGENT_SPEED}|" \
+									-e "s|AGENT_COMMUNICATION_RADIUS|${AGENT_COMMUNICATION_RADIUS}|" \
+									-e "s|AGENT_COMMUNICATION_STOP_TIME|${AGENT_COMMUNICATION_STOP_TIME}|" \
+									-e "s|AGENT_COMMUNICATION_COOLDOWN|${AGENT_COMMUNICATION_COOLDOWN}|" \
+									-e "s|AGENT_NOISE_CLASS|${AGENT_NOISE_CLASS}|" \
+									-e "s|AGENT_NOISE_PARAMETERS|${AGENT_NOISE_PARAMETERS}|" \
+									-e "s|AGENT_NOISE_SAMPLING_MU|${AGENT_NOISE_SAMPLING_MU}|" \
+									-e "s|AGENT_NOISE_SAMPLING_SIGMA|${AGENT_NOISE_SAMPLING_SIGMA}|" \
+									-e "s|AGENT_NOISE_SD|${AGENT_NOISE_SD}|" \
+									-e "s|AGENT_FUEL_COST|${AGENT_FUEL_COST}|" \
+									-e "s|BEHAVIOURS|${BEHAVIOUR_TEMPLATE}|" \
+									-e "s|DISHONEST_CLASS|${DISHONEST_CLASS}|" \
+									-e "s|HONEST_CLASS|${HONEST_CLASS}|" \
+									-e "s|DISHONEST_POPULATION|${DISHONEST_POPULATION}|" \
+									-e "s|HONEST_POPULATION|${HONEST_POPULATION}|" \
+									-e "s|DISHONEST_PARAMS|${DISHONEST_PARAMS}|" \
+									-e "s|HONEST_PARAMS|${HONEST_PARAMS}|" \
+									-e "s|DISHONEST_LIE_ANGLE|${DISHONEST_LIE_ANGLE}|" \
+									-e "s|COMBINE_STRATEGY_CLASS|${COMBINE_STRATEGY_CLASS}|" \
+									-e "s|PAYMENT_SYSTEM_CLASS|${PAYMENT_SYSTEM_CLASS}|" \
+									-e "s|PAYMENT_SYSTEM_INITIAL_REWARD|${PAYMENT_SYSTEM_INITIAL_REWARD}|" \
+									-e "s|PAYMENT_SYSTEM_INFORAMTION_SHARE|${PAYMENT_SYSTEM_INFORAMTION_SHARE}|" \
+									-e "s|MARKET_CLASS|${MARKET_CLASS}|" \
+									-e "s|MARKET_REWARD|${MARKET_REWARD}|" \
+									-e "s|DATA_OUTPUT_DIRECTORY|${DATA_OUTPUT_DIRECTORY}|" \
+									-e "s|DATA_PRECISE_RECORDING_INTERVAL|${DATA_PRECISE_RECORDING_INTERVAL}|" \
+									-e "s|DATA_TRANSACTIONS_LOG|${DATA_TRANSACTIONS_LOG}|" \
+										${CONFIG_FILE_TEMPLATE} > ${TEMP_CONFIG_FILENAME}
+
+								DATA_FILENAME=$( echo ${DATA_FILENAME} | 
+												sed -e "s|AGENT_NOISE_SAMPLING_MU|${AGENT_NOISE_SAMPLING_MU}|"\
+												-e "s|AGENT_NOISE_SAMPLING_SIGMA|${AGENT_NOISE_SAMPLING_SIGMA}|"\
+												-e "s|AGENT_NOISE_SD|${AGENT_NOISE_SD}|" )
+								
+								# 	BEHAVIOUR PARAMS_SUBSTITUTION
+								if [[ ${BEHAVIOR} == "n" ]] || [[ ${BEHAVIOR} == "Nn" ]] || [[ ${BEHAVIOR} == "w" ]]; then
+									CURRENT_DATA_FILENAME=$( echo ${DATA_FILENAME} | 
+												sed -e "s|[\.]||g" )
+									FINAL_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}/${CURRENT_DATA_FILENAME}.json"
+									cp ${TEMP_CONFIG_FILENAME} ${FINAL_CONFIG_FILENAME}
+									GENERATED_FILENAMES+=(${FINAL_CONFIG_FILENAME})
+									COUNT=$((COUNT + 1))
+								else
+									if [[ ${BEHAVIOR} == "s" ]] || [[ ${BEHAVIOR} == "Ns" ]]; then
+										for SCEPTICISM_THRESHOLD in ${sSCEPTICISM_THRESHOLD_LIST[*]} ; do
 											CURRENT_DATA_FILENAME=$( echo ${DATA_FILENAME} | 
-														sed -e "s|RANKING_THRESHOLD|${RANKING_THRESHOLD}|"  \
-																-e "s|[\.]||g")
-											FINAL_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}${CURRENT_DATA_FILENAME}.json"
-											sed -e "s|RANKING_THRESHOLD|${RANKING_THRESHOLD}|" \
+														sed -e "s|SCEPTICISM_THRESHOLD|${SCEPTICISM_THRESHOLD}|"  \
+																	-e "s|[\.]||g")
+											FINAL_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}/${CURRENT_DATA_FILENAME}.json"
+											sed -e "s|SCEPTICISM_THRESHOLD|${SCEPTICISM_THRESHOLD}|" \
 												${TEMP_CONFIG_FILENAME} > ${FINAL_CONFIG_FILENAME}
+											GENERATED_FILENAMES+=(${FINAL_CONFIG_FILENAME})
+											COUNT=$((COUNT + 1))
 										done
 									else
-										if [[ ${BEHAVIOR} == "v" ]] || [[ ${BEHAVIOR} == "Nv" ]]; then
-											for COMPARISON_METHOD in ${vCOMPARISON_METHOD_LIST[*]} ; do
-											for SCALING in ${vSCALING_LIST[*]} ; do
-											for SCEPTICISM_THRESHOLD in ${vSCEPTICISM_THRESHOLD_LIST[*]} ; do
-											for WEIGHT_METHOD in ${vWEIGHT_METHOD_LIST[*]} ; do
+										if [[ ${BEHAVIOR} == "r" ]]; then
+											for RANKING_THRESHOLD in ${rRANKING_THRESHOLD_LIST[*]} ; do
 												CURRENT_DATA_FILENAME=$( echo ${DATA_FILENAME} | 
-															sed -e "s|COMPARISON_METHOD|${COMPARISON_METHOD}|" \
-															-e "s|SCALING|${SCALING}|" \
-															-e "s|SCEPTICISM_THRESHOLD|${SCEPTICISM_THRESHOLD}|" \
-															-e "s|WEIGHT_METHOD|${WEIGHT_METHOD}|" \
-																-e "s|[\.]||g" )
-												FINAL_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}${CURRENT_DATA_FILENAME}.json"
-												sed -e "s|COMPARISON_METHOD|${COMPARISON_METHOD}|" \
-													-e "s|SCALING|${SCALING}|" \
-													-e "s|SCEPTICISM_THRESHOLD|${SCEPTICISM_THRESHOLD}|" \
-													-e "s|WEIGHT_METHOD|${WEIGHT_METHOD}|" \
+															sed -e "s|RANKING_THRESHOLD|${RANKING_THRESHOLD}|"  \
+																	-e "s|[\.]||g")
+												FINAL_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}/${CURRENT_DATA_FILENAME}.json"
+												sed -e "s|RANKING_THRESHOLD|${RANKING_THRESHOLD}|" \
 													${TEMP_CONFIG_FILENAME} > ${FINAL_CONFIG_FILENAME}
-											done
-											done
-											done
+												GENERATED_FILENAMES+=(${FINAL_CONFIG_FILENAME})
+												COUNT=$((COUNT + 1))
 											done
 										else
-											if [[ ${BEHAVIOR} == "t" ]]; then
-												for COMPARISON_METHOD in ${tCOMPARISON_METHOD_LIST[*]} ; do
-												for SCALING in ${tSCALING_LIST[*]} ; do
+											if [[ ${BEHAVIOR} == "v" ]] || [[ ${BEHAVIOR} == "Nv" ]]; then
+												for COMPARISON_METHOD in ${vCOMPARISON_METHOD_LIST[*]} ; do
+												for SCALING in ${vSCALING_LIST[*]} ; do
+												for SCEPTICISM_THRESHOLD in ${vSCEPTICISM_THRESHOLD_LIST[*]} ; do
+												for WEIGHT_METHOD in ${vWEIGHT_METHOD_LIST[*]} ; do
 													CURRENT_DATA_FILENAME=$( echo ${DATA_FILENAME} | 
 																sed -e "s|COMPARISON_METHOD|${COMPARISON_METHOD}|" \
 																-e "s|SCALING|${SCALING}|" \
-																-e "s|[\.]||g")
-													FINAL_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}${CURRENT_DATA_FILENAME}.json"
+																-e "s|SCEPTICISM_THRESHOLD|${SCEPTICISM_THRESHOLD}|" \
+																-e "s|WEIGHT_METHOD|${WEIGHT_METHOD}|" \
+																	-e "s|[\.]||g" )
+													FINAL_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}/${CURRENT_DATA_FILENAME}.json"
 													sed -e "s|COMPARISON_METHOD|${COMPARISON_METHOD}|" \
 														-e "s|SCALING|${SCALING}|" \
+														-e "s|SCEPTICISM_THRESHOLD|${SCEPTICISM_THRESHOLD}|" \
+														-e "s|WEIGHT_METHOD|${WEIGHT_METHOD}|" \
 														${TEMP_CONFIG_FILENAME} > ${FINAL_CONFIG_FILENAME}
+													GENERATED_FILENAMES+=(${FINAL_CONFIG_FILENAME})
+													COUNT=$((COUNT + 1))
 												done
 												done
+												done
+												done
+											else
+												if [[ ${BEHAVIOR} == "t" ]]; then
+													for COMPARISON_METHOD in ${tCOMPARISON_METHOD_LIST[*]} ; do
+													for SCALING in ${tSCALING_LIST[*]} ; do
+														CURRENT_DATA_FILENAME=$( echo ${DATA_FILENAME} | 
+																	sed -e "s|COMPARISON_METHOD|${COMPARISON_METHOD}|" \
+																	-e "s|SCALING|${SCALING}|" \
+																	-e "s|[\.]||g")
+														FINAL_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}/${CURRENT_DATA_FILENAME}.json"
+														sed -e "s|COMPARISON_METHOD|${COMPARISON_METHOD}|" \
+															-e "s|SCALING|${SCALING}|" \
+															${TEMP_CONFIG_FILENAME} > ${FINAL_CONFIG_FILENAME}
+														GENERATED_FILENAMES+=(${FINAL_CONFIG_FILENAME})
+														COUNT=$((COUNT + 1))
+													done
+													done
+												fi
 											fi
 										fi
 									fi
 								fi
-							fi
-							COUNT=$((COUNT + 1))
-							rm ${TEMP_CONFIG_FILENAME}
+								rm ${TEMP_CONFIG_FILENAME}
+							done
 						done
 					done
 				done
@@ -426,145 +482,156 @@ for AGENT_NOISE_ASSIGNATION in ${AGENT_NOISE_ASSIGNATION_LIST[*]} ; do
 					DISHONEST_POPULATION=$((NUMBER_OF_ROBOTS-HONEST_POPULATION))
 					for PAYMENT_SYSTEM_CLASS in ${PAYMENT_SYSTEM_CLASS_LIST[*]} ; do
 						for DISHONEST_LIE_ANGLE in ${DISHONEST_LIE_ANGLES[*]} ; do
-							HONEST_CLASS=${HONEST_DICTIONARY[${BEHAVIOR}]}
-							DISHONEST_CLASS=${DISHONEST_DICTIONARY[${BEHAVIOR}]}
-							HONEST_PARAMS=${HONEST_PARAMETERS[${BEHAVIOR}]}
-							DISHONEST_PARAMS=${DISHONEST_PARAMETERS[${BEHAVIOR}]}
-							FILENAME_ADDITIONAL_INFO=${BEHAVIOUR_FILENAME_ADDITIONAL_INFO[${BEHAVIOR}]}
-							SUB_DIR=${SUB_DIR_BEHAVIOR[${BEHAVIOR}]}
-							DATA_OUTPUT_DIRECTORY="${DATA_DIR}${SUB_DIR}"
-							CONFIG_OUTPUT_DIRECTORY="${CONFIG_DIR}${SUB_DIR}"
-							if [[ ${DISHONEST_POPULATION} -eq 0 ]]; then
-								FILENAME_BASE="${HONEST_POPULATION}${BEHAVIOR_INITIALS[${BEHAVIOR}]}_${PAYMENT_SYSTEM_NAME[${PAYMENT_SYSTEM_CLASS}]}_0LIA"
-							else
-								FILENAME_BASE="${HONEST_POPULATION}${BEHAVIOR_INITIALS[${BEHAVIOR}]}_${PAYMENT_SYSTEM_NAME[${PAYMENT_SYSTEM_CLASS}]}_${DISHONEST_LIE_ANGLE}LIA"
-							fi
-							FILENAME="${FILENAME_BASE}${FILENAME_ADDITIONAL_INFO}${NOISE_FILENAME_ADDITIONAL_INFO[${AGENT_NOISE_ASSIGNATION}]}"
-							DATA_FILENAME="${FILENAME}"
-							TEMP_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}temp.json"
-
-							mkdir -p ${CONFIG_OUTPUT_DIRECTORY}
-
-							sed -e "s|DATA_FILENAME|${DATA_FILENAME}.csv|" \
-								-e "s|WIDTH|${WIDTH}|" \
-								-e "s|HEIGHT|${HEIGHT}|" \
-								-e "s|FOOD_X|${FOOD_X}|" \
-								-e "s|FOOD_Y|${FOOD_Y}|" \
-								-e "s|FOOD_RADIUS|${FOOD_RADIUS}|" \
-								-e "s|NEST_X|${NEST_X}|" \
-								-e "s|NEST_Y|${NEST_Y}|" \
-								-e "s|NEST_RADIUS|${NEST_RADIUS}|" \
-								-e "s|SIMULATION_STEPS|${SIMULATION_STEPS}|" \
-								-e "s|SIMULATION_SEED|${SIMULATION_SEED}|" \
-								-e "s|NUMBER_RUNS|${NUMBER_RUNS}|" \
-								-e "s|VISUALISATION_ACTIVATE|${VISUALISATION_ACTIVATE}|" \
-								-e "s|VISUALISATION_FPS|${VISUALISATION_FPS}|" \
-								-e "s|RANDOM_WALK_FACTOR|${RANDOM_WALK_FACTOR}|" \
-								-e "s|RANDOM_WALK_LEVI_FACTOR|${RANDOM_WALK_LEVI_FACTOR}|" \
-								-e "s|AGENT_RADIUS|${AGENT_RADIUS}|" \
-								-e "s|AGENT_SPEED|${AGENT_SPEED}|" \
-								-e "s|AGENT_COMMUNICATION_RADIUS|${AGENT_COMMUNICATION_RADIUS}|" \
-								-e "s|AGENT_COMMUNICATION_STOP_TIME|${AGENT_COMMUNICATION_STOP_TIME}|" \
-								-e "s|AGENT_COMMUNICATION_COOLDOWN|${AGENT_COMMUNICATION_COOLDOWN}|" \
-								-e "s|AGENT_NOISE_CLASS|${AGENT_NOISE_CLASS}|" \
-								-e "s|AGENT_NOISE_PARAMETERS|${AGENT_NOISE_PARAMETERS}|" \
-								-e "s|AGENT_DISHONEST_PERFORMANCE|${AGENT_NOISE_ASSIGNATION}|" \
-								-e "s|AGENT_NOISE_MU|${AGENT_NOISE_MU}|" \
-								-e "s|AGENT_NOISE_RANGE|${AGENT_NOISE_RANGE}|" \
-								-e "s|AGENT_FUEL_COST|${AGENT_FUEL_COST}|" \
-								-e "s|BEHAVIOURS|${BEHAVIOUR_TEMPLATE}|" \
-								-e "s|DISHONEST_CLASS|${DISHONEST_CLASS}|" \
-								-e "s|HONEST_CLASS|${HONEST_CLASS}|" \
-								-e "s|DISHONEST_POPULATION|${DISHONEST_POPULATION}|" \
-								-e "s|HONEST_POPULATION|${HONEST_POPULATION}|" \
-								-e "s|DISHONEST_PARAMS|${DISHONEST_PARAMS}|" \
-								-e "s|HONEST_PARAMS|${HONEST_PARAMS}|" \
-								-e "s|DISHONEST_LIE_ANGLE|${DISHONEST_LIE_ANGLE}|" \
-								-e "s|PAYMENT_SYSTEM_CLASS|${PAYMENT_SYSTEM_CLASS}|" \
-								-e "s|PAYMENT_SYSTEM_INITIAL_REWARD|${PAYMENT_SYSTEM_INITIAL_REWARD}|" \
-								-e "s|PAYMENT_SYSTEM_INFORAMTION_SHARE|${PAYMENT_SYSTEM_INFORAMTION_SHARE}|" \
-								-e "s|MARKET_CLASS|${MARKET_CLASS}|" \
-								-e "s|MARKET_REWARD|${MARKET_REWARD}|" \
-								-e "s|DATA_OUTPUT_DIRECTORY|${DATA_OUTPUT_DIRECTORY}|" \
-								-e "s|DATA_PRECISE_RECORDING_INTERVAL|${DATA_PRECISE_RECORDING_INTERVAL}|" \
-								-e "s|DATA_TRANSACTIONS_LOG|${DATA_TRANSACTIONS_LOG}|" \
-									${CONFIG_FILE_TEMPLATE} > ${TEMP_CONFIG_FILENAME}
-
-								DATA_FILENAME=$( echo ${DATA_FILENAME} | 
-							 				sed -e "s|AGENT_NOISE_MU|${AGENT_NOISE_MU}|"\
-							 				-e "s|AGENT_NOISE_RANGE|${AGENT_NOISE_RANGE}|" )
-							
-							# 	BEHAVIOUR PARAMS_SUBSTITUTION
-							if [[ ${BEHAVIOR} == "n" ]] || [[ ${BEHAVIOR} == "Nn" ]] || [[ ${BEHAVIOR} == "w" ]]; then
-								# FINAL_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}${DATA_FILENAME}.json"
-								CURRENT_DATA_FILENAME=$( echo ${DATA_FILENAME} | 
-											sed -e "s|[\.]||g" )
-								FINAL_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}${CURRENT_DATA_FILENAME}.json"
-								cp ${TEMP_CONFIG_FILENAME} ${FINAL_CONFIG_FILENAME}
-							else
-								if [[ ${BEHAVIOR} == "s" ]] || [[ ${BEHAVIOR} == "Ns" ]]; then
-									for SCEPTICISM_THRESHOLD in ${sSCEPTICISM_THRESHOLD_LIST[*]} ; do
-										CURRENT_DATA_FILENAME=$( echo ${DATA_FILENAME} | 
-													sed -e "s|SCEPTICISM_THRESHOLD|${SCEPTICISM_THRESHOLD}|"  \
-																-e "s|[\.]||g")
-										FINAL_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}${CURRENT_DATA_FILENAME}.json"
-										sed -e "s|SCEPTICISM_THRESHOLD|${SCEPTICISM_THRESHOLD}|" \
-											${TEMP_CONFIG_FILENAME} > ${FINAL_CONFIG_FILENAME}
-									done
+							for COMBINE_STRATEGY in ${COMBINE_STRATEGY_LIST[*]} ; do
+								HONEST_CLASS=${HONEST_DICTIONARY[${BEHAVIOR}]}
+								DISHONEST_CLASS=${DISHONEST_DICTIONARY[${BEHAVIOR}]}
+								HONEST_PARAMS=${HONEST_PARAMETERS[${BEHAVIOR}]}
+								DISHONEST_PARAMS=${DISHONEST_PARAMETERS[${BEHAVIOR}]}
+								COMBINE_STRATEGY_CLASS=${COMBINE_STRATEGIES[${COMBINE_STRATEGY}]}
+								FILENAME_ADDITIONAL_INFO=${BEHAVIOUR_FILENAME_ADDITIONAL_INFO[${BEHAVIOR}]}
+								SUB_DIR=${SUB_DIR_BEHAVIOR[${BEHAVIOR}]}
+								DATA_OUTPUT_DIRECTORY="${DATA_DIR}/${SUB_DIR}"
+								CONFIG_OUTPUT_DIRECTORY="${CONFIG_DIR}/${SUB_DIR}"
+								if [[ ${DISHONEST_POPULATION} -eq 0 ]]; then
+									FILENAME_BASE="${HONEST_POPULATION}${BEHAVIOR_INITIALS[${BEHAVIOR}]}_${COMBINE_STRATEGIES_INITIALS[${COMBINE_STRATEGY}]}CS_${PAYMENT_SYSTEM_NAME[${PAYMENT_SYSTEM_CLASS}]}_0LIA"
 								else
-									if [[ ${BEHAVIOR} == "r" ]]; then
-										for RANKING_THRESHOLD in ${rRANKING_THRESHOLD_LIST[*]} ; do
+									FILENAME_BASE="${HONEST_POPULATION}${BEHAVIOR_INITIALS[${BEHAVIOR}]}_${COMBINE_STRATEGIES_INITIALS[${COMBINE_STRATEGY}]}CS_${PAYMENT_SYSTEM_NAME[${PAYMENT_SYSTEM_CLASS}]}_${DISHONEST_LIE_ANGLE}LIA"
+								fi
+								FILENAME="${FILENAME_BASE}${FILENAME_ADDITIONAL_INFO}${NOISE_FILENAME_ADDITIONAL_INFO[${AGENT_NOISE_ASSIGNATION}]}"
+								DATA_FILENAME="${FILENAME}"
+								TEMP_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}/temp.json"
+
+								mkdir -p ${CONFIG_OUTPUT_DIRECTORY}
+
+								sed -e "s|DATA_FILENAME|${DATA_FILENAME}.csv|" \
+									-e "s|WIDTH|${WIDTH}|" \
+									-e "s|HEIGHT|${HEIGHT}|" \
+									-e "s|FOOD_X|${FOOD_X}|" \
+									-e "s|FOOD_Y|${FOOD_Y}|" \
+									-e "s|FOOD_RADIUS|${FOOD_RADIUS}|" \
+									-e "s|NEST_X|${NEST_X}|" \
+									-e "s|NEST_Y|${NEST_Y}|" \
+									-e "s|NEST_RADIUS|${NEST_RADIUS}|" \
+									-e "s|SIMULATION_STEPS|${SIMULATION_STEPS}|" \
+									-e "s|SIMULATION_SEED|${SIMULATION_SEED}|" \
+									-e "s|NUMBER_RUNS|${NUMBER_RUNS}|" \
+									-e "s|VISUALISATION_ACTIVATE|${VISUALISATION_ACTIVATE}|" \
+									-e "s|VISUALISATION_FPS|${VISUALISATION_FPS}|" \
+									-e "s|RANDOM_WALK_FACTOR|${RANDOM_WALK_FACTOR}|" \
+									-e "s|RANDOM_WALK_LEVI_FACTOR|${RANDOM_WALK_LEVI_FACTOR}|" \
+									-e "s|AGENT_RADIUS|${AGENT_RADIUS}|" \
+									-e "s|AGENT_SPEED|${AGENT_SPEED}|" \
+									-e "s|AGENT_COMMUNICATION_RADIUS|${AGENT_COMMUNICATION_RADIUS}|" \
+									-e "s|AGENT_COMMUNICATION_STOP_TIME|${AGENT_COMMUNICATION_STOP_TIME}|" \
+									-e "s|AGENT_COMMUNICATION_COOLDOWN|${AGENT_COMMUNICATION_COOLDOWN}|" \
+									-e "s|AGENT_NOISE_CLASS|${AGENT_NOISE_CLASS}|" \
+									-e "s|AGENT_NOISE_PARAMETERS|${AGENT_NOISE_PARAMETERS}|" \
+									-e "s|AGENT_DISHONEST_PERFORMANCE|${AGENT_NOISE_ASSIGNATION}|" \
+									-e "s|AGENT_NOISE_MU|${AGENT_NOISE_MU}|" \
+									-e "s|AGENT_NOISE_RANGE|${AGENT_NOISE_RANGE}|" \
+									-e "s|AGENT_FUEL_COST|${AGENT_FUEL_COST}|" \
+									-e "s|BEHAVIOURS|${BEHAVIOUR_TEMPLATE}|" \
+									-e "s|DISHONEST_CLASS|${DISHONEST_CLASS}|" \
+									-e "s|HONEST_CLASS|${HONEST_CLASS}|" \
+									-e "s|DISHONEST_POPULATION|${DISHONEST_POPULATION}|" \
+									-e "s|HONEST_POPULATION|${HONEST_POPULATION}|" \
+									-e "s|DISHONEST_PARAMS|${DISHONEST_PARAMS}|" \
+									-e "s|HONEST_PARAMS|${HONEST_PARAMS}|" \
+									-e "s|DISHONEST_LIE_ANGLE|${DISHONEST_LIE_ANGLE}|" \
+									-e "s|COMBINE_STRATEGY_CLASS|${COMBINE_STRATEGY_CLASS}|" \
+									-e "s|PAYMENT_SYSTEM_CLASS|${PAYMENT_SYSTEM_CLASS}|" \
+									-e "s|PAYMENT_SYSTEM_INITIAL_REWARD|${PAYMENT_SYSTEM_INITIAL_REWARD}|" \
+									-e "s|PAYMENT_SYSTEM_INFORAMTION_SHARE|${PAYMENT_SYSTEM_INFORAMTION_SHARE}|" \
+									-e "s|MARKET_CLASS|${MARKET_CLASS}|" \
+									-e "s|MARKET_REWARD|${MARKET_REWARD}|" \
+									-e "s|DATA_OUTPUT_DIRECTORY|${DATA_OUTPUT_DIRECTORY}|" \
+									-e "s|DATA_PRECISE_RECORDING_INTERVAL|${DATA_PRECISE_RECORDING_INTERVAL}|" \
+									-e "s|DATA_TRANSACTIONS_LOG|${DATA_TRANSACTIONS_LOG}|" \
+										${CONFIG_FILE_TEMPLATE} > ${TEMP_CONFIG_FILENAME}
+
+									DATA_FILENAME=$( echo ${DATA_FILENAME} | 
+												sed -e "s|AGENT_NOISE_MU|${AGENT_NOISE_MU}|"\
+												-e "s|AGENT_NOISE_RANGE|${AGENT_NOISE_RANGE}|" )
+								
+								# 	BEHAVIOUR PARAMS_SUBSTITUTION
+								if [[ ${BEHAVIOR} == "n" ]] || [[ ${BEHAVIOR} == "Nn" ]] || [[ ${BEHAVIOR} == "w" ]]; then
+									CURRENT_DATA_FILENAME=$( echo ${DATA_FILENAME} | 
+												sed -e "s|[\.]||g" )
+									FINAL_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}/${CURRENT_DATA_FILENAME}.json"
+									cp ${TEMP_CONFIG_FILENAME} ${FINAL_CONFIG_FILENAME}
+									GENERATED_FILENAMES+=(${FINAL_CONFIG_FILENAME})
+									COUNT=$((COUNT + 1))
+								else
+									if [[ ${BEHAVIOR} == "s" ]] || [[ ${BEHAVIOR} == "Ns" ]]; then
+										for SCEPTICISM_THRESHOLD in ${sSCEPTICISM_THRESHOLD_LIST[*]} ; do
 											CURRENT_DATA_FILENAME=$( echo ${DATA_FILENAME} | 
-														sed -e "s|RANKING_THRESHOLD|${RANKING_THRESHOLD}|"  \
-																-e "s|[\.]||g")
-											FINAL_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}${CURRENT_DATA_FILENAME}.json"
-											sed -e "s|RANKING_THRESHOLD|${RANKING_THRESHOLD}|" \
+														sed -e "s|SCEPTICISM_THRESHOLD|${SCEPTICISM_THRESHOLD}|"  \
+																	-e "s|[\.]||g")
+											FINAL_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}/${CURRENT_DATA_FILENAME}.json"
+											sed -e "s|SCEPTICISM_THRESHOLD|${SCEPTICISM_THRESHOLD}|" \
 												${TEMP_CONFIG_FILENAME} > ${FINAL_CONFIG_FILENAME}
+											GENERATED_FILENAMES+=(${FINAL_CONFIG_FILENAME})
+											COUNT=$((COUNT + 1))
 										done
 									else
-										if [[ ${BEHAVIOR} == "v" ]] || [[ ${BEHAVIOR} == "Nv" ]]; then
-											for COMPARISON_METHOD in ${vCOMPARISON_METHOD_LIST[*]} ; do
-											for SCALING in ${vSCALING_LIST[*]} ; do
-											for SCEPTICISM_THRESHOLD in ${vSCEPTICISM_THRESHOLD_LIST[*]} ; do
-											for WEIGHT_METHOD in ${vWEIGHT_METHOD_LIST[*]} ; do
+										if [[ ${BEHAVIOR} == "r" ]]; then
+											for RANKING_THRESHOLD in ${rRANKING_THRESHOLD_LIST[*]} ; do
 												CURRENT_DATA_FILENAME=$( echo ${DATA_FILENAME} | 
-															sed -e "s|COMPARISON_METHOD|${COMPARISON_METHOD}|" \
-															-e "s|SCALING|${SCALING}|" \
-															-e "s|SCEPTICISM_THRESHOLD|${SCEPTICISM_THRESHOLD}|" \
-															-e "s|WEIGHT_METHOD|${WEIGHT_METHOD}|" \
-																-e "s|[\.]||g" )
-												FINAL_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}${CURRENT_DATA_FILENAME}.json"
-												sed -e "s|COMPARISON_METHOD|${COMPARISON_METHOD}|" \
-													-e "s|SCALING|${SCALING}|" \
-													-e "s|SCEPTICISM_THRESHOLD|${SCEPTICISM_THRESHOLD}|" \
-													-e "s|WEIGHT_METHOD|${WEIGHT_METHOD}|" \
+															sed -e "s|RANKING_THRESHOLD|${RANKING_THRESHOLD}|"  \
+																	-e "s|[\.]||g")
+												FINAL_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}/${CURRENT_DATA_FILENAME}.json"
+												sed -e "s|RANKING_THRESHOLD|${RANKING_THRESHOLD}|" \
 													${TEMP_CONFIG_FILENAME} > ${FINAL_CONFIG_FILENAME}
-											done
-											done
-											done
+												GENERATED_FILENAMES+=(${FINAL_CONFIG_FILENAME})
+												COUNT=$((COUNT + 1))
 											done
 										else
-											if [[ ${BEHAVIOR} == "t" ]]; then
-												for COMPARISON_METHOD in ${tCOMPARISON_METHOD_LIST[*]} ; do
-												for SCALING in ${tSCALING_LIST[*]} ; do
+											if [[ ${BEHAVIOR} == "v" ]] || [[ ${BEHAVIOR} == "Nv" ]]; then
+												for COMPARISON_METHOD in ${vCOMPARISON_METHOD_LIST[*]} ; do
+												for SCALING in ${vSCALING_LIST[*]} ; do
+												for SCEPTICISM_THRESHOLD in ${vSCEPTICISM_THRESHOLD_LIST[*]} ; do
+												for WEIGHT_METHOD in ${vWEIGHT_METHOD_LIST[*]} ; do
 													CURRENT_DATA_FILENAME=$( echo ${DATA_FILENAME} | 
 																sed -e "s|COMPARISON_METHOD|${COMPARISON_METHOD}|" \
 																-e "s|SCALING|${SCALING}|" \
-																-e "s|[\.]||g" )
-													FINAL_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}${CURRENT_DATA_FILENAME}.json"
+																-e "s|SCEPTICISM_THRESHOLD|${SCEPTICISM_THRESHOLD}|" \
+																-e "s|WEIGHT_METHOD|${WEIGHT_METHOD}|" \
+																	-e "s|[\.]||g" )
+													FINAL_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}/${CURRENT_DATA_FILENAME}.json"
 													sed -e "s|COMPARISON_METHOD|${COMPARISON_METHOD}|" \
 														-e "s|SCALING|${SCALING}|" \
+														-e "s|SCEPTICISM_THRESHOLD|${SCEPTICISM_THRESHOLD}|" \
+														-e "s|WEIGHT_METHOD|${WEIGHT_METHOD}|" \
 														${TEMP_CONFIG_FILENAME} > ${FINAL_CONFIG_FILENAME}
+													GENERATED_FILENAMES+=(${FINAL_CONFIG_FILENAME})
+													COUNT=$((COUNT + 1))
 												done
 												done
+												done
+												done
+											else
+												if [[ ${BEHAVIOR} == "t" ]]; then
+													for COMPARISON_METHOD in ${tCOMPARISON_METHOD_LIST[*]} ; do
+													for SCALING in ${tSCALING_LIST[*]} ; do
+														CURRENT_DATA_FILENAME=$( echo ${DATA_FILENAME} | 
+																	sed -e "s|COMPARISON_METHOD|${COMPARISON_METHOD}|" \
+																	-e "s|SCALING|${SCALING}|" \
+																	-e "s|[\.]||g" )
+														FINAL_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}/${CURRENT_DATA_FILENAME}.json"
+														sed -e "s|COMPARISON_METHOD|${COMPARISON_METHOD}|" \
+															-e "s|SCALING|${SCALING}|" \
+															${TEMP_CONFIG_FILENAME} > ${FINAL_CONFIG_FILENAME}
+														GENERATED_FILENAMES+=(${FINAL_CONFIG_FILENAME})
+														COUNT=$((COUNT + 1))
+													done
+													done
+												fi
 											fi
 										fi
 									fi
 								fi
-							fi
-							COUNT=$((COUNT + 1))
-							rm ${TEMP_CONFIG_FILENAME}
-							COUNT=$((COUNT + 1))
+								rm ${TEMP_CONFIG_FILENAME}
+							done
 						done
 					done
 				done

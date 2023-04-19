@@ -34,7 +34,6 @@ The parameters shall be modified inside the script itself:
 The section relative to behaviours has specific lists for each one to specify the combinations of parameters to generate.
 
 ## Run single or multiple experiments
-
 It is possible to run a single or multiple experiments using information-market. First, edit the config file(s) inside the config folder with the parameter you want to use; you can start from `config.json`. Then open a terminal, cd to the src folder and run the program.
 ```bash
 cd path/to/src
@@ -44,7 +43,7 @@ If ARGS us a single file, it will check if the GUI simulation is requested (set 
  Otherwise a folder, or multiple filenames can be specified. In the last case, interpose a space between the selected files.
 This is mostly useful to run simulations without the GUI (set `activate` to false in the visualization parameters in the config files, as well as the `number_runs` parameter for the number of simulations you wish to perform with this configuration).
 
-# Error
+# Runtime Errors
 Errors and config file generating them can be retrieved in ```src/error.log```. Config files who generated an error are copied in ```src/errors/```;
 you can run the whole folder once fixed
 
