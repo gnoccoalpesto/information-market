@@ -1,7 +1,9 @@
 import json
-from helpers import random_walk
+import numpy as np
 
+from helpers import random_walk
 from model.environment import Environment
+
 
 
 class Configuration:
@@ -36,6 +38,7 @@ class MainController:
                                        height=self.config.value_of("height"),
                                        agent_params=self.config.value_of("agent"),
                                        behavior_params=self.config.value_of("behaviors"),
+                                       combine_strategy_params=self.config.value_of("combine_strategy"),
                                        food=self.config.value_of("food"),
                                        nest=self.config.value_of("nest"),
                                        payment_system_params=config.value_of("payment_system"),
@@ -145,17 +148,36 @@ class MainController:
         return [self.environment.payment_database.get_attempted_transactions(bot.id) \
             for bot in self.environment.population]
 
-
     def get_validated_transactions_list(self):
         return [self.environment.payment_database.get_validated_transactions(bot.id) \
             for bot in self.environment.population]
-
 
     def get_completed_transactions_list(self):
         return [self.environment.payment_database.get_completed_transactions(bot.id) \
             for bot in self.environment.population]
 
-
     def get_combined_transactions_list(self):
         return [self.environment.payment_database.get_combined_transactions(bot.id) \
             for bot in self.environment.population]
+
+    def get_transactions_list(self,type:str,role="buyer"):
+        '''
+        :param type of transaction desidered. Accepted values are:
+            "attempted"("A","a"),"validated","completed"("C","c"),"combined"
+        :param role in the transaction. Accepted values are: "buyer" or "seller".
+        
+        :return a list of {type} transactions, where element is the amount of 
+            transactions where each robot took part as {role}
+        '''
+        transaction_matrix=np.array([self.environment.payment_database.get_transactions(type,bot.id) \
+                                        for bot in self.environment.population])
+        if role=="buyer":
+            return transaction_matrix.sum(axis=1)
+        return transaction_matrix.sum(axis=0)
+        
+        # in this case, the list contains the transactions per seller
+        transactions=[0]*len(self.environment.population)
+        for bot in self.environment.population:
+            buyer_transactions=self.environment.payment_database.get_transactions(bot.id,type)
+            transaction=[t+bt for t,bt in zip(transactions,buyer_transactions)]
+        return transaction

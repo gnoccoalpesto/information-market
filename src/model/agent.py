@@ -3,7 +3,6 @@ import numpy as np
 
 from random import random, choices, gauss
 from math import sin, cos, radians
-from tkinter import LAST
 from collections import deque
 
 from helpers import random_walk as rw
@@ -12,7 +11,7 @@ from model.communication import CommunicationSession
 from model.navigation import Location
 from helpers.utils import get_orientation_from_vector, rotate, InsufficientFundsException, CommunicationState, norm, \
     NoLocationSensedException
-
+from model.payment import Transaction
 
 class AgentAPI:
     def __init__(self, agent):
@@ -238,26 +237,28 @@ class Agent:
 
 
     def draw_goal_vector(self, canvas):
-        arrow = canvas.create_line(self.pos[0],
-                                   self.pos[1],
-                                   self.pos[0] + rotate(
-                                       self.behavior.navigation_table.get_relative_position_for_location(Location.FOOD),
-                                       self.orientation)[0],
-                                   self.pos[1] + rotate(
-                                       self.behavior.navigation_table.get_relative_position_for_location(Location.FOOD),
-                                       self.orientation)[1],
-                                   arrow=LAST,
-                                   fill="darkgreen")
-        arrow = canvas.create_line(self.pos[0],
-                                   self.pos[1],
-                                   self.pos[0] + rotate(
-                                       self.behavior.navigation_table.get_relative_position_for_location(Location.NEST),
-                                       self.orientation)[0],
-                                   self.pos[1] + rotate(
-                                       self.behavior.navigation_table.get_relative_position_for_location(Location.NEST),
-                                       self.orientation)[1],
-                                   arrow=LAST,
-                                   fill="darkorange")
+        pass
+        #OVERLOADED IN gui.py
+        # arrow = canvas.create_line(self.pos[0],
+        #                            self.pos[1],
+        #                            self.pos[0] + rotate(
+        #                                self.behavior.navigation_table.get_relative_position_for_location(Location.FOOD),
+        #                                self.orientation)[0],
+        #                            self.pos[1] + rotate(
+        #                                self.behavior.navigation_table.get_relative_position_for_location(Location.FOOD),
+        #                                self.orientation)[1],
+        #                            arrow=LAST,
+        #                            fill="darkgreen")
+        # arrow = canvas.create_line(self.pos[0],
+        #                            self.pos[1],
+        #                            self.pos[0] + rotate(
+        #                                self.behavior.navigation_table.get_relative_position_for_location(Location.NEST),
+        #                                self.orientation)[0],
+        #                            self.pos[1] + rotate(
+        #                                self.behavior.navigation_table.get_relative_position_for_location(Location.NEST),
+        #                                self.orientation)[1],
+        #                            arrow=LAST,
+        #                            fill="darkorange")
 
 
     def draw_orientation(self, canvas):
@@ -308,21 +309,16 @@ class Agent:
         self.dr = dr
 
 
-    def record_attempted_transaction(self):
-        self.environment.payment_database.record_attempted_transaction(self.id)
-
-    
-    def record_validated_transaction(self):
-        self.environment.payment_database.record_validated_transaction(self.id)
-
-
-    def record_completed_transaction(self, transaction):
-        transaction.timestep = self.environment.timestep
-        self.environment.payment_database.record_completed_transaction(transaction)
-
-
-    def record_combined_transaction(self):
-        self.environment.payment_database.record_combined_transaction(self.id)
+    def record_transaction(self,type:str,seller_id:int=None,transaction:Transaction=None):
+        if type=="attempted" or type=="a" or type=="A" or \
+                type=="validated" or type=="v" or type=="V" or \
+                type=="combined" or type=="x" or type=="X":
+            self.environment.payment_database.record_transaction(type,self.id,seller_id)
+        elif type=="completed" or type=="c" or type=="C":
+            transaction.timestep = self.environment.timestep
+            self.environment.payment_database.record_transaction(type,self.id,seller_id,transaction)
+        else:
+            raise ValueError("Transaction type not recognized")
 
 
     def update_communication_state(self):

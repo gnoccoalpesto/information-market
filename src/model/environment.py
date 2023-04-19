@@ -1,12 +1,11 @@
 from math import cos, sin, radians
-from PIL import ImageTk
+from random import randint, random, seed as random_seed
+import numpy as np
+
 from model.agent import Agent
 from model.market import market_factory
 from model.navigation import Location
 from helpers.utils import norm, distance_between
-from random import randint, random, seed as random_seed
-import numpy as np
-
 from model.payment import PaymentDB
 
 
@@ -83,7 +82,8 @@ class Environment:
                  width,
                  height, 
                  agent_params, 
-                 behavior_params, 
+                 behavior_params,
+                 combine_strategy_params,
                  food, 
                  nest, 
                  payment_system_params, 
@@ -99,7 +99,7 @@ class Environment:
         self.locations = {Location.FOOD: self.food, Location.NEST: self.nest}
         self.foraging_spawns = self.create_spawn_dicts()
         self.SIMULATION_SEED=simulation_seed
-        self.create_robots(agent_params, behavior_params)
+        self.create_robots(agent_params, behavior_params,combine_strategy_params)
         self.best_bot_id = self.get_best_bot_id()
         self.payment_database = PaymentDB([bot.id for bot in self.population], payment_system_params)
         self.market = market_factory(market_params)
@@ -131,10 +131,12 @@ class Environment:
 
 
     def load_images(self):
-        self.img = ImageTk.PhotoImage(file="../assets/strawberry.png")
+        pass
+        #OVERLOADED IN gui.py
+        # self.img = ImageTk.PhotoImage(file="../assets/strawberry.png")
 
 
-    def create_robots(self, agent_params, behavior_params):
+    def create_robots(self, agent_params, behavior_params,combine_strategy_params):
         robot_id = 0
         self.ROBOTS_AMOUNT = np.sum([behavior['population_size'] for behavior in behavior_params])
         self.DISHONEST_AMOUNT = int(np.sum([behavior['population_size'] for behavior in behavior_params
@@ -148,12 +150,12 @@ class Environment:
                                                             random_switch=True,
                                                             random_seed=self.SIMULATION_SEED*20
                                                     )
-        random_seeder(self.SIMULATION_SEED)#no need to waste samples if not random_switch             
+        random_seeder(self.SIMULATION_SEED)#no need to waste samples if not random_switch      
         for behavior_params in behavior_params:
+            behavior_params["parameters"]["combine_strategy"]=combine_strategy_params["class"]
             for _ in range(behavior_params['population_size']):
 
                 if agent_params["noise"]["class"]=="UniformNoise":
-                    #override with correct value for each agent
                     agent_params["noise"]["parameters"]["noise_mu"] = generated_fixed_noise[robot_id]
 
                 robot_x=randint(agent_params['radius'], self.width - 1 - agent_params['radius'])
@@ -173,7 +175,7 @@ class Environment:
         speed = robot.speed()
         sensors = {Location.FOOD: self.senses(robot, Location.FOOD),
                    Location.NEST: self.senses(robot, Location.NEST),
-                   #TODO any() in check_border_collision, is this causing warning?
+                   #TODO any() in check_border_collision, is this causing WARNING?
                    "FRONT": any(self.check_border_collision(robot, robot.pos[0] + speed * cos(radians(orientation)),
                                                             robot.pos[1] + speed * sin(radians(orientation)))),
                    "RIGHT": any(

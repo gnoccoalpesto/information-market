@@ -11,26 +11,27 @@ class CommunicationSession:
         self._neighbors = {n.id: n for n in neighbors if n.comm_state == CommunicationState.OPEN}
 
 
-    def get_metadata(self, location):#,payment_database):
-        #TODO also, should this be retrieved from bchain to avoid lying?
-        #TODO should differentiate if using local or global information, passing bchain?
+    def get_metadata(self, location):
         metadata = {n_id:{"age": n.get_info_from_behavior(location).get_age(),
                             # "reward": payment_database.get_reward(n_id),#(n_id, location), if different rewards
                         }
                         for n_id, n in self._neighbors.items() 
                         if n.get_info_from_behavior(location) is not None 
                             and n.get_info_from_behavior(location).is_valid()
-                            #TODO validity on blockchain
                     }
         return metadata
 
 
-    def record_attempted_transaction(self):
-        self._client.record_attempted_transaction()
-
-    
-    def record_validated_transaction(self):
-        self._client.record_validated_transaction()
+    def record_transaction(self,type:str ,seller_id:int=None, transaction:Transaction=None)->None:
+        '''
+        :param type:str   type of transaction. Accepted values are:
+            "attempted", "A", "a" : the client attempted to buy information from a neighbor
+            [UNUSED]"validated", "V", "v" : the client validated information from a neighbor
+            "completed", "C", "c" : the client successfully bought information from a neighbor
+            [UNUSED]"combined", "X", "x" : the client combined information from multiple neighbors
+        '''
+        #TODO
+        self._client.record_transaction(type,seller_id, transaction)
 
 
     def make_transaction(self, neighbor_id, location) -> Target:
@@ -43,14 +44,10 @@ class CommunicationSession:
                                   location,
                                   get_orientation_from_vector(target.get_distance()),
                                   None)
-        self._client.record_completed_transaction(transaction)
+        self.record_transaction("completed",neighbor_id,transaction)
         self._client.communication_happened()
         self._neighbors[neighbor_id].communication_happened()
         return target
-
-
-    def record_combined_transaction(self):
-        self._client.record_combined_transaction()
 
 
     def get_distance_from(self, neighbor_id):

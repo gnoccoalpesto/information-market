@@ -1,11 +1,9 @@
 import copy
-# import re
 from abc import ABC, abstractmethod
 from enum import Enum
 from math import cos, radians, sin
 import numpy as np
 
-# import config as CONFIG_FILE
 from model.payment import PaymentDB
 from model.communication import CommunicationSession
 from model.navigation import Location, NavigationTable, Target
@@ -55,6 +53,7 @@ PARAMS_NAME_DICT={
                     "CM": "comparison method",
                     "SC": "scaling",
                     "WM": "weight method",
+                    "CS": "combine strategy",
                     "P": "penalization",
                     "NP": "non penalization",
                     "LIA": "lie angle",
@@ -75,6 +74,22 @@ BEHAVIOR_PARAMS_DICT = {"n": [],
                         "t": ["CM","SC"],
                         "w": [],
                         }
+COMBINE_STRATEGY_DICT = {
+                            "waa" : "WeightedAverageAgeStrategy",
+                            "wara" : "WeightedAverageReputationAgeStrategy",
+                            "rwar" : "RunningWeightedAverageReputationStrategy",
+                            "nrwar" : "NewRunningWeightedAverageReputationStrategy",
+                            "fwar" : "FullWeightedAverageReputationStrategy",
+                            "nfwar" : "NewFullWeightedAverageReputationStrategy",
+                            }
+COMBINE_STRATEGY_NAME_DICT = {
+                            "waa" : "Weighted Average Age",
+                            "wara" : "Weighted Average Reputation Age",
+                            "rwar" : "Running Weighted Average Reputation",
+                            "nrwar" : "New Running Weighted Average Reputation",
+                            "fwar" : "Full Weighted Average Reputation",
+                            "nfwar" : "New Full Weighted Average Reputation",
+                            }
 NOISE_PARAMS_DICT={ "bimodal": ["SMU","SSD","NSD"],
                     "uniform": ["NMU","NRANG","SAB"],
                 }
@@ -239,16 +254,43 @@ class Behavior(ABC):
 
 
 class TemplateBehaviour(Behavior):
-    def __init__(self):
+    def __init__(self,combine_strategy="WeightedAverageAgeStrategy"):
         super().__init__()
-        # self.color = "blue"
-        # self.navigation_table = NavigationTable()
         self.state = State.EXPLORING
-        self.strategy = None
+        self.strategy = strategy_factory(combine_strategy)
         self.dr = np.array([0, 0]).astype('float64')
         self.id = -1
         self.required_information = -1
         self.information_ordering_metric=""
+
+
+    def buy_info(self, payment_database:PaymentDB, session: CommunicationSession):
+        for location in Location:
+            sorted_metadata=self.get_ordered_metadata(location, payment_database, session)
+
+            for seller_id, data in sorted_metadata:
+                session.record_transaction('attempted',seller_id)
+
+                if self.test_data_validity(location,data,payment_database,seller_id):
+                    # session.record_transaction('validated',seller_id)
+
+                    try:
+                        target=self.navigation_table.get_information_entry(location)
+                        other_target=self.acquire_referenced_info(location,session,seller_id)
+
+                        if self.test_data_quality(location,other_target,payment_database,seller_id):
+                            # session.record_transaction('combined',seller_id)
+
+                            self.combine_data(location,target, other_target,payment_database,seller_id)
+
+                        else:
+                            self.behavior_specific_combine(location, other_target,session,seller_id)
+
+                        if self.stop_buying_process(): break
+
+                    except (InsufficientFundsException,
+                            NoInformationSoldException,
+                            NoLocationSensedException): continue
 
 
     def get_ordered_metadata(self,location: Location, payment_database: PaymentDB,session: CommunicationSession):
@@ -294,15 +336,52 @@ class TemplateBehaviour(Behavior):
                                 payment_database:PaymentDB, seller_id):
         """
         combine data with other target and update navigation table
+
+        TODO more elegantly pass kwargs using a dict
         """
-        #TODO more elegantly pass kwargs using a dict
-        # if not self.required_information==RequiredInformation.GLOBAL and\
         if self.strategy.__class__.__name__ == "WeightedAverageAgeStrategy":
             new_target = self.strategy.combine(
                         target,
                         other_target,
                         np.array([0, 0]))
-        else:
+
+        elif self.strategy.__class__.__name__ == "WeightedAverageReputationAgeStrategy":
+            mean_reputation = payment_database.get_average_reward()
+            seller_reputation = payment_database.get_reward(seller_id)
+            new_target=self.strategy.combine(
+                        target,
+                        other_target,
+                        np.array([0, 0]),
+                        mean_reputation,
+                        seller_reputation)
+
+        elif self.strategy.__class__.__name__ == "NewRunningWeightedAverageReputationStrategy":
+            mean_reputation = payment_database.get_average_reward()
+            seller_reputation = payment_database.get_reward(seller_id)
+            new_target=self.strategy.combine(
+                        target,
+                        other_target,
+                        mean_reputation,
+                        seller_reputation)
+
+        elif self.strategy.__class__.__name__ == "FullWeightedAverageReputationStrategy":
+            new_target=self.strategy.combine(
+                        target,
+                        other_target,
+                        self.id,
+                        seller_id,
+                        payment_database
+                        )
+
+        elif self.strategy.__class__.__name__ == "NewFullWeightedAverageReputationStrategy":
+            new_target=self.strategy.combine(
+                        target,
+                        other_target,
+                        seller_id,
+                        payment_database
+                        )
+
+        elif self.strategy.__class__.__name__ == "RunningWeightedAverageReputationStrategy":
             my_reputation = payment_database.get_reward(self.id)
             seller_reputation = payment_database.get_reward(seller_id)
             new_target=self.strategy.combine(
@@ -310,8 +389,8 @@ class TemplateBehaviour(Behavior):
                         other_target,
                         my_reputation,
                         seller_reputation)
+                        
         self.navigation_table.replace_information_entry(location, new_target)
-        # payment_database.record_completed_transaction(self.id)
 
 
     # @abstractmethod
@@ -328,36 +407,6 @@ class TemplateBehaviour(Behavior):
         """
         return True
 
-
-    def buy_info(self, payment_database:PaymentDB, session: CommunicationSession):
-        for location in Location:
-            sorted_metadata=self.get_ordered_metadata(location, payment_database, session)
-
-            for seller_id, data in sorted_metadata:
-                # payment_database.record_attempted_transaction(self.id)
-                session.record_attempted_transaction()
-
-                if self.test_data_validity(location,data,payment_database,seller_id):
-                    # payment_database.record_validated_transaction(self.id)
-                    session.record_validated_transaction()
-
-                    try:
-                        target=self.navigation_table.get_information_entry(location)
-                        other_target=self.acquire_referenced_info(location,session,seller_id)
-
-                        if self.test_data_quality(location,other_target,payment_database,seller_id):
-                            session.record_combined_transaction()
-
-                            self.combine_data(location,target, other_target,payment_database,seller_id)
-
-                        else:
-                            self.behavior_specific_combine(location, other_target,session,seller_id)
-
-                        if self.stop_buying_process(): break
-
-                    except (InsufficientFundsException,
-                            NoInformationSoldException,
-                            NoLocationSensedException): continue
 
     def step(self, api):
         self.dr[0], self.dr[1] = 0, 0
@@ -456,7 +505,7 @@ class TemplateBehaviour(Behavior):
 #################################################################################################
 ## NAIVE BEHAVIORS
 class NaiveBehavior(Behavior):
-    def __init__(self):
+    def __init__(self,combine_strategy="WeightedAverageAgeStrategy"):
         super().__init__()
         self.state = State.EXPLORING
         self.strategy = WeightedAverageAgeStrategy()
@@ -470,17 +519,16 @@ class NaiveBehavior(Behavior):
             metadata = session.get_metadata(location)
             metadata_sorted_by_age = sorted(metadata.items(), key=lambda item: item[1]["age"])
             for bot_id, data in metadata_sorted_by_age:
-                session.record_attempted_transaction()
+                session.record_transaction('attempted',bot_id)
 
                 if data["age"] < self.navigation_table.get_age_for_location(location):
-                    session.record_validated_transaction()
-
+                    # session.record_transaction('validated',bot_id)
                     try:
                         other_target = session.make_transaction(neighbor_id=bot_id, location=location)
                         new_target = self.strategy.combine(self.navigation_table.get_information_entry(location),
                                                            other_target,
                                                            session.get_distance_from(bot_id))
-                        session.record_combined_transaction()
+                        # session.record_transaction('combined',bot_id)
                         self.navigation_table.replace_information_entry(location, new_target)
                         break
                     except InsufficientFundsException:
@@ -583,7 +631,7 @@ class NaiveBehavior(Behavior):
 
 
 class SaboteurBehavior(NaiveBehavior):
-    def __init__(self, lie_angle=90):
+    def __init__(self, lie_angle=90,combine_strategy="WeightedAverageAgeStrategy"):
         super().__init__()
         self.color = "red"
         self.lie_angle = lie_angle
@@ -597,7 +645,7 @@ class SaboteurBehavior(NaiveBehavior):
 ##################################################################################################
 # # SKEPTICISM
 class ScepticalBehavior(NaiveBehavior):
-    def __init__(self, threshold=.25):
+    def __init__(self, threshold=.25,combine_strategy="WeightedAverageAgeStrategy"):
         super(ScepticalBehavior, self).__init__()
         self.pending_information = {location: {} for location in Location}
         self.threshold = threshold
@@ -608,11 +656,11 @@ class ScepticalBehavior(NaiveBehavior):
             metadata = session.get_metadata(location)
             metadata_sorted_by_age = sorted(metadata.items(), key=lambda item: item[1]["age"])
             for bot_id, data in metadata_sorted_by_age:
-                session.record_attempted_transaction()
+                session.record_transaction('attempted', bot_id)
 
                 if data["age"] < self.navigation_table.get_age_for_location(location) and bot_id not in \
                         self.pending_information[location]:
-                    session.record_validated_transaction()
+                    # session.record_transaction('validated', bot_id)
 
                     try:
                         other_target = session.make_transaction(neighbor_id=bot_id, location=location)
@@ -626,7 +674,7 @@ class ScepticalBehavior(NaiveBehavior):
                             new_target = self.strategy.combine(self.navigation_table.get_information_entry(location),
                                                                other_target,
                                                                np.array([0, 0]))
-                            session.record_combined_transaction()
+                            # session.record_transaction('combined', bot_id)
                             self.navigation_table.replace_information_entry(location, new_target)
                             self.pending_information[location].clear()
                         else:
@@ -637,7 +685,7 @@ class ScepticalBehavior(NaiveBehavior):
                                     new_target = self.strategy.combine(target,
                                                                        other_target,
                                                                        np.array([0, 0]))
-                                    session.record_combined_transaction()
+                                    # session.record_transaction('combined', bot_id)
                                     self.navigation_table.replace_information_entry(location, new_target)
                                     self.pending_information[location].clear()
                                     break
@@ -666,7 +714,7 @@ class ScepticalBehavior(NaiveBehavior):
 
 
 class ScaboteurBehavior(ScepticalBehavior):
-    def __init__(self, lie_angle=90, threshold=.25):
+    def __init__(self, lie_angle=90, threshold=.25,combine_strategy="WeightedAverageAgeStrategy"):
         super().__init__()
         self.color = "red"
         self.lie_angle = lie_angle
@@ -682,11 +730,10 @@ class ScaboteurBehavior(ScepticalBehavior):
 ##################################################################################################
 # # NEW CLASSICAL BEHAVIOURS
 class NewNaiveBehavior(TemplateBehaviour):
-    def __init__(self):
-        super().__init__()
+    def __init__(self,combine_strategy="WeightedAverageAgeStrategy"):
+        super().__init__(combine_strategy=combine_strategy)
         self.required_information=RequiredInformation.LOCAL
         self.information_ordering_metric="age"
-        self.strategy=strategy_factory("WeightedAverageAgeStrategy")
 
     def test_data_validity(self, location: Location, data,_,__):
         return data[self.information_ordering_metric] <\
@@ -694,8 +741,8 @@ class NewNaiveBehavior(TemplateBehaviour):
 
 
 class NewSaboteurBehavior(NewNaiveBehavior):
-    def __init__(self,lie_angle=90):
-        super().__init__()
+    def __init__(self,lie_angle=90,combine_strategy="WeightedAverageAgeStrategy"):
+        super().__init__(combine_strategy=combine_strategy)
         self.color = "red"
         self.lie_angle = lie_angle
 
@@ -706,11 +753,10 @@ class NewSaboteurBehavior(NewNaiveBehavior):
 
 
 class NewScepticalBehavior(TemplateBehaviour):
-    def __init__(self,scepticism_threshold=.25):
-        super().__init__()
+    def __init__(self,scepticism_threshold=.25,combine_strategy="WeightedAverageAgeStrategy"):
+        super().__init__(combine_strategy=combine_strategy)
         self.required_information=RequiredInformation.LOCAL
         self.information_ordering_metric="age"
-        self.strategy=strategy_factory("WeightedAverageAgeStrategy")
         self.pending_information = {location: {} for location in Location}
         self.scepticism_threshold=scepticism_threshold
 
@@ -782,8 +828,9 @@ class NewScepticalBehavior(TemplateBehaviour):
 
 
 class NewScaboteurBehavior(NewScepticalBehavior):
-    def __init__(self,lie_angle=90,scepticism_threshold=.25):
-        super().__init__(scepticism_threshold)
+    def __init__(self,lie_angle=90,scepticism_threshold=.25,combine_strategy="WeightedAverageAgeStrategy"):
+        super().__init__(combine_strategy=combine_strategy, 
+                        scepticism_threshold=scepticism_threshold)
         self.color = "red"
         self.lie_angle = lie_angle
 
@@ -798,14 +845,11 @@ class NewScaboteurBehavior(NewScepticalBehavior):
 # BEHAVIOURS WITH REPUTATION (SYSTEMIC PROTECTION)
 
 class WealthWeightedBehavior(TemplateBehaviour):
-    def __init__(self):
-        super().__init__()
+    def __init__(self,combine_strategy="WeightedAverageAgeStrategy"):
+        super().__init__(combine_strategy=combine_strategy)
         self.required_information=RequiredInformation.GLOBAL
         self.information_ordering_metric="reputation"
-        self.strategy=strategy_factory("RunningWeightedAverageReputationStrategy")
         if self.strategy.__class__.__name__=="FullWeightedAverageReputationStrategy":
-            #TODO: use this to store all the info bought and pass it to strategy
-            #      to compute the value at each update with current reputation
             self.bought_information = {location: {} for location in Location}
 
 
@@ -825,8 +869,8 @@ class WealthWeightedBehavior(TemplateBehaviour):
 
 
 class SaboteurWealthWeightedBehavior(WealthWeightedBehavior):
-    def __init__(self,lie_angle=90):
-        super().__init__()
+    def __init__(self,lie_angle=90,combine_strategy="WeightedAverageAgeStrategy"):
+        super().__init__(combine_strategy=combine_strategy)
         self.color = "red"
         self.lie_angle = lie_angle
 
@@ -837,13 +881,11 @@ class SaboteurWealthWeightedBehavior(WealthWeightedBehavior):
 
 
 class ReputationRankingBehavior(TemplateBehaviour):
-    def __init__(self,ranking_threshold=.5):
-        super().__init__()
+    def __init__(self,ranking_threshold=.5,combine_strategy="WeightedAverageAgeStrategy"):
+        super().__init__(combine_strategy=combine_strategy)
         self.required_information=RequiredInformation.GLOBAL
         # self.information_ordering_metric="reputation"
         self.information_ordering_metric="age"
-        # self.strategy=strategy_factory("WeightedAverageAgeStrategy")
-        self.strategy=strategy_factory("RunningWeightedAverageReputationStrategy")
         self.ranking_threshold=ranking_threshold
 
 
@@ -868,8 +910,9 @@ class ReputationRankingBehavior(TemplateBehaviour):
 
 
 class SaboteurReputationRankingBehavior(ReputationRankingBehavior):
-    def __init__(self,lie_angle=90,ranking_threshold=.5):
-        super().__init__(ranking_threshold)
+    def __init__(self,lie_angle=90,ranking_threshold=.5,combine_strategy="WeightedAverageAgeStrategy"):
+        super().__init__(ranking_threshold=ranking_threshold,
+                        combine_strategy=combine_strategy)
         self.color = "red"
         self.lie_angle = lie_angle
 
@@ -880,12 +923,10 @@ class SaboteurReputationRankingBehavior(ReputationRankingBehavior):
 
 
 class WealthThresholdBehavior(TemplateBehaviour):
-    def __init__(self,comparison_method="allavg",scaling=.3):
-        super().__init__()
+    def __init__(self,comparison_method="allavg",scaling=.3,combine_strategy="WeightedAverageAgeStrategy"):
+        super().__init__(combine_strategy=combine_strategy)
         self.required_information=RequiredInformation.GLOBAL
         self.information_ordering_metric="age"
-        # self.strategy=strategy_factory("WeightedAverageAgeStrategy")
-        self.strategy=strategy_factory("RunningWeightedAverageReputationStrategy")
         self.scaling=scaling
         self.comparison_method=comparison_method
 
@@ -931,11 +972,11 @@ class WealthThresholdBehavior(TemplateBehaviour):
                                  "avg":payment_database.get_average_reward,
                                  "min":payment_database.get_lowest_reward,
                                  },
-                            "neigh":{
+                            # "neigh":{
                                     # "max":session.get_max_neighboor_reward,
                                     # "avg":session.get_average_neighbor_reward,
                                     # "min":session.get_min_neighboor_reward,
-                                }
+                                # }
                             }
         try:
             return self.scaling*reputation_dict[extension][metric]()
@@ -944,8 +985,10 @@ class WealthThresholdBehavior(TemplateBehaviour):
 
 
 class SaboteurWealthThresholdBehavior(WealthThresholdBehavior):
-    def __init__(self,lie_angle=90,comparison_method="allavg",scaling=.3):
-        super().__init__(comparison_method,scaling)
+    def __init__(self,lie_angle=90,comparison_method="allavg",scaling=.3,combine_strategy="WeightedAverageAgeStrategy"):
+        super().__init__(comparison_method=comparison_method,
+                        scaling=scaling,
+                        combine_strategy=combine_strategy)
         self.color = "red"
         self.lie_angle = lie_angle
 
@@ -956,12 +999,11 @@ class SaboteurWealthThresholdBehavior(WealthThresholdBehavior):
 
 
 class NewScepticalReputationBehavior(NewScepticalBehavior):
-    def __init__(self,scepticism_threshold=.25,comparison_method="allavg",scaling=.3,weight_method="ratio"):
-        super().__init__(scepticism_threshold)
+    def __init__(self,scepticism_threshold=.25,comparison_method="allavg",scaling=.3,weight_method="ratio",combine_strategy="WeightedAverageAgeStrategy"):
+        super().__init__(scepticism_threshold=scepticism_threshold,
+                        combine_strategy=combine_strategy)
         self.required_information=RequiredInformation.GLOBAL
         self.information_ordering_metric="age"
-        # self.strategy=strategy_factory("WeightedAverageAgeStrategy")
-        self.strategy=strategy_factory("RunningWeightedAverageReputationStrategy")
         self.scaling=scaling
         self.comparison_method=comparison_method
         self.weight_method=weight_method
@@ -997,15 +1039,19 @@ class NewScepticalReputationBehavior(NewScepticalBehavior):
             #     return max(0,threshold)
             elif self.weight_method=="exponential":
                 return self.scepticism_threshold*(reputation_score/(metric_score*self.scaling))**2
-            elif self.weight_method=="logarithmic":
-                return self.scepticism_threshold*np.log(reputation_score/(metric_score*self.scaling))
+            # elif self.weight_method=="logarithmic":
+            #     return self.scepticism_threshold*np.log(reputation_score/(metric_score*self.scaling))
         except:
             return self.scepticism_threshold
 
 
 class NewSaboteurScepticalReputationBehavior(NewScepticalReputationBehavior):
-    def __init__(self,scepticism_threshold=.25,comparison_method="allavg",scaling=.3,weight_method="ratio",lie_angle=90):
-        super().__init__(scepticism_threshold,comparison_method,scaling,weight_method)
+    def __init__(self,scepticism_threshold=.25,comparison_method="allavg",scaling=.3,weight_method="ratio",lie_angle=90,combine_strategy="WeightedAverageAgeStrategy"):
+        super().__init__(scepticism_threshold=scepticism_threshold,
+                        comparison_method=comparison_method,
+                        scaling=scaling,
+                        weight_method=weight_method,
+                        combine_strategy=combine_strategy)
         self.color = "red"
         self.lie_angle = lie_angle
 

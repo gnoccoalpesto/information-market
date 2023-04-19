@@ -15,35 +15,8 @@ ___  ___        _    ___
 =========
 SIMULATOR=======================================================
 
--NEW DATA ON BCHAIN:
-->EVERY DATA IS NOW TRACKED, NOT POSSIBLE TO LIE ON AGE,...
---AGE OF WALLET
---AGE OF LOCATIONS
---...
---->NEED TO USE A DIFFERENT METHOD FOR AGE: DATE
----STILL, LOCATIONS VALUES ARE STORED LOCALLY (NON VISIBLE TO BCHAIN)
----more data was it more secure to deal with an agent
-
-(SYNCH WITH SOME BCHAIN CLOCK)
-
-#   #   #   #   #   #
-
--SIMULATION STATISTICS WINDOW
-
-
--CONFIG OVERRIDE with ARGPARSE
---visual sim
---output folder
---transactions_log
-?-how the -X flags works with argv?
-
-
 =============
 DATA ANALYSIS=======================================================
-
--ITERATIVE BOX PLOTS
---instead of recursive DataFrama, 
-    COULD TRY DataFrame(list()), RECURSIVE LIST
 
 -CORRELATION SYMBOL
 --add a symbol to indicate statistical test between compared make_boxplots
@@ -55,16 +28,6 @@ ns          P > 0.05 (not significant)
 ****        P ≤ 0.0001 (For the last two choices only)
 ---easy: in x_label
 ---best: above the boxplot
-
-
--TEST: 
---SHORTER boxplot PAIRING
----HOW CAN I ADD LABELS WITHOUT EXPLICITLY PASSING FIELD NAME?
-list1 = pd.DataFrame(list1).assign(n_agents=labels[0])#do i need list1.to_numpy().flatten()?
-list2 = pd.DataFrame(list2).assign(n_agents=labels[1])#<- how to remove n_agents=?
-data=pd.concat([list1,list2])
----should melt be used? data_final=pd.melt(data_final, id_vars=, value_vars=)
-
 
 ==========
 REPUTATION======================================================

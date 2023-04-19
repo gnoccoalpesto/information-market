@@ -37,6 +37,10 @@
   "behaviors":[
     BEHAVIOURS
   ],
+  "combine_strategy": {
+    "class": "COMBINE_STRATEGY_CLASS",
+    "parameters": {}
+  },
   "payment_system": {
     "class": "PAYMENT_SYSTEM_CLASS",
     "initial_reward": PAYMENT_SYSTEM_INITIAL_REWARD,
