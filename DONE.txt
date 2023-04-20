@@ -26,6 +26,7 @@ SIMULATOR=======================================================
 -> uniform noise is a metric for BYZANTININESS
 -->the noisier, the "dishonestier" the agent is
 
+-configuration generation
 
 ============
 PENALISATION=========================================================
