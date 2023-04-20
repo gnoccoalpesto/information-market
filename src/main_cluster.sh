@@ -66,7 +66,7 @@ done
 
 ## RUN
 for file in $CONFIGS; do
-    sbatch $PROJECT_DIR/job_cluster.sh $file
+    sbatch $PROJECT_DIR/src/job_cluster.sh $file
 done
 
 
