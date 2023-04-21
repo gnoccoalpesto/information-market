@@ -44,7 +44,7 @@ CONFIG_FILE_TEMPLATE="${ASSETS_DIR}/config_template"
 
 #simulation, visualisation, noise, combine_strategy, payment system, data collection, robots, behaviors
 
-. ./params_generate_config_experiment.sh
+. ./params_experiment_generate_config.sh
 
 # PARAMETERS DICTIONARIES #######################################################
 # ----------------- DO NOT MODIFY, UNLESS YOU MODIFY behaviour.py ------------- #
@@ -56,8 +56,8 @@ declare -A HONEST_DICTIONARY
 	HONEST_DICTIONARY[s]="ScepticalBehavior"
 	HONEST_DICTIONARY[Ns]="NewScepticalBehavior"
 	HONEST_DICTIONARY[r]="ReputationRankingBehavior"
-	HONEST_DICTIONARY[v]="ScepticalReputationBehavior"
-	HONEST_DICTIONARY[Nv]="NewScepticalReputationBehavior"
+	HONEST_DICTIONARY[v]="VariableScepticalBehavior"
+	HONEST_DICTIONARY[Nv]="NewVariableScepticalBehavior"
 	HONEST_DICTIONARY[t]="WealthThresholdBehavior"
 	HONEST_DICTIONARY[w]="WealthWeightedBehavior"
 
@@ -67,8 +67,8 @@ declare -A DISHONEST_DICTIONARY
 	DISHONEST_DICTIONARY[s]="ScaboteurBehavior"
 	DISHONEST_DICTIONARY[Ns]="NewScaboteurBehavior"
 	DISHONEST_DICTIONARY[r]="SaboteurReputationRankingBehavior"
-	DISHONEST_DICTIONARY[v]="SaboteurScepticalReputationBehavior"
-	DISHONEST_DICTIONARY[Nv]="NewSaboteurScepticalReputationBehavior"
+	DISHONEST_DICTIONARY[v]="SaboteurVariableScepticalBehavior"
+	DISHONEST_DICTIONARY[Nv]="NewSaboteurVariableScepticalBehavior"
 	DISHONEST_DICTIONARY[t]="SaboteurWealthThresholdBehavior"
 	DISHONEST_DICTIONARY[w]="SaboteurWealthWeightedBehavior"
 

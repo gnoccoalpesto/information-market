@@ -43,8 +43,8 @@ def params_from_filename(filename:str, compact_format:bool=False):
                         "s": "ScepticalBehavior",
                         "Ns": "NewScepticalBehavior",
                         "r": "ReputationRankingBehavior",
-                        "v": "ScepticalReputationBehavior",
-                        "Nv": "NewScepticalReputationBehavior",
+                        "v": "VariableScepticalBehavior",
+                        "Nv": "NewVariableScepticalBehavior",
                         "t": "WealthThresholdBehavior",
                         "w": "WealthWeightedBehavior",
 
@@ -341,7 +341,7 @@ class InformationMarket():
                 pd.concat(dataframes).to_csv(join(output_directory, "items_evolution", current_filename))
             elif "transactions" in metric:
                 Path(join(output_directory, "transactions")).mkdir(parents=True, exist_ok=True)
-                types_of_interest=["attempted","completed",]
+                types_of_interest=["attempted","completed","combined"]
                 roles_of_interest=["buyer","seller"]
                 #TODO role from the config: scan for metric in metrics if mmetric.startswith("transactions")
                 # if m=="transactions" for m in metric then roles_of_interest=["buyer","seller"]
@@ -406,26 +406,19 @@ def main2():
                 p=join(CONFIG_FILE.CONFIG_DIR,SUB_FOLDERS_DICT[p])
 
             if isdir(p):
-                filenames.extend([join(p, f) for f in listdir(p) if isfile(join(p, f))])
 
             elif isfile(p):
-                filenames.append(p)
 
             else:
-                print(f"WARNING: {p} is not a valid config file or directory. Skipping...\n")
+                print(f"WARNING")
+                
 
     SHOWED_WARNING_RECORD_DATA=False
     for i,f in enumerate(filenames):
-
         try:
             if c.value_of("visualization")["activate"]:
-                view_controller = ViewController(main_controller,
-                                                    c.value_of("width"),
-                                                    c.value_of("height"),
-                                                    c.value_of("visualization")['fps'],
-                                                    title=f"Simulation {i+1}/{len(filenames)}: {f.split('/')[-1].split('.json')[0]}"
-                                                    )
-                #TODO start another one when finishes/closes
+                main_controller = MainController(c)
+                view_controller = launch_view_controller(main_controller, c)
             else:
                 if not CONFIG_FILE.RECORD_DATA and not SHOWED_WARNING_RECORD_DATA:
                     print("##\t"*10+"\nWARNING: data recording is disabled."
@@ -433,5 +426,6 @@ def main2():
 
                 run_processes(c)
 
+        except Exception as e: ...
 
 '''

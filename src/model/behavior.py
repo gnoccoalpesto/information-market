@@ -17,8 +17,8 @@ BEHAVIORS_DICT = {  "n": "NaiveBeahvior",
                     "s": "ScepticalBehavior",
                     "Ns": "NewScepticalBehavior",
                     "r": "ReputationRankingBehavior",
-                    "v": "ScepticalReputationBehavior",
-                    "Nv": "NewScepticalReputationBehavior",
+                    "v": "VariableScepticalBehavior",
+                    "Nv": "NewVariableScepticalBehavior",
                     "t": "WealthThresholdBehavior",
                     "w": "WealthWeightedBehavior",
                     }
@@ -224,8 +224,8 @@ def behavior_factory(behavior_params):
 #         "SaboteurReputationStaticThresholdBehavior": RequiredInformation.GLOBAL,
 #         "ReputationDynamicThresholdBehavior": RequiredInformation.GLOBAL,
 #         "SaboteurReputationDynamicThresholdBehavior": RequiredInformation.GLOBAL,
-#         "ScepticalReputationBehavior": RequiredInformation.GLOBAL,
-#         "SaboteurScepticalReputationBehavior": RequiredInformation.GLOBAL,
+#         "VariableScepticalBehavior": RequiredInformation.GLOBAL,
+#         "SaboteurVariableScepticalBehavior": RequiredInformation.GLOBAL,
 #         "WealthWeightedBehavior": RequiredInformation.GLOBAL,
 #         "SaboteurWealthWeightedBehavior": RequiredInformation.GLOBAL,
 #     }
@@ -279,7 +279,7 @@ class TemplateBehaviour(Behavior):
                         other_target=self.acquire_referenced_info(location,session,seller_id)
 
                         if self.test_data_quality(location,other_target,payment_database,seller_id):
-                            # session.record_transaction('combined',seller_id)
+                            session.record_transaction('combined',seller_id)
 
                             self.combine_data(location,target, other_target,payment_database,seller_id)
 
@@ -346,7 +346,7 @@ class TemplateBehaviour(Behavior):
                         np.array([0, 0]))
 
         elif self.strategy.__class__.__name__ == "WeightedAverageReputationAgeStrategy":
-            mean_reputation = payment_database.get_average_reward()
+            mean_reputation = payment_database.get_mean_reward()
             seller_reputation = payment_database.get_reward(seller_id)
             new_target=self.strategy.combine(
                         target,
@@ -356,7 +356,7 @@ class TemplateBehaviour(Behavior):
                         seller_reputation)
 
         elif self.strategy.__class__.__name__ == "NewRunningWeightedAverageReputationStrategy":
-            mean_reputation = payment_database.get_average_reward()
+            mean_reputation = payment_database.get_mean_reward()
             seller_reputation = payment_database.get_reward(seller_id)
             new_target=self.strategy.combine(
                         target,
@@ -898,14 +898,16 @@ class ReputationRankingBehavior(TemplateBehaviour):
         test if seller is in the top X% of the reputation ranking
         """
         if not self.navigation_table.is_information_valid_for_location(location)\
-                or self.compute_seller_percentile(payment_database, seller_id):
+                or self.verify_reputation(payment_database, seller_id):
             return True
         return False
 
 
-    def compute_seller_percentile(self,payment_database:PaymentDB,seller_id):
-        rank=payment_database.get_wallet_ranking(seller_id)
-        percentile=1-rank/len(payment_database.database)
+    def verify_reputation(self,payment_database:PaymentDB,seller_id):
+        #[ ]
+        # rank=payment_database.get_reward_ranking(seller_id)
+        rank=payment_database.get_reputation_ranking(seller_id,"w")
+        percentile=1-rank/payment_database.get_number_of_wallets()
         return percentile >= self.ranking_threshold
 
 
@@ -950,7 +952,11 @@ class WealthThresholdBehavior(TemplateBehaviour):
 
 
     def verify_reputation(self,payment_database:PaymentDB,seller_id):
-        return payment_database.get_reward(seller_id) >= self.get_threshold_value(payment_database)
+        #[ ]
+        seller_reputation=payment_database.get_reputation(seller_id,"w")
+        # seller_reward=payment_database.get_reward(seller_id)
+        threshld_reputation_value=self.get_threshold_value(payment_database)
+        return seller_reputation >= threshld_reputation_value
 
 
     def get_threshold_value(self,payment_database:PaymentDB):
@@ -960,7 +966,7 @@ class WealthThresholdBehavior(TemplateBehaviour):
         allmin: selects only above a certain percentage of minimum wealth (poorest bots), of all robots
         TODO: all_rise:  selects above a certaint value, increasing with time, starting from a certain level, of all robots
 
-        DEPRECATED:
+        NOTE DEPRECATED:
         neighmax: selects only above a certain percentage of maximum wealth (wealthiest bots), of neighbors
         neighavg: selects only above certain percentage of average wealth, considering neighbors
         neighmin: selects only above a certain percentage of minimum wealth (poorest bots), of neighbors
@@ -968,9 +974,13 @@ class WealthThresholdBehavior(TemplateBehaviour):
         # extension, metric=re.split("_",self.comparison_method)
         extension, metric=self.comparison_method[:-3],self.comparison_method[-3:]
         reputation_dict = {"all":{
-                                "max":payment_database.get_highest_reward,
-                                 "avg":payment_database.get_average_reward,
-                                 "min":payment_database.get_lowest_reward,
+                                # "max":payment_database.get_highest_reward,
+                                #  "avg":payment_database.get_mean_reward,
+                                #  "min":payment_database.get_lowest_reward,
+                                #[ ]
+                                "max":payment_database.get_highest_reputation,
+                                 "avg":payment_database.get_mean_reputation,
+                                 "min":payment_database.get_lowest_reputation,
                                  },
                             # "neigh":{
                                     # "max":session.get_max_neighboor_reward,
@@ -979,7 +989,9 @@ class WealthThresholdBehavior(TemplateBehaviour):
                                 # }
                             }
         try:
-            return self.scaling*reputation_dict[extension][metric]()
+            #[ ]
+            # return self.scaling*reputation_dict[extension][metric]()
+            return self.scaling*reputation_dict[extension][metric]('w')
         except KeyError:
             exit(1)
 
@@ -998,7 +1010,7 @@ class SaboteurWealthThresholdBehavior(WealthThresholdBehavior):
         return t
 
 
-class NewScepticalReputationBehavior(NewScepticalBehavior):
+class NewVariableScepticalBehavior(NewScepticalBehavior):
     def __init__(self,scepticism_threshold=.25,comparison_method="allavg",scaling=.3,weight_method="ratio",combine_strategy="WeightedAverageAgeStrategy"):
         super().__init__(scepticism_threshold=scepticism_threshold,
                         combine_strategy=combine_strategy)
@@ -1009,20 +1021,28 @@ class NewScepticalReputationBehavior(NewScepticalBehavior):
         self.weight_method=weight_method
 
     def get_scepticism_threshold(self,payment_database:PaymentDB,seller_id):
-        reputation_score=payment_database.get_reward(seller_id)
+        # reputation_score=payment_database.get_reward(seller_id)
+        #[ ]
+        seller_reputation=payment_database.get_reputation(seller_id,"w")
         #TODO could substitute with "-"
         # extension, metric=re.split("_",self.comparison_method)
         extension, metric=self.comparison_method[:-3],self.comparison_method[-3:]
 
 
         reputation_dict = {"all":{
-                            "max":payment_database.get_highest_reward,
-                            "avg":payment_database.get_average_reward,
-                            "min":payment_database.get_lowest_reward,
+                            # "max":payment_database.get_highest_reward,
+                            # "avg":payment_database.get_mean_reward,
+                            # "min":payment_database.get_lowest_reward,
+                            #[ ]
+                            "max":payment_database.get_highest_reputation,
+                            "avg":payment_database.get_mean_reputation,
+                            "min":payment_database.get_lowest_reputation,
                             },
                         }
         try:
-            return self.weight_scepticism(reputation_score,reputation_dict[extension][metric]())
+            # return self.weight_scepticism(reputation_score,reputation_dict[extension][metric]())
+            #[ ]
+            return self.weight_scepticism(seller_reputation,reputation_dict[extension][metric]('w'))
         except KeyError:
             return self.scepticism_threshold
 
@@ -1045,7 +1065,7 @@ class NewScepticalReputationBehavior(NewScepticalBehavior):
             return self.scepticism_threshold
 
 
-class NewSaboteurScepticalReputationBehavior(NewScepticalReputationBehavior):
+class NewSaboteurVariableScepticalBehavior(NewVariableScepticalBehavior):
     def __init__(self,scepticism_threshold=.25,comparison_method="allavg",scaling=.3,weight_method="ratio",lie_angle=90,combine_strategy="WeightedAverageAgeStrategy"):
         super().__init__(scepticism_threshold=scepticism_threshold,
                         comparison_method=comparison_method,
