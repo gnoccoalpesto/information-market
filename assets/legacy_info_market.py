@@ -13,7 +13,7 @@ import logging
 
 import config as CONFIG_FILE
 from controllers.main_controller import MainController, Configuration
-from controllers.view_controller import ViewController
+# from controllers.view_controller import ViewController
 from model.behavior import BAD_PARAM_COMBINATIONS_DICT, BEHAVIORS_NAME_DICT, BEHAVIOR_PARAMS_DICT, \
     PARAMS_NAME_DICT, NOISE_PARAMS_DICT, BEST_PARAM_COMBINATIONS_DICT,COMBINE_STRATEGY_NAME_DICT, \
     SUB_FOLDERS_DICT
@@ -46,8 +46,8 @@ def params_from_filename(filename:str, compact_format:bool=False):
                         "s": "ScepticalBehavior",
                         "Ns": "NewScepticalBehavior",
                         "r": "ReputationRankingBehavior",
-                        "v": "ScepticalReputationBehavior",
-                        "Nv": "NewScepticalReputationBehavior",
+                        "v": "VariableScepticalBehavior",
+                        "Nv": "NewVariableScepticalBehavior",
                         "t": "WealthThresholdBehavior",
                         "w": "WealthWeightedBehavior",
 
@@ -206,10 +206,10 @@ def main():
                 config = Configuration(config_file=p)
                 if config.value_of("visualization")['activate']:
                     main_controller = MainController(config)
-                    view_controller = ViewController(main_controller,
-                                                        config.value_of("width"),
-                                                        config.value_of("height"),
-                                                        config.value_of("visualization")['fps'])
+                    # view_controller = ViewController(main_controller,
+                    #                                     config.value_of("width"),
+                    #                                     config.value_of("height"),
+                    #                                     config.value_of("visualization")['fps'])
                     exit(0)
                 else:
                     filenames.append(p)
@@ -371,74 +371,3 @@ def log_config(c,f,output_log=False):
 if __name__ == '__main__':
     main()
 
-'''
-
-def main2():
-    try:
-        filenames=[]
-        for p in argv[1:]:
-            if p in SUB_FOLDERS_DICT:
-                p=join(CONFIG_FILE.CONFIG_DIR,SUB_FOLDERS_DICT[p])
-
-            if isdir(p):
-                filenames.extend([join(p, f) for f in listdir(p) if isfile(join(p, f))])
-
-            elif isfile(p):
-                filenames.append(p)
-
-            else:
-                print(f"WARNING: {p} is not a valid config file or directory. Skipping...\n")
-
-        if CONFIG_FILE.PRUNE_FILENAMES:
-            filenames=prune_params_combinations(filenames,best_mode=CONFIG_FILE.PRUNE_NOT_BEST)
-
-    except IndexError:
-        print("ERROR: no config file specified. Exiting...\n")
-        exit(1)
-
-    print(f"Running {len(filenames)} config"
-            f"{'s' if len(filenames)>1 else ''}: ",end="\t")
-    print(*filenames, sep="\n\t\t\t");print("\n\n")
-
-    SHOWED_WARNING_RECORD_DATA=False
-    for i,f in enumerate(filenames):
-        print(f"Running config {i+1}/{len(filenames)}: {f}")
-
-        c = Configuration(config_file=f)
-        if CONFIG_FILE.CONFIG_RUN_LOG: log_config(c,f)
-
-        try:
-            if c.value_of("visualization")["activate"]:
-                main_controller = MainController(c)
-                view_controller = ViewController(main_controller,
-                                                    c.value_of("width"),
-                                                    c.value_of("height"),
-                                                    c.value_of("visualization")['fps'],
-                                                    title=f"Simulation {i+1}/{len(filenames)}: {f.split('/')[-1].split('.json')[0]}"
-                                                    )
-                #TODO start another one when finishes/closes
-            else:
-                if not CONFIG_FILE.RECORD_DATA and not SHOWED_WARNING_RECORD_DATA:
-                    print("##\t"*10+"\nWARNING: data recording is disabled."
-                        " Set src/config(.py).RECORD_DATA to True to enable it.\n"+"##\t"*10+"\n")
-
-                run_processes(c)
-
-                if exists(join(CONFIG_FILE.CONFIG_ERRORS_DIR,f.split('/')[-1])):
-                    system(f"rm {join(CONFIG_FILE.CONFIG_ERRORS_DIR,f.split('/')[-1])}")
-                    print(f"#-#-#- [[successfully removing {join(CONFIG_FILE.CONFIG_ERRORS_DIR,f.split('/')[-1])}]]\n")
-                else: print()
-
-        except Exception as e:
-        #BUG cannot catch JSONDecodeError, missing files
-            logging.exception(F"{datetime.datetime.now()}, file {f} : \n")# logging.error(e, exc_info=True)
-            with open(CONFIG_FILE.ERRORS_LOG_FILE, "a+") as fe:
-                fe.write("\n"+"#"*100+"\n\n")
-
-            Path(CONFIG_FILE.CONFIG_ERRORS_DIR).mkdir(parents=True, exist_ok=True)
-            system(f"cp {f} {CONFIG_FILE.CONFIG_ERRORS_DIR}{f.split('/')[-1]}")
-
-            print(f"LOGGED ERROR: {e}. {f} copied in {CONFIG_FILE.CONFIG_ERRORS_DIR}\n")
-            continue
-
-'''

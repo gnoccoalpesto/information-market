@@ -28,7 +28,7 @@ class CommunicationSession:
             "attempted", "A", "a" : the client attempted to buy information from a neighbor
             [UNUSED]"validated", "V", "v" : the client validated information from a neighbor
             "completed", "C", "c" : the client successfully bought information from a neighbor
-            [UNUSED]"combined", "X", "x" : the client combined information from multiple neighbors
+            "combined", "X", "x" : the client combined information from multiple neighbors
         '''
         #TODO
         self._client.record_transaction(type,seller_id, transaction)

@@ -138,7 +138,7 @@ class FullWeightedAverageReputationStrategy(InformationStrategy):
         #TODO: is passing all bchain inefficient? maybe better to just pass the vector (but must call outside to know 
         #   purchase locations for the IDs then)
         if not self.initialized:
-            self.initialize(payment_database.number_of_wallets())
+            self.initialize(payment_database.get_number_of_wallets())
         
         if self.purchased_targets[other_target.location][seller_id].get_age() is None or \
                 other_target.get_age()<self.purchased_targets[other_target.location][seller_id].get_age():
@@ -199,14 +199,14 @@ class NewFullWeightedAverageReputationStrategy(InformationStrategy):
 
     def combine(self, my_target: Target, other_target: Target, seller_id, payment_database:PaymentDB) -> Target:
         if not self.initialized:
-            self.initialize(payment_database.number_of_wallets())
+            self.initialize(payment_database.get_number_of_wallets())
 
         if self.purchased_targets[other_target.location][seller_id].get_age() is None or \
                 other_target.get_age()<self.purchased_targets[other_target.location][seller_id].get_age():
             self.purchased_targets[other_target.location][seller_id].set_age(other_target.get_age())
             self.purchased_targets[other_target.location][seller_id].set_distance(other_target.get_distance())
         
-        mean_reputation=payment_database.get_average_reward()
+        mean_reputation=payment_database.get_mean_reputation('w')
         sellers_reputation=[payment_database.get_reward(purchased_id) 
                         for purchased_id in self.purchased_targets[other_target.location]]
         sellers_ratios=sellers_reputation/mean_reputation
