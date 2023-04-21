@@ -15,7 +15,7 @@ NUMBER_RUNS=20
 VISUALISATION_ACTIVATE=false
 #noise
 AGENT_NOISE_ASSIGNATION_LIST=("average" 
-							"perfect"
+							# "perfect"
 							)
 # bimodal:
 AGENT_NOISE_SAMPLING_MU_LIST=(0.05)
@@ -35,7 +35,7 @@ COMBINE_STRATEGY_LIST=(
 #payment system
 PAYMENT_SYSTEM_CLASS_LIST=(
 							"OutlierPenalisationPaymentSystem" 
-							"DelayedPaymentPaymentSystem"
+							# "DelayedPaymentPaymentSystem"
 							)
 #data collection
 DATA_PRECISE_RECORDING_INTERVAL=100
@@ -46,11 +46,11 @@ HONEST_POPULATION_LIST=(24)
 DISHONEST_LIE_ANGLES=(90)
 # behaviors ----------------------------------------------------
 BEHAVIOR_LIST=(
-				"n" "s"
+				# "w" 
+				# "n" "s"
 				"r" 
 				"t" 
 				"Nv"
-				"w"
 			)
 # naive: n ; new naive: Nn ; wealth weighted: w
 ################################################ -params:{}

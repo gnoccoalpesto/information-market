@@ -273,7 +273,7 @@ class ReputationDynamicThresholdBehavior(ReputationTresholdBehaviour):
         extension, metric=self.comparison_method[:-3],self.comparison_method[-3:]
         reputation_dict = {"all":{
                                 "max":payment_database.get_highest_reward,
-                                 "avg":payment_database.get_average_reward,
+                                 "avg":payment_database.get_mean_reward,
                                  "min":payment_database.get_lowest_reward,
                                  },
                             "neigh":{
@@ -289,9 +289,9 @@ class ReputationDynamicThresholdBehavior(ReputationTresholdBehaviour):
             # return super().reputation_threshold(session, self.method)
 
 
-class ScepticalReputationBehavior(NaiveBehavior):
+class VariableScepticalBehavior(NaiveBehavior):
     def __init__(self,comparison_method="allavg",scaling=1,scepticism_threshold=.25,weight_method="linear"):
-        super(ScepticalReputationBehavior, self).__init__()
+        super(VariableScepticalBehavior, self).__init__()
         self.scepticism_threshold=scepticism_threshold
         self.weight_method=weight_method
         self.comparison_method=comparison_method
@@ -328,7 +328,7 @@ class ScepticalReputationBehavior(NaiveBehavior):
         extension, metric=self.comparison_method[:-3],self.comparison_method[-3:]
         reputation_dict = {"all":{
                             "max":payment_database.get_highest_reward,
-                            "avg":payment_database.get_average_reward,
+                            "avg":payment_database.get_mean_reward,
                             "min":payment_database.get_lowest_reward,
                             },
                         }
