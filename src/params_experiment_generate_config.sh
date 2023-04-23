@@ -14,8 +14,9 @@ NUMBER_RUNS=20
 #visualisation
 VISUALISATION_ACTIVATE=false
 #noise
-AGENT_NOISE_ASSIGNATION_LIST=("average" 
-							# "perfect"
+AGENT_NOISE_ASSIGNATION_LIST=(
+							"average" 
+							"perfect"
 							)
 # bimodal:
 AGENT_NOISE_SAMPLING_MU_LIST=(0.05)
@@ -35,22 +36,29 @@ COMBINE_STRATEGY_LIST=(
 #payment system
 PAYMENT_SYSTEM_CLASS_LIST=(
 							"OutlierPenalisationPaymentSystem" 
-							# "DelayedPaymentPaymentSystem"
+							"DelayedPaymentPaymentSystem"
 							)
 #data collection
 DATA_PRECISE_RECORDING_INTERVAL=100
 DATA_TRANSACTIONS_LOG=false
 #robots
 NUMBER_OF_ROBOTS=25
-HONEST_POPULATION_LIST=(24)
-DISHONEST_LIE_ANGLES=(90)
+HONEST_POPULATION_LIST=(
+							# 22
+							24
+							25
+						)
+DISHONEST_LIE_ANGLES=(
+						90
+					)
 # behaviors ----------------------------------------------------
 BEHAVIOR_LIST=(
 				# "w" 
 				# "n" "s"
-				"r" 
-				"t" 
-				"Nv"
+				# "r" 
+				# "t" 
+				# "Nv"
+				"h"
 			)
 # naive: n ; new naive: Nn ; wealth weighted: w
 ################################################ -params:{}
@@ -73,3 +81,14 @@ vWEIGHT_METHOD_LIST=("ratio" "exponential")
 ##################### -params:{comparison_method,scaling}
 tCOMPARISON_METHOD_LIST=("allavg" "allmax")
 tSCALING_LIST=(0.8 0.5 0.3)
+#####################
+hVERIFICATION_METHOD_LIST=(
+							"last" 
+							"last2" 
+							"discrete" 
+							"difference" 
+							"aged" 
+							"derivative" 
+							"derivative2"
+						)
+
