@@ -535,7 +535,7 @@ class NaiveBehavior(Behavior):
                         new_target = self.strategy.combine(self.navigation_table.get_information_entry(location),
                                                            other_target,
                                                            session.get_distance_from(bot_id))
-                        # session.record_transaction('combined',bot_id)
+                        session.record_transaction('combined',bot_id)
                         self.navigation_table.replace_information_entry(location, new_target)
                         break
                     except InsufficientFundsException:
@@ -692,7 +692,7 @@ class ScepticalBehavior(NaiveBehavior):
                                     new_target = self.strategy.combine(target,
                                                                        other_target,
                                                                        np.array([0, 0]))
-                                    # session.record_transaction('combined', bot_id)
+                                    session.record_transaction('combined', bot_id)
                                     self.navigation_table.replace_information_entry(location, new_target)
                                     self.pending_information[location].clear()
                                     break
