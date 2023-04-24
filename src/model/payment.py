@@ -149,15 +149,17 @@ class PaymentDB:
                             previous_h=h
                         else:
                             if verification_method=="discrete":
-                                increment=np.sign(h-previous_h)*1
+                                increment=np.sign(h-previous_h)
                             elif verification_method=="difference":
-                                increment=np.sign(h-previous_h)*(h-previous_h)
+                                increment=(h-previous_h)
+                            elif verification_method=="normalized":
+                                increment=(h-previous_h)/(np.abs(previous_h) if previous_h!=0 and previous_h is not None else 1)
                             elif verification_method=="aged":
-                                increment=np.sign(h-previous_h)*(h-previous_h)*(i+1)
+                                increment=(h-previous_h)*(i+1)
                             elif verification_method=="derivative":
-                                increment=np.sign(h-previous_h)*(h-previous_h)/(len(valid_history)-i)
+                                increment=(h-previous_h)/(len(valid_history)-i)
                             elif verification_method=="derivative2":
-                                increment=np.sign(h-previous_h)*(h-previous_h)/(len(valid_history)-i)**2
+                                increment=(h-previous_h)/(len(valid_history)-i)**2
 
                             reputation+=increment
                             previous_h=h

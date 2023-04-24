@@ -87,8 +87,14 @@ hVERIFICATION_METHOD_LIST=(
 							"last2" 
 							"discrete" 
 							"difference" 
+							"normalized"
 							"aged" 
 							"derivative" 
 							"derivative2"
+						)
+hTHRESHOLD_METHOD_LIST=(
+						"null" 
+						"positive" 
+						"mean"
 						)
 

@@ -88,7 +88,7 @@ declare -A HONEST_PARAMETERS
 	HONEST_PARAMETERS[Nv]="\"comparison_method\": \"COMPARISON_METHOD\",\n\t\t\t\"scaling\": SCALING,\n\t\t\t\"scepticism_threshold\": SCEPTICISM_THRESHOLD,\n\t\t\t\"weight_method\": \"WEIGHT_METHOD\""
 	HONEST_PARAMETERS[w]=""
 	HONEST_PARAMETERS[t]="\"comparison_method\": \"COMPARISON_METHOD\",\n\"scaling\": SCALING"
-	HONEST_PARAMETERS[h]="\"verification_method\": \"VERIFICATION_METHOD\""
+	HONEST_PARAMETERS[h]="\"verification_method\": \"VERIFICATION_METHOD\",\n\t\t\t\"threshold_method\": \"THRESHOLD_METHOD\""
 
 declare -A DISHONEST_PARAMETERS
 	DISHONEST_PARAMETERS[n]="\"lie_angle\": DISHONEST_LIE_ANGLE"
@@ -100,7 +100,7 @@ declare -A DISHONEST_PARAMETERS
 	DISHONEST_PARAMETERS[Nv]="\"lie_angle\": DISHONEST_LIE_ANGLE,\n\t\t\t\"comparison_method\": \"COMPARISON_METHOD\",\n\t\t\t\"scaling\": SCALING,\n\t\t\t\"scepticism_threshold\": SCEPTICISM_THRESHOLD,\n\t\t\t\"weight_method\": \"WEIGHT_METHOD\""
 	DISHONEST_PARAMETERS[w]="\"lie_angle\": DISHONEST_LIE_ANGLE"
 	DISHONEST_PARAMETERS[t]="\"lie_angle\": DISHONEST_LIE_ANGLE,\n\t\t\t\"comparison_method\": \"COMPARISON_METHOD\",\n\"scaling\": SCALING"
-	DISHONEST_PARAMETERS[h]="\"lie_angle\": DISHONEST_LIE_ANGLE,\n\t\t\t\"verification_method\": \"VERIFICATION_METHOD\""
+	DISHONEST_PARAMETERS[h]="\"lie_angle\": DISHONEST_LIE_ANGLE,\n\t\t\t\"verification_method\": \"VERIFICATION_METHOD\",\n\t\t\t\"threshold_method\": \"THRESHOLD_METHOD\""
 
 declare -A BEHAVIOR_INITIALS
 	BEHAVIOR_INITIALS[n]="n"
@@ -136,7 +136,7 @@ declare -A BEHAVIOUR_FILENAME_ADDITIONAL_INFO
 	BEHAVIOUR_FILENAME_ADDITIONAL_INFO[Nv]="_COMPARISON_METHODCM_SCALINGSC_SCEPTICISM_THRESHOLDST_WEIGHT_METHODWM"
 	BEHAVIOUR_FILENAME_ADDITIONAL_INFO[t]="_COMPARISON_METHODCM_SCALINGSC"
 	BEHAVIOUR_FILENAME_ADDITIONAL_INFO[w]=""
-	BEHAVIOUR_FILENAME_ADDITIONAL_INFO[h]="_VERIFICATION_METHODVM"
+	BEHAVIOUR_FILENAME_ADDITIONAL_INFO[h]="_VERIFICATION_METHODVM_THRESHOLD_METHODTM"
 
 
 # information combine strategy
@@ -357,14 +357,18 @@ for AGENT_NOISE_ASSIGNATION in ${AGENT_NOISE_ASSIGNATION_LIST[*]} ; do
 												else
 													if [[ ${BEHAVIOR} == "h" ]]; then
 														for VERIFICATION_METHOD in ${hVERIFICATION_METHOD_LIST[*]} ; do
+														for THRESHOLD_METHOD in ${hTHRESHOLD_METHOD_LIST[*]} ; do
 															CURRENT_DATA_FILENAME=$( echo ${DATA_FILENAME} | 
 																		sed -e "s|VERIFICATION_METHOD|${VERIFICATION_METHOD}|" \
+																		-e "s|THRESHOLD_METHOD|${THRESHOLD_METHOD}|" \
 																		-e "s|[\.]||g")
 															FINAL_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}/${CURRENT_DATA_FILENAME}.json"
 															sed -e "s|VERIFICATION_METHOD|${VERIFICATION_METHOD}|" \
+																-e "s|THRESHOLD_METHOD|${THRESHOLD_METHOD}|" \
 																${TEMP_CONFIG_FILENAME} > ${FINAL_CONFIG_FILENAME}
 															GENERATED_FILENAMES+=(${FINAL_CONFIG_FILENAME})
 															COUNT=$((COUNT + 1))
+														done
 														done
 													fi
 												fi
@@ -537,14 +541,18 @@ for AGENT_NOISE_ASSIGNATION in ${AGENT_NOISE_ASSIGNATION_LIST[*]} ; do
 												else
 													if [[ ${BEHAVIOR} == "h" ]]; then
 														for VERIFICATION_METHOD in ${hVERIFICATION_METHOD_LIST[*]} ; do
+														for THRESHOLD_METHOD in ${hTHRESHOLD_METHOD_LIST[*]} ; do
 															CURRENT_DATA_FILENAME=$( echo ${DATA_FILENAME} | 
 																		sed -e "s|VERIFICATION_METHOD|${VERIFICATION_METHOD}|" \
+																		-e "s|THRESHOLD_METHOD|${THRESHOLD_METHOD}|" \
 																		-e "s|[\.]||g")
 															FINAL_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}/${CURRENT_DATA_FILENAME}.json"
 															sed -e "s|VERIFICATION_METHOD|${VERIFICATION_METHOD}|" \
+																-e "s|THRESHOLD_METHOD|${THRESHOLD_METHOD}|" \
 																${TEMP_CONFIG_FILENAME} > ${FINAL_CONFIG_FILENAME}
 															GENERATED_FILENAMES+=(${FINAL_CONFIG_FILENAME})
 															COUNT=$((COUNT + 1))
+														done
 														done
 													fi
 												fi

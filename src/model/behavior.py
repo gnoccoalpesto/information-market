@@ -67,6 +67,7 @@ PARAMS_NAME_DICT={
                     "NRANG": "uniform noise range",
                     "SAB": "saboteur performance",
                     "VM": "verification method",
+                    "TM": "threshold method",
                     }
 BEHAVIOR_PARAMS_DICT = {"n": [],
                         "Nn": [],
@@ -77,7 +78,7 @@ BEHAVIOR_PARAMS_DICT = {"n": [],
                         "Nv": ["CM","SC","ST","WM"],
                         "t": ["CM","SC"],
                         "w": [],
-                        "h": ["VM"],
+                        "h": ["VM","TM"],
                         }
 COMBINE_STRATEGY_DICT = {
                             "waa" : "WeightedAverageAgeStrategy",
@@ -193,6 +194,7 @@ BAD_PARAM_COMBINATIONS_DICT={
                         ['NP',[]],
                         ['P',[]],
                     ],
+                    "h": [],
                 }
 
 
@@ -535,7 +537,7 @@ class NaiveBehavior(Behavior):
                         new_target = self.strategy.combine(self.navigation_table.get_information_entry(location),
                                                            other_target,
                                                            session.get_distance_from(bot_id))
-                        # session.record_transaction('combined',bot_id)
+                        session.record_transaction('combined',bot_id)
                         self.navigation_table.replace_information_entry(location, new_target)
                         break
                     except InsufficientFundsException:
@@ -681,7 +683,7 @@ class ScepticalBehavior(NaiveBehavior):
                             new_target = self.strategy.combine(self.navigation_table.get_information_entry(location),
                                                                other_target,
                                                                np.array([0, 0]))
-                            # session.record_transaction('combined', bot_id)
+                            session.record_transaction('combined', bot_id)
                             self.navigation_table.replace_information_entry(location, new_target)
                             self.pending_information[location].clear()
                         else:
@@ -692,7 +694,7 @@ class ScepticalBehavior(NaiveBehavior):
                                     new_target = self.strategy.combine(target,
                                                                        other_target,
                                                                        np.array([0, 0]))
-                                    # session.record_transaction('combined', bot_id)
+                                    session.record_transaction('combined', bot_id)
                                     self.navigation_table.replace_information_entry(location, new_target)
                                     self.pending_information[location].clear()
                                     break
@@ -1014,11 +1016,12 @@ class SaboteurWealthThresholdBehavior(WealthThresholdBehavior):
 
 
 class ReputationHistoryBehavior(TemplateBehaviour):
-    def __init__(self,combine_strategy="WeightedAverageAgeStrategy", verification_method="last"):
+    def __init__(self,combine_strategy="WeightedAverageAgeStrategy", verification_method="last",threshold_method='null'):
         super().__init__(combine_strategy=combine_strategy)
         self.required_information=RequiredInformation.GLOBAL
         self.information_ordering_metric="age"
         self.verification_method=verification_method
+        self.threshold_method=threshold_method
 
 
     def test_data_validity(self, location: Location, data,_,__):
@@ -1049,14 +1052,11 @@ class ReputationHistoryBehavior(TemplateBehaviour):
         previous_h=None
         if valid_history==[]:
             result=True
-            # return True
         #TODO make this in the loop, by using len(valid_history)-i and return
         if len(valid_history)>1 and self.verification_method=="last":
-            # return valid_history[-1] >= 0
             result=valid_history[-1] >= 0
         elif len(valid_history)>2:
             if self.verification_method=="last2":
-                # return valid_history[-1] >= valid_history[-2]
                 result=valid_history[-1] >= valid_history[-2]
             else:
                 for i,h in enumerate(valid_history):
@@ -1064,33 +1064,39 @@ class ReputationHistoryBehavior(TemplateBehaviour):
                         previous_h=h
                     else:
                         if self.verification_method=="discrete":
-                            increment=np.sign(h-previous_h)*1
+                            increment=np.sign(h-previous_h)
                         elif self.verification_method=="difference":
-                            increment=np.sign(h-previous_h)*(h-previous_h)
+                            increment=h-previous_h
+                        elif self.verification_method=="normalized":
+                            increment=(h-previous_h)/(np.abs(previous_h) if previous_h!=0 and previous_h is not None else 1)
                         elif self.verification_method=="aged":
-                            increment=np.sign(h-previous_h)*(h-previous_h)*(i+1)
+                            increment=(h-previous_h)*(i+1)
                         elif self.verification_method=="derivative":
-                            increment=np.sign(h-previous_h)*(h-previous_h)/(len(valid_history)-i)
+                            increment=(h-previous_h)/(len(valid_history)-i)
                         elif self.verification_method=="derivative2":
-                            increment=np.sign(h-previous_h)*(h-previous_h)/(len(valid_history)-i)**2
-
+                            increment=(h-previous_h)/(len(valid_history)-i)**2
+                        
                         reputation+=increment
                         previous_h=h
-                # return reputation>=self.get_threshold_value(payment_database)
-                # result=reputation>=0
-                result=reputation>=.5
+                result=reputation>=self.get_threshold_value(payment_database)
         else:
             result=True
         return result
 
 
     def get_threshold_value(self,payment_database:PaymentDB):
-        return payment_database.get_mean_reputation('h',self.verification_method)
+        if self.threshold_method=='null':
+            return 0
+        elif self.threshold_method=='positive':
+            return .5
+        elif self.threshold_method=='mean':
+            return payment_database.get_mean_reputation('h',self.verification_method)
 
 
 class SaboteurReputationHistoryBehavior(ReputationHistoryBehavior):
-    def __init__(self,lie_angle=90,verification_method="last",combine_strategy="WeightedAverageAgeStrategy"):
+    def __init__(self,lie_angle=90,verification_method="last",combine_strategy="WeightedAverageAgeStrategy",threshold_method='null'):
         super().__init__(verification_method=verification_method,
+                        threshold_method=threshold_method,
                         combine_strategy=combine_strategy)
         self.color = "red"
         self.lie_angle = lie_angle
