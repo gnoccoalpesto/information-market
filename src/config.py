@@ -27,7 +27,7 @@ LOG_COMPLETED_TRANSATIONS:bool = False
 LOG_REJECTED_TRANSATIONS:bool = False
 
 # bad configs pruning at runtime
-PRUNE_FILENAMES= True
+PRUNE_FILENAMES= False
 PRUNE_NOT_BEST= True
 # DELETE_PRUNED=False
 

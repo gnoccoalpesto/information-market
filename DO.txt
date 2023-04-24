@@ -15,6 +15,30 @@ ___  ___        _    ___
 =========
 SIMULATOR=======================================================
 
+use #property decorator, getter and setter for private attributes
+{{{{
+class Prova:
+    def __init__(self):self._a = 0 #private attribute, "not accessible"
+
+    @property
+    def a(self): return self._a
+
+    @a.setter
+    def a(self, value): self._a = value
+
+    @a.getter
+    def a(self): return self._a
+
+if __name__ == '__main__':
+    prova = Prova()
+    print(prova.a)#0
+    prova.a = 1; print(prova.a)#1
+}}}}
+
+
+-None var should always be tested with "is" operator
+--also is faster that "==", as it does not need to check the type
+
 =============
 DATA ANALYSIS=======================================================
 
@@ -40,11 +64,15 @@ REPUTATION: SYSTEM-WISE protection
 }}}}}
 
 
--REPUTATION: WEALTH
+!!!!!!!!!!!!!!
+-ALL PROCESSING OF BCHAIN DATA MUST BE DONE BY BEHAVIOUR AND NOT 
+    BLOCKCHAIN CLASS
 
---FILTER on LAST 10 REDISTRIBUTIONS OF WEALTH -> SLOPE
----remember to IGNORE STACKING
----metrics could be INCOME-STACKING>=<0
+!!!!!!!!!!!!!!!!!
+
+
+
+-REPUTATION: WEALTH
 
 --VARIABLE SKEPTICISM: WAITING TIME
 ---age of info used in COMBINING STRATEGY

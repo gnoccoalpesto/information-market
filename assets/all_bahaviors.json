@@ -13,7 +13,7 @@
   },
   "simulation_steps": 15000,
   "simulation_seed": 5684436,
-  "number_runs": 64,
+  "number_runs": 1,
   "visualization": {
     "activate": false,
     "fps": 60
@@ -41,7 +41,7 @@
   "behaviors": [
     {
       "class": "NaiveBehavior",
-      "population_size": 22,
+      "population_size": 0,
       "parameters": {
       }
     },
@@ -90,6 +90,13 @@
       }
     },
     {
+      "class": "ReputationHistoryBehavior",
+      "population_size": 25,
+      "parameters": {
+        "verification_method":"last"
+      }
+    },    
+    {
       "class": "NewVariableScepticalBehavior",
       "population_size": 0,
       "parameters": {
@@ -108,7 +115,7 @@
     },
     {
       "class": "NewScaboteurBehavior",
-      "population_size": 3,
+      "population_size": 0,
       "parameters": {
         "scepticism_threshold": 0.25,
         "lie_angle": 90

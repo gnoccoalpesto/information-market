@@ -5,10 +5,12 @@ from helpers import random_walk
 from model.environment import Environment
 
 
-
 class Configuration:
     def __init__(self, config_file):
         self._parameters = self.read_config(config_file)
+
+    def __contains__(self, item):
+        return item in self._parameters
 
     @staticmethod
     def read_config(config_file):

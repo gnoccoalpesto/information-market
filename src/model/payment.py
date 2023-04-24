@@ -51,10 +51,12 @@ class PaymentDB:
                                        "payment_system": eval(payment_system_params['class'])(
                                                                 **payment_system_params['parameters']),
                                         "wallet_age": 0,
+                                        #TODO make n_transactions a DICT
                                         "n_attempted_transactions": [0]*len(population_ids),
                                         #UNUSED "n_validated_transactions": 0,
                                         "n_completed_transactions": [0]*len(population_ids),
                                         "n_combined_transactions" : [0]*len(population_ids),
+                                        #NOTE history is loaded bottom->top
                                         "history": [None]*self.history_span,
                                         # "reward_trend": 0,
                                         # "n_transactions_trend": 0,
@@ -72,6 +74,10 @@ class PaymentDB:
         self.database[robot_id]["history"].pop(0)
         self.database[robot_id]["history"].append(redistribution)
 
+
+    def get_history(self,robot_id):
+        #[ ]
+        return self.database[robot_id]["history"]
 
     def increment_wallet_age(self, robot_id):
         self.database[robot_id]["wallet_age"] += 1
@@ -119,13 +125,31 @@ class PaymentDB:
         return self.database[robot_id]["reward"]
 
 
-    def get_reputation(self, robot_id,method="reward"):
+    def get_reputation(self, robot_id,method="reward",verification_method="difference"):
         #TODO unify below
         if method=="reward" or method=="r" or method=="R" or method=="w":
             return self.get_reward(robot_id)
         #[ ]
         elif method=="history" or method=="h" or method=="H":
-            pass
+            valid_history=[h for h in self.database[robot_id]["history"]
+                            if h is not None]
+            if len(valid_history)>0:
+                reputation=0
+                for i,h in enumerate(valid_history):
+                    if verification_method=="discrete":
+                        increment=np.sign(h)
+                    elif verification_method=="difference":
+                        increment=h
+                    elif verification_method=="aged":
+                        increment=h*(i+1)
+                    elif verification_method=="derivative":
+                        increment=h/(len(valid_history)-i)
+                    elif verification_method=="derivative2":
+                        increment=h/(len(valid_history)-i)**2
+                    reputation+=increment
+
+                return reputation
+            return None
 
 
     def get_highest_reward(self):
@@ -134,36 +158,45 @@ class PaymentDB:
 
 
     def get_lowest_reward(self):
+        #TODO remove
         return np.min([self.database[robot_id]["reward"] for robot_id in self.database])
 
     
     def get_mean_reward(self):
+        #TODO remove
         return np.average([self.database[robot_id]["reward"] for robot_id in self.database])
 
 
-    def get_highest_reputation(self,method="reward"):
+    def get_highest_reputation(self,method="reward",verification_method="difference"):
+        #TODO remove: better to process the data robotside
         #TODO unify
         if method=="reward" or method=="r" or method=="R" or method=="w":
             return self.get_highest_reward()
         #[ ]
         elif method=="history" or method=="h" or method=="H":
-            pass
+            method="history"
+            return np.max([self.get_reputation(robot_id,method,verification_method) for robot_id in self.database])
 
 
     def get_lowest_reputation(self,method="reward"):
+        #TODO remove
         if method=="reward" or method=="r" or method=="R" or method=="w":
             return self.get_lowest_reward()
         #[ ]
         elif method=="history" or method=="h" or method=="H":
-            pass
+            return np.min([self.get_reputation(robot_id,method="history") for robot_id in self.database])
     
 
-    def get_mean_reputation(self,method="reward"):
+    def get_mean_reputation(self,method="reward",verification_method="difference"):
+        #TODO remove
         if method=="reward" or method=="r" or method=="R" or method=="w":
             return self.get_mean_reward()
         #[ ]
         elif method=="history" or method=="h" or method=="H":
-            pass
+            method="history"
+            reputations=[self.get_reputation(robot_id,method,verification_method) for robot_id in self.database ]
+            valid_reputations=[r for r in reputations if r is not None]
+            return np.mean([r for r in valid_reputations]) if len(valid_reputations)>0 else None
 
 
     def get_sorted_database(self,method="reward"):
@@ -177,16 +210,22 @@ class PaymentDB:
         
     
     def get_reward_ranking(self,robot_id):
+        #TODO remove?
         sorted_database = self.get_sorted_database()
         return list(sorted_database.keys()).index(robot_id)
 
     
     def get_reputation_ranking(self,robot_id,method="reward"):
+        #TODO remove?
         if method=="reward" or method=="r" or method=="R" or method=="w":
             return self.get_reward_ranking(robot_id)
         #[ ]
         elif method=="history" or method=="h" or method=="H":
-            pass
+                reputations=[self.get_reputation(robot_id,method="history") for robot_id in self.database]
+                valid_reputations=[r for r in reputations if r is not None]
+                return valid_reputations[np.argmax(valid_reputations)] if len(valid_reputations)>0 else None
+                    
+
 
 
     def get_number_of_wallets(self):
@@ -301,12 +340,7 @@ class OutlierPenalisationPaymentSystem(PaymentSystem):
         reward_share_to_distribute = self.information_share * reward
         payment_api.apply_gains(rewarded_id, self.pot_amount)
         shares_mapping = self.calculate_shares_mapping(reward_share_to_distribute)
-        #[ ]
-        # if rewarded_id==11:
-            # [print(t.seller_id,t.buyer_id,t.location) for t in sorted(self.transactions, key=lambda x: x.seller_id)]
-            # print(f"debitor_id {rewarded_id}")
-            # [print(s) for s in shares_mapping.items()]
-        # exit()
+
         for seller_id, share in shares_mapping.items():
             payment_api.transfer(rewarded_id, seller_id, share)
             last_redistribution= share-(self.stake_amount if hasattr(self,"stake_amount") else 0)

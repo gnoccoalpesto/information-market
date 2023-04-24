@@ -21,6 +21,7 @@ BEHAVIORS_DICT = {  "n": "NaiveBeahvior",
                     "Nv": "NewVariableScepticalBehavior",
                     "t": "WealthThresholdBehavior",
                     "w": "WealthWeightedBehavior",
+                    "h": "ReputationHistoryBehavior",
                     }
 BEHAVIORS_NAME_DICT = {  "n": "Naive",
                         "Nn": "Naive",
@@ -36,6 +37,7 @@ BEHAVIORS_NAME_DICT = {  "n": "Naive",
                         "w": "Rep. Weighted",
                         # "t": "Reputation Threshold",
                         # "w": "Reputation Weighted",
+                        "h": "Rep. History",
                     }
 SUB_FOLDERS_DICT={  "n": "naive",
                     "Nn": "new_naive",
@@ -46,6 +48,7 @@ SUB_FOLDERS_DICT={  "n": "naive",
                     "Nv": "variable_scepticism",
                     "t": "wealth_threshold",
                     "w": "wealth_weighted",
+                    "h": "history",
                     }
 PARAMS_NAME_DICT={
                     "ST": "scepticism threshold",
@@ -63,6 +66,8 @@ PARAMS_NAME_DICT={
                     "NMU": "uniform noise mean",
                     "NRANG": "uniform noise range",
                     "SAB": "saboteur performance",
+                    "VM": "verification method",
+                    "TM": "threshold method",
                     }
 BEHAVIOR_PARAMS_DICT = {"n": [],
                         "Nn": [],
@@ -73,6 +78,7 @@ BEHAVIOR_PARAMS_DICT = {"n": [],
                         "Nv": ["CM","SC","ST","WM"],
                         "t": ["CM","SC"],
                         "w": [],
+                        "h": ["VM","TM"],
                         }
 COMBINE_STRATEGY_DICT = {
                             "waa" : "WeightedAverageAgeStrategy",
@@ -118,6 +124,7 @@ BEST_PARAM_COMBINATIONS_DICT={
                                 ['P', ['allavg', '05']],
                                 ],
                             "w": [],
+                            "h": [],
                             }
 
 BAD_PARAM_COMBINATIONS_DICT={
@@ -157,6 +164,7 @@ BAD_PARAM_COMBINATIONS_DICT={
                         ['P', ['allmax', '05']],
                         ['P', ['allmax', '08']],
                         ],
+                    "w": [],
                     #TODO dots in filenames
                     #     ['NP', ['allavg', '0.3', '0.25', 'exponential']],
                     #     ['NP', ['allavg', '0.5', '0.25', 'exponential']],
@@ -186,6 +194,7 @@ BAD_PARAM_COMBINATIONS_DICT={
                         ['NP',[]],
                         ['P',[]],
                     ],
+                    "h": [],
                 }
 
 
@@ -528,7 +537,7 @@ class NaiveBehavior(Behavior):
                         new_target = self.strategy.combine(self.navigation_table.get_information_entry(location),
                                                            other_target,
                                                            session.get_distance_from(bot_id))
-                        # session.record_transaction('combined',bot_id)
+                        session.record_transaction('combined',bot_id)
                         self.navigation_table.replace_information_entry(location, new_target)
                         break
                     except InsufficientFundsException:
@@ -674,7 +683,7 @@ class ScepticalBehavior(NaiveBehavior):
                             new_target = self.strategy.combine(self.navigation_table.get_information_entry(location),
                                                                other_target,
                                                                np.array([0, 0]))
-                            # session.record_transaction('combined', bot_id)
+                            session.record_transaction('combined', bot_id)
                             self.navigation_table.replace_information_entry(location, new_target)
                             self.pending_information[location].clear()
                         else:
@@ -685,7 +694,7 @@ class ScepticalBehavior(NaiveBehavior):
                                     new_target = self.strategy.combine(target,
                                                                        other_target,
                                                                        np.array([0, 0]))
-                                    # session.record_transaction('combined', bot_id)
+                                    session.record_transaction('combined', bot_id)
                                     self.navigation_table.replace_information_entry(location, new_target)
                                     self.pending_information[location].clear()
                                     break
@@ -894,9 +903,6 @@ class ReputationRankingBehavior(TemplateBehaviour):
 
 
     def test_data_quality(self, location: Location, _, payment_database:PaymentDB, seller_id):
-        """
-        test if seller is in the top X% of the reputation ranking
-        """
         if not self.navigation_table.is_information_valid_for_location(location)\
                 or self.verify_reputation(payment_database, seller_id):
             return True
@@ -906,7 +912,10 @@ class ReputationRankingBehavior(TemplateBehaviour):
     def verify_reputation(self,payment_database:PaymentDB,seller_id):
         #[ ]
         # rank=payment_database.get_reward_ranking(seller_id)
-        rank=payment_database.get_reputation_ranking(seller_id,"w")
+        # rank=payment_database.get_reputation_ranking(seller_id,"r")
+        rank=payment_database.get_reputation_ranking(seller_id,"h")
+        if rank is None:
+            return True
         percentile=1-rank/payment_database.get_number_of_wallets()
         return percentile >= self.ranking_threshold
 
@@ -938,9 +947,6 @@ class WealthThresholdBehavior(TemplateBehaviour):
 
 
     def test_data_quality(self, location: Location, _, payment_database:PaymentDB, seller_id):
-        """
-        test if seller is in the top X% of the reputation ranking
-        """
         if not self.navigation_table.is_information_valid_for_location(location)\
                 or self.verify_reputation(payment_database, seller_id):
             return True
@@ -953,10 +959,12 @@ class WealthThresholdBehavior(TemplateBehaviour):
 
     def verify_reputation(self,payment_database:PaymentDB,seller_id):
         #[ ]
-        seller_reputation=payment_database.get_reputation(seller_id,"w")
+        seller_reputation=payment_database.get_reputation(seller_id,"h")
         # seller_reward=payment_database.get_reward(seller_id)
-        threshld_reputation_value=self.get_threshold_value(payment_database)
-        return seller_reputation >= threshld_reputation_value
+        threshld_reputation=self.get_threshold_value(payment_database)
+        return seller_reputation >= threshld_reputation if threshld_reputation is not None \
+                                    and seller_reputation is not None  else False
+
 
 
     def get_threshold_value(self,payment_database:PaymentDB):
@@ -991,8 +999,10 @@ class WealthThresholdBehavior(TemplateBehaviour):
         try:
             #[ ]
             # return self.scaling*reputation_dict[extension][metric]()
-            return self.scaling*reputation_dict[extension][metric]('w')
+            reputation=reputation_dict[extension][metric]('h')
+            return self.scaling*reputation if reputation is not None else None
         except KeyError:
+            #TODO remove this handling
             exit(1)
 
 
@@ -1010,8 +1020,113 @@ class SaboteurWealthThresholdBehavior(WealthThresholdBehavior):
         return t
 
 
+class ReputationHistoryBehavior(TemplateBehaviour):
+    def __init__(self,combine_strategy="WeightedAverageAgeStrategy",
+                     verification_method="discrete",threshold_method='positive'):
+        super().__init__(combine_strategy=combine_strategy)
+        self.required_information=RequiredInformation.GLOBAL
+        self.information_ordering_metric="age"
+        self.verification_method=verification_method
+        self.threshold_method=threshold_method
+
+
+    def test_data_validity(self, location: Location, data,_,__):
+        return data["age"] < self.navigation_table.get_age_for_location(location)
+
+
+    def test_data_quality(self, location: Location, _, payment_database:PaymentDB, seller_id):
+        if not self.navigation_table.is_information_valid_for_location(location)\
+                or self.verify_reputation(payment_database, seller_id):
+            return True
+        return False
+
+
+    def stop_buying_process(self):
+        return False
+
+
+    def verify_reputation(self,payment_database:PaymentDB,seller_id):
+        #[ ]
+        valid_history=[h for h in payment_database.get_history(seller_id) 
+                        if h is not None]
+        if len(valid_history)>0:
+            reputation=0
+            for i,h in enumerate(valid_history):
+                if self.verification_method=="discrete":
+                    increment=np.sign(h)
+                elif self.verification_method=="difference":
+                    increment=h
+                elif self.verification_method=="aged":
+                    increment=h*(i+1)
+                elif self.verification_method=="derivative":
+                    increment=h/(len(valid_history)-i)
+                elif self.verification_method=="derivative2":
+                    increment=h/(len(valid_history)-i)**2
+                reputation+=increment
+
+            return reputation>=self.get_threshold_value(payment_database)
+        return True
+        # reputation=0
+        # previous_h=None
+        # if valid_history==[]:
+        #     result=True
+        # #TODO make this in the loop, by using len(valid_history)-i and return
+        # if len(valid_history)>1 and self.verification_method=="last":
+        #     result=valid_history[-1] >= 0
+        # elif len(valid_history)>2:
+        #     if self.verification_method=="last2":
+        #         result=valid_history[-1] >= valid_history[-2]
+        #     else:
+        #         for i,h in enumerate(valid_history):
+        #             if previous_h is None:
+        #                 previous_h=h
+        #             else:
+        #                 if self.verification_method=="discrete":
+        #                     increment=np.sign(h-previous_h)
+        #                 elif self.verification_method=="difference":
+        #                     increment=h-previous_h
+        #                 elif self.verification_method=="normalized":
+        #                     increment=(h-previous_h)/(np.abs(previous_h) if previous_h!=0 and previous_h is not None else 1)
+        #                 elif self.verification_method=="aged":
+        #                     increment=(h-previous_h)*(i+1)
+        #                 elif self.verification_method=="derivative":
+        #                     increment=(h-previous_h)/(len(valid_history)-i)
+        #                 elif self.verification_method=="derivative2":
+        #                     increment=(h-previous_h)/(len(valid_history)-i)**2
+                        
+        #                 reputation+=increment
+        #                 previous_h=h
+        #         result=reputation>=self.get_threshold_value(payment_database)
+        # else:
+        #     result=True
+        # return result
+
+
+    def get_threshold_value(self,payment_database:PaymentDB):
+        if self.threshold_method=='positive':
+            return 0
+        elif self.threshold_method=='mean':
+            return payment_database.get_mean_reputation('h',self.verification_method)
+
+
+class SaboteurReputationHistoryBehavior(ReputationHistoryBehavior):
+    def __init__(self,lie_angle=90,combine_strategy="WeightedAverageAgeStrategy",
+                    verification_method="discrete",threshold_method='positive'):
+        super().__init__(verification_method=verification_method,
+                        threshold_method=threshold_method,
+                        combine_strategy=combine_strategy)
+        self.color = "red"
+        self.lie_angle = lie_angle
+
+
+    def sell_info(self, location):
+        t = copy.deepcopy(self.navigation_table.get_information_entry(location))
+        t.rotate(self.lie_angle)
+        return t
+
 class NewVariableScepticalBehavior(NewScepticalBehavior):
-    def __init__(self,scepticism_threshold=.25,comparison_method="allavg",scaling=.3,weight_method="ratio",combine_strategy="WeightedAverageAgeStrategy"):
+    def __init__(self,scepticism_threshold=.25,comparison_method="allavg",
+                    scaling=.3,weight_method="ratio",combine_strategy="WeightedAverageAgeStrategy"):
         super().__init__(scepticism_threshold=scepticism_threshold,
                         combine_strategy=combine_strategy)
         self.required_information=RequiredInformation.GLOBAL
@@ -1023,7 +1138,7 @@ class NewVariableScepticalBehavior(NewScepticalBehavior):
     def get_scepticism_threshold(self,payment_database:PaymentDB,seller_id):
         # reputation_score=payment_database.get_reward(seller_id)
         #[ ]
-        seller_reputation=payment_database.get_reputation(seller_id,"w")
+        seller_reputation=payment_database.get_reputation(seller_id,"h")
         #TODO could substitute with "-"
         # extension, metric=re.split("_",self.comparison_method)
         extension, metric=self.comparison_method[:-3],self.comparison_method[-3:]
@@ -1042,7 +1157,7 @@ class NewVariableScepticalBehavior(NewScepticalBehavior):
         try:
             # return self.weight_scepticism(reputation_score,reputation_dict[extension][metric]())
             #[ ]
-            return self.weight_scepticism(seller_reputation,reputation_dict[extension][metric]('w'))
+            return self.weight_scepticism(seller_reputation,reputation_dict[extension][metric]('h'))
         except KeyError:
             return self.scepticism_threshold
 
@@ -1066,7 +1181,8 @@ class NewVariableScepticalBehavior(NewScepticalBehavior):
 
 
 class NewSaboteurVariableScepticalBehavior(NewVariableScepticalBehavior):
-    def __init__(self,scepticism_threshold=.25,comparison_method="allavg",scaling=.3,weight_method="ratio",lie_angle=90,combine_strategy="WeightedAverageAgeStrategy"):
+    def __init__(self,scepticism_threshold=.25,comparison_method="allavg",
+                    scaling=.3,weight_method="ratio",lie_angle=90,combine_strategy="WeightedAverageAgeStrategy"):
         super().__init__(scepticism_threshold=scepticism_threshold,
                         comparison_method=comparison_method,
                         scaling=scaling,
