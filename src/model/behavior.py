@@ -1064,7 +1064,7 @@ class ReputationHistoryBehavior(TemplateBehaviour):
                         previous_h=h
                     else:
                         if self.verification_method=="discrete":
-                            increment=np.sign(h-previous_h)*1
+                            increment=np.sign(h-previous_h)
                         elif self.verification_method=="difference":
                             increment=h-previous_h
                         elif self.verification_method=="normalized":
