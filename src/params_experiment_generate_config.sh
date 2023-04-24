@@ -83,17 +83,13 @@ tCOMPARISON_METHOD_LIST=("allavg" "allmax")
 tSCALING_LIST=(0.8 0.5 0.3)
 #####################
 hVERIFICATION_METHOD_LIST=(
-							"last" 
-							"last2" 
 							"discrete" 
 							"difference" 
-							"normalized"
 							"aged" 
 							"derivative" 
 							"derivative2"
 						)
 hTHRESHOLD_METHOD_LIST=(
-						"null" 
 						"positive" 
 						"mean"
 						)
