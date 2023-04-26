@@ -117,7 +117,6 @@ BEST_PARAM_COMBINATIONS_DICT={
                             "Nv": [
                                 ['P', ['allavg', '03', '025', 'exponential']],
                                 ['P', ['allavg', '03', '025', 'ratio']],
-                                ['NP', ['allmax', '03', '025', 'ratio']],
                                 ],
                             "t": [
                                 ['P', ['allavg', '03']],
@@ -960,13 +959,12 @@ class WealthThresholdBehavior(TemplateBehaviour):
     def verify_reputation(self,payment_database:PaymentDB,seller_id):
         #[ ]
         seller_reputation=payment_database.get_reputation(seller_id,"h")
-        # seller_reward=payment_database.get_reward(seller_id)
         threshld_reputation=self.get_threshold_value(payment_database)
         return seller_reputation >= threshld_reputation if threshld_reputation is not None \
                                     and seller_reputation is not None  else False
 
 
-
+    #[ ]
     def get_threshold_value(self,payment_database:PaymentDB):
         """
         allmax: selects only above a certain percentage of maximum wealth (wealthiest bots), of all robots
@@ -982,28 +980,14 @@ class WealthThresholdBehavior(TemplateBehaviour):
         # extension, metric=re.split("_",self.comparison_method)
         extension, metric=self.comparison_method[:-3],self.comparison_method[-3:]
         reputation_dict = {"all":{
-                                # "max":payment_database.get_highest_reward,
-                                #  "avg":payment_database.get_mean_reward,
-                                #  "min":payment_database.get_lowest_reward,
-                                #[ ]
                                 "max":payment_database.get_highest_reputation,
                                  "avg":payment_database.get_mean_reputation,
                                  "min":payment_database.get_lowest_reputation,
                                  },
-                            # "neigh":{
-                                    # "max":session.get_max_neighboor_reward,
-                                    # "avg":session.get_average_neighbor_reward,
-                                    # "min":session.get_min_neighboor_reward,
-                                # }
+                            # "neigh":{"COMPARISON_x": session.get_X_COMPARE,}
                             }
-        try:
-            #[ ]
-            # return self.scaling*reputation_dict[extension][metric]()
-            reputation=reputation_dict[extension][metric]('h')
-            return self.scaling*reputation if reputation is not None else None
-        except KeyError:
-            #TODO remove this handling
-            exit(1)
+        reputation=reputation_dict[extension][metric]('h')
+        return self.scaling*reputation if reputation is not None else None
 
 
 class SaboteurWealthThresholdBehavior(WealthThresholdBehavior):
@@ -1019,7 +1003,7 @@ class SaboteurWealthThresholdBehavior(WealthThresholdBehavior):
         t.rotate(self.lie_angle)
         return t
 
-
+#[ ]
 class ReputationHistoryBehavior(TemplateBehaviour):
     def __init__(self,combine_strategy="WeightedAverageAgeStrategy",
                      verification_method="discrete",threshold_method='positive'):
@@ -1045,8 +1029,8 @@ class ReputationHistoryBehavior(TemplateBehaviour):
         return False
 
 
-    def verify_reputation(self,payment_database:PaymentDB,seller_id):
         #[ ]
+    def verify_reputation(self,payment_database:PaymentDB,seller_id):
         valid_history=[h for h in payment_database.get_history(seller_id) 
                         if h is not None]
         if len(valid_history)>0:
@@ -1066,40 +1050,6 @@ class ReputationHistoryBehavior(TemplateBehaviour):
 
             return reputation>=self.get_threshold_value(payment_database)
         return True
-        # reputation=0
-        # previous_h=None
-        # if valid_history==[]:
-        #     result=True
-        # #TODO make this in the loop, by using len(valid_history)-i and return
-        # if len(valid_history)>1 and self.verification_method=="last":
-        #     result=valid_history[-1] >= 0
-        # elif len(valid_history)>2:
-        #     if self.verification_method=="last2":
-        #         result=valid_history[-1] >= valid_history[-2]
-        #     else:
-        #         for i,h in enumerate(valid_history):
-        #             if previous_h is None:
-        #                 previous_h=h
-        #             else:
-        #                 if self.verification_method=="discrete":
-        #                     increment=np.sign(h-previous_h)
-        #                 elif self.verification_method=="difference":
-        #                     increment=h-previous_h
-        #                 elif self.verification_method=="normalized":
-        #                     increment=(h-previous_h)/(np.abs(previous_h) if previous_h!=0 and previous_h is not None else 1)
-        #                 elif self.verification_method=="aged":
-        #                     increment=(h-previous_h)*(i+1)
-        #                 elif self.verification_method=="derivative":
-        #                     increment=(h-previous_h)/(len(valid_history)-i)
-        #                 elif self.verification_method=="derivative2":
-        #                     increment=(h-previous_h)/(len(valid_history)-i)**2
-                        
-        #                 reputation+=increment
-        #                 previous_h=h
-        #         result=reputation>=self.get_threshold_value(payment_database)
-        # else:
-        #     result=True
-        # return result
 
 
     def get_threshold_value(self,payment_database:PaymentDB):
@@ -1124,6 +1074,7 @@ class SaboteurReputationHistoryBehavior(ReputationHistoryBehavior):
         t.rotate(self.lie_angle)
         return t
 
+
 class NewVariableScepticalBehavior(NewScepticalBehavior):
     def __init__(self,scepticism_threshold=.25,comparison_method="allavg",
                     scaling=.3,weight_method="ratio",combine_strategy="WeightedAverageAgeStrategy"):
@@ -1135,31 +1086,21 @@ class NewVariableScepticalBehavior(NewScepticalBehavior):
         self.comparison_method=comparison_method
         self.weight_method=weight_method
 
+    #[ ]
     def get_scepticism_threshold(self,payment_database:PaymentDB,seller_id):
         # reputation_score=payment_database.get_reward(seller_id)
-        #[ ]
         seller_reputation=payment_database.get_reputation(seller_id,"h")
-        #TODO could substitute with "-"
-        # extension, metric=re.split("_",self.comparison_method)
+        # extension, metric=re.split("_",self.comparison_method) #TODO could substitute with "-"
         extension, metric=self.comparison_method[:-3],self.comparison_method[-3:]
 
-
         reputation_dict = {"all":{
-                            # "max":payment_database.get_highest_reward,
-                            # "avg":payment_database.get_mean_reward,
-                            # "min":payment_database.get_lowest_reward,
-                            #[ ]
-                            "max":payment_database.get_highest_reputation,
-                            "avg":payment_database.get_mean_reputation,
-                            "min":payment_database.get_lowest_reputation,
+                                "max":payment_database.get_highest_reputation,
+                                "avg":payment_database.get_mean_reputation,
+                                "min":payment_database.get_lowest_reputation,
                             },
                         }
-        try:
-            # return self.weight_scepticism(reputation_score,reputation_dict[extension][metric]())
-            #[ ]
-            return self.weight_scepticism(seller_reputation,reputation_dict[extension][metric]('h'))
-        except KeyError:
-            return self.scepticism_threshold
+        comparison_reputation=reputation_dict[extension][metric]('h')
+        return self.weight_scepticism(seller_reputation,comparison_reputation)
 
 
     def weight_scepticism(self,reputation_score,metric_score):

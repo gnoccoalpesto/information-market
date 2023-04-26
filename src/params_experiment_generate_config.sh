@@ -56,32 +56,56 @@ BEHAVIOR_LIST=(
 				# "w" 
 				# "n" "s"
 				# "r" 
-				# "t" 
-				# "Nv"
-				"h"
+				"t" 
+				"Nv"
+				# "h"
 			)
+			
 # naive: n ; new naive: Nn ; wealth weighted: w
 ################################################ -params:{}
+
 # sceptical: s ; new sceptical: Ns
 ################################## -params:{threshold} ; {scepticism_threshold}
 sSCEPTICISM_THRESHOLD_LIST=(0.25)
+
 # ranking: r
 ############ -params:{ranking_threshold}
 rRANKING_THRESHOLD_LIST=(
 						0.3 
 						0.5
 						)
+
 # variable scepticism: v ; new variable scepticism: Nv
 ###################################################### -params:{comparison_method,scaling,scepticism_threshold,weight_method}
-vCOMPARISON_METHOD_LIST=("allavg" "allmax")
-vSCALING_LIST=(0.8 0.5 0.3)
+vCOMPARISON_METHOD_LIST=(
+							# "allavg" 
+							"allmax"
+							)
+vSCALING_LIST=(
+				0.8 
+				0.5 
+				0.3
+				)
 vSCEPTICISM_THRESHOLD_LIST=(0.25)
-vWEIGHT_METHOD_LIST=("ratio" "exponential")
+vWEIGHT_METHOD_LIST=(
+						"ratio" 
+						"exponential"
+						)
+
 # wealth threshold: t
 ##################### -params:{comparison_method,scaling}
-tCOMPARISON_METHOD_LIST=("allavg" "allmax")
-tSCALING_LIST=(0.8 0.5 0.3)
-#####################
+tCOMPARISON_METHOD_LIST=(
+							# "allavg" 
+							"allmax"
+							)
+tSCALING_LIST=(
+				0.8 
+				0.5 
+				0.3
+				)
+
+# reputation history: h
+######################## -params:{verification_method,threshold_method}
 hVERIFICATION_METHOD_LIST=(
 							"discrete" 
 							"difference" 
