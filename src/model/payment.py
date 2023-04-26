@@ -125,71 +125,31 @@ class PaymentDB:
         return self.database[robot_id]["reward"]
 
 
-    def get_reputation(self, robot_id,method="reward",verification_method="last"):
+    def get_reputation(self, robot_id,method="reward",verification_method="difference"):
         #TODO unify below
         if method=="reward" or method=="r" or method=="R" or method=="w":
             return self.get_reward(robot_id)
         #[ ]
         elif method=="history" or method=="h" or method=="H":
-            valid_history=[h for h in self.database[robot_id]["history"] if h]
+            valid_history=[h for h in self.database[robot_id]["history"]
+                            if h is not None]
+            if len(valid_history)>0:
+                reputation=0
+                for i,h in enumerate(valid_history):
+                    if verification_method=="discrete":
+                        increment=np.sign(h)
+                    elif verification_method=="difference":
+                        increment=h
+                    elif verification_method=="aged":
+                        increment=h*(i+1)
+                    elif verification_method=="derivative":
+                        increment=h/(len(valid_history)-i)
+                    elif verification_method=="derivative2":
+                        increment=h/(len(valid_history)-i)**2
+                    reputation+=increment
 
-            # try:
-            if len(valid_history)>1 and verification_method=="last":
-            # return valid_history[-1] >= 0
-                result=valid_history[-1]
-            elif len(valid_history)>2:
-                if verification_method=="last2":
-                    # return valid_history[-1] >= valid_history[-2]
-                    result=max(valid_history[-1],valid_history[-2])
-                else:
-                    reputation=0
-                    previous_h=None
-                    for i,h in enumerate(valid_history):
-                        if previous_h is None:
-                            previous_h=h
-                        else:
-                            if verification_method=="discrete":
-                                increment=np.sign(h-previous_h)
-                            elif verification_method=="difference":
-                                increment=(h-previous_h)
-                            elif verification_method=="normalized":
-                                increment=(h-previous_h)/(np.abs(previous_h) if previous_h!=0 and previous_h is not None else 1)
-                            elif verification_method=="aged":
-                                increment=(h-previous_h)*(i+1)
-                            elif verification_method=="derivative":
-                                increment=(h-previous_h)/(len(valid_history)-i)
-                            elif verification_method=="derivative2":
-                                increment=(h-previous_h)/(len(valid_history)-i)**2
-
-                            reputation+=increment
-                            previous_h=h
-                    result=reputation
-            else:
-                result=0
-            return result
-            # except UnboundLocalError:
-            #     return 0
-
-
-            # for i,h in enumerate(valid_history):
-            #     if previous_h is None:
-            #         previous_h=h
-            #     else:
-            #         if verification_method=="discrete":
-            #             increment=np.sign(h-previous_h)*1
-            #         elif verification_method=="difference":
-            #             increment=np.sign(h-previous_h)*(h-previous_h)
-            #         elif verification_method=="aged":
-            #             increment=np.sign(h-previous_h)*(h-previous_h)*(i+1)
-            #         elif verification_method=="derivative":
-            #             increment=np.sign(h-previous_h)*(h-previous_h)/(len(valid_history)-i)
-            #         elif verification_method=="derivative2":
-            #             increment=np.sign(h-previous_h)*(h-previous_h)/(len(valid_history)-i)**2
-
-            #         reputation+=increment
-            #         previous_h=h
-            # print("reputation",reputation)
-            # return reputation
+                return reputation
+            return None
 
 
     def get_highest_reward(self):
@@ -198,23 +158,28 @@ class PaymentDB:
 
 
     def get_lowest_reward(self):
+        #TODO remove
         return np.min([self.database[robot_id]["reward"] for robot_id in self.database])
 
     
     def get_mean_reward(self):
+        #TODO remove
         return np.average([self.database[robot_id]["reward"] for robot_id in self.database])
 
 
-    def get_highest_reputation(self,method="reward"):
+    def get_highest_reputation(self,method="reward",verification_method="difference"):
+        #TODO remove: better to process the data robotside
         #TODO unify
         if method=="reward" or method=="r" or method=="R" or method=="w":
             return self.get_highest_reward()
         #[ ]
         elif method=="history" or method=="h" or method=="H":
-            return np.max([self.get_reputation(robot_id,method="history") for robot_id in self.database])
+            method="history"
+            return np.max([self.get_reputation(robot_id,method,verification_method) for robot_id in self.database])
 
 
     def get_lowest_reputation(self,method="reward"):
+        #TODO remove
         if method=="reward" or method=="r" or method=="R" or method=="w":
             return self.get_lowest_reward()
         #[ ]
@@ -222,13 +187,16 @@ class PaymentDB:
             return np.min([self.get_reputation(robot_id,method="history") for robot_id in self.database])
     
 
-    def get_mean_reputation(self,method="reward",verification_method="last"):
+    def get_mean_reputation(self,method="reward",verification_method="difference"):
+        #TODO remove
         if method=="reward" or method=="r" or method=="R" or method=="w":
             return self.get_mean_reward()
         #[ ]
         elif method=="history" or method=="h" or method=="H":
             method="history"
-            return np.mean([self.get_reputation(robot_id,method,verification_method) for robot_id in self.database])
+            reputations=[self.get_reputation(robot_id,method,verification_method) for robot_id in self.database ]
+            valid_reputations=[r for r in reputations if r is not None]
+            return np.mean([r for r in valid_reputations]) if len(valid_reputations)>0 else None
 
 
     def get_sorted_database(self,method="reward"):
@@ -242,17 +210,21 @@ class PaymentDB:
         
     
     def get_reward_ranking(self,robot_id):
+        #TODO remove?
         sorted_database = self.get_sorted_database()
         return list(sorted_database.keys()).index(robot_id)
 
     
     def get_reputation_ranking(self,robot_id,method="reward"):
+        #TODO remove?
         if method=="reward" or method=="r" or method=="R" or method=="w":
             return self.get_reward_ranking(robot_id)
         #[ ]
         elif method=="history" or method=="h" or method=="H":
-            reputations=[self.get_reputation(robot_id,method="history") for robot_id in self.database]
-            return list
+                reputations=[self.get_reputation(robot_id,method="history") for robot_id in self.database]
+                valid_reputations=[r for r in reputations if r is not None]
+                return valid_reputations[np.argmax(valid_reputations)] if len(valid_reputations)>0 else None
+                    
 
 
 
