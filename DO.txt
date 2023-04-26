@@ -1,9 +1,40 @@
+not buying if low reputation
+-instead of checking after validation, check before and refuse the sell
+--this could make the byz not be punished cause it's not losing money
+
+
+fix reward below zero exception:
+-reward should always be >=0
+-this problem only with honests and penalisation
+--possibly because they lose money with stacking, but shouldnt be allowed to sell
+    they cannot cover the cost
+
+
+not compare with past performance but only with stacking
+-do not use last_h>=<h, but only use the current value
+--trying to enforce continuos improvement is not working
+
+
+
+?TAXATION IF BYZ DONT SELL, NO STACKING, THEN NO PUNISHING
+--volker's idea on how penalize the byz, if they're not by stacking
+
+
+REMOVE WORST PERFORMING Nv
+--the first one of the best ones (no pen)
+
+
+plot both reward for new behav
+- for the new behav, and to check if everything is ok with nofundexception
+
+only null and mean, no positive history
+
+
+
+
 LUDERIC DRIVE
 https://drive.google.com/drive/folders/16iAl7eeitXAf_gAv4wz5sreHP5u6hpPb
-MYDRIVE
-https://drive.google.com/drive/folders/1PlWc36lnJWACqnCIYEpYKVkDDaUndFvD
-
-
+    
 ================================================================
 ================================================================
 ___  ___        _    ___ 

@@ -125,78 +125,92 @@ class PaymentDB:
         return self.database[robot_id]["reward"]
 
 
+    #[ ] 
+    #TODO PAYMENT SHOULD ONLY RETURN THE FULL LIST,
+    #     COMPUTATION, EVEN MAX,MEAN,... SHOULD BE DONE BY THE CALLER
     def get_reputation(self, robot_id,method="reward",verification_method="difference"):
-        #TODO unify below
         if method=="reward" or method=="r" or method=="R" or method=="w":
-            return self.get_reward(robot_id)
-        #[ ]
-        elif method=="history" or method=="h" or method=="H":
-            valid_history=[h for h in self.database[robot_id]["history"]
-                            if h is not None]
-            if len(valid_history)>0:
-                reputation=0
-                for i,h in enumerate(valid_history):
-                    if verification_method=="discrete":
-                        increment=np.sign(h)
-                    elif verification_method=="difference":
-                        increment=h
-                    elif verification_method=="aged":
-                        increment=h*(i+1)
-                    elif verification_method=="derivative":
-                        increment=h/(len(valid_history)-i)
-                    elif verification_method=="derivative2":
-                        increment=h/(len(valid_history)-i)**2
-                    reputation+=increment
+            if isinstance(robot_id,int):
+                return self.get_reward(robot_id)
+            elif robot_id=="all":
+                return self.get_total_reward()
+            elif robot_id=="mean":
+                return self.get_mean_reward()
+            elif robot_id=="max":
+                return self.get_highest_reward()
+            elif robot_id=="min":
+                return self.get_lowest_reward()
+            else:
+                raise ValueError("Robot id not recognized")
 
-                return reputation
-            return None
-
-
-    def get_highest_reward(self):
-        #TODO remove
-        return np.max([self.database[robot_id]["reward"] for robot_id in self.database])
-
-
-    def get_lowest_reward(self):
-        #TODO remove
-        return np.min([self.database[robot_id]["reward"] for robot_id in self.database])
-
-    
-    def get_mean_reward(self):
-        #TODO remove
-        return np.average([self.database[robot_id]["reward"] for robot_id in self.database])
-
-
-    def get_highest_reputation(self,method="reward",verification_method="difference"):
-        #TODO remove: better to process the data robotside
-        #TODO unify
-        if method=="reward" or method=="r" or method=="R" or method=="w":
-            return self.get_highest_reward()
-        #[ ]
         elif method=="history" or method=="h" or method=="H":
             method="history"
-            return np.max([self.get_reputation(robot_id,method,verification_method) for robot_id in self.database])
+            if isinstance(robot_id,int):
+                valid_history=[h for h in self.database[robot_id]["history"]
+                                if h is not None]
+                if len(valid_history)>0:
+                    reputation=0
+                    for i,h in enumerate(valid_history):
+                        if verification_method=="discrete":
+                            increment=np.sign(h)
+                        elif verification_method=="difference":
+                            increment=h
+                        elif verification_method=="aged":
+                            increment=h*(i+1)
+                        elif verification_method=="derivative":
+                            increment=h/(len(valid_history)-i)
+                        elif verification_method=="derivative2":
+                            increment=h/(len(valid_history)-i)**2
+                        reputation+=increment
 
-
-    def get_lowest_reputation(self,method="reward"):
-        #TODO remove
-        if method=="reward" or method=="r" or method=="R" or method=="w":
-            return self.get_lowest_reward()
-        #[ ]
-        elif method=="history" or method=="h" or method=="H":
-            return np.min([self.get_reputation(robot_id,method="history") for robot_id in self.database])
-    
+                    return reputation
+                return None
+            elif robot_id=="all":
+                return None
+            elif robot_id=="mean":
+                return self.get_mean_reputation(method,verification_method)
+            elif robot_id=="max":
+                return self.get_highest_reputation(method,verification_method)
+            elif robot_id=="min":
+                return self.get_lowest_reputation(method,verification_method)
+            else:
+                raise ValueError("Robot id not recognized")
 
     def get_mean_reputation(self,method="reward",verification_method="difference"):
-        #TODO remove
         if method=="reward" or method=="r" or method=="R" or method=="w":
             return self.get_mean_reward()
-        #[ ]
         elif method=="history" or method=="h" or method=="H":
             method="history"
             reputations=[self.get_reputation(robot_id,method,verification_method) for robot_id in self.database ]
             valid_reputations=[r for r in reputations if r is not None]
             return np.mean([r for r in valid_reputations]) if len(valid_reputations)>0 else None
+
+    def get_highest_reputation(self,method="reward",verification_method="difference"):
+        if method=="reward" or method=="r" or method=="R" or method=="w":
+            return self.get_highest_reward()
+        elif method=="history" or method=="h" or method=="H":
+            method="history"
+            reputations=[self.get_reputation(robot_id,method,verification_method) for robot_id in self.database ]
+            valid_reputations=[r for r in reputations if r is not None]
+            return np.max([r for r in valid_reputations]) if len(valid_reputations)>0 else None
+
+    def get_lowest_reputation(self,method="reward",verification_method="difference"):
+        if method=="reward" or method=="r" or method=="R" or method=="w":
+            return self.get_lowest_reward()
+        elif method=="history" or method=="h" or method=="H":
+            method="history"
+            reputations=[self.get_reputation(robot_id,method,verification_method) for robot_id in self.database ]
+            valid_reputations=[r for r in reputations if r is not None]
+            return np.min([r for r in valid_reputations]) if len(valid_reputations)>0 else None
+
+    def get_highest_reward(self):
+        return np.max([self.database[robot_id]["reward"] for robot_id in self.database])
+
+    def get_lowest_reward(self):
+        return np.min([self.database[robot_id]["reward"] for robot_id in self.database])
+    
+    def get_mean_reward(self):
+        return np.average([self.database[robot_id]["reward"] for robot_id in self.database])
 
 
     def get_sorted_database(self,method="reward"):
