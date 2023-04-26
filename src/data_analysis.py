@@ -29,6 +29,7 @@ from info_market import filename_from_params, params_from_filename,is_bad_param_
 #BRIGHT
 #['#023eff', '#ff7c00', '#1ac938', '#e8000b', '#8b2be2', '#9f4800', '#f14cc1', '#a3a3a3', '#ffc400', '#00d7ff']
 
+
 BEHAVIOUR_PALETTE={'n':"#e377c2",#7, pink
                     'Naive':"#e377c2",
                     'Saboteur Naive':"#d62728",#4, red
@@ -53,11 +54,11 @@ BEHAVIOUR_PALETTE={'n':"#e377c2",#7, pink
                     'Reputation Threshold':"#ff7f0e",
                     'Saboteur Rep. Threshold':"#d62728",
                     'Saboteur Reputation Threshold':"#d62728",
-                    'w':"#9467bd",#5, violet
-                    'Rep. Weighted':"#9467bd",
-                    'Reputation Weighted':"#9467bd",
-                    'Saboteur Rep. Weighted':"#d62728",
-                    'Saboteur Reputation Weighted':"#d62728",
+                    'h':"#9467bd",#5, purple
+                    'Rep. History':"#9467bd",
+                    'Reputation History':"#9467bd",
+                    'Saboteur Rep. History':"#d62728",
+                    'Saboteur Reputation History':"#d62728",
                     ###############QUALITY INDEXES############
                     #1
                     'Q1n':"#da8bc3",#7, pink deep
@@ -73,6 +74,9 @@ BEHAVIOUR_PALETTE={'n':"#e377c2",#7, pink
                     'Q1t':"#dd8452",#2, orange deep
                     'Q1Rep. Threshold':"#dd8452",
                     'Q1Reputation Threshold':"#dd8452",
+                    'Q1h':"#8172b3",#5, purple deep
+                    'Q1Rep. History':"#8172b3",
+                    'Q1Reputation History':"#8172b3",
                     #2
                     'Q2n':"#a23582",#7, pink dark
                     'Q2Naive':"#a23582",
@@ -87,6 +91,9 @@ BEHAVIOUR_PALETTE={'n':"#e377c2",#7, pink
                     'Q2t':"#b1400d",#2, orange dark
                     'Q2Rep. Threshold':"#b1400d",
                     'Q2Reputation Threshold':"#b1400d",
+                    'Q2h':"#591e71",#5, purple dark
+                    'Q2Rep. History':"#591e71",
+                    'Q2Reputation History':"#591e71",
                     #3
                     'Q3n':"#f14cc1",#7, pink bright
                     'Q3Naive':"#f14cc1",
@@ -101,6 +108,9 @@ BEHAVIOUR_PALETTE={'n':"#e377c2",#7, pink
                     'Q3t':"#ff7c00",#2, orange bright
                     'Q3Rep. Threshold':"#ff7c00",
                     'Q3Reputation Threshold':"#ff7c00",
+                    'Q3h':"#8b2be2",#5, purple bright
+                    'Q3Rep. History':"#8b2be2",
+                    'Q3Reputation History':"#8b2be2",
                     #4
                     'Q4n':"#fab0e4",#7, pink pastel
                     'Q4Naive':"#fab0e4",
@@ -115,6 +125,9 @@ BEHAVIOUR_PALETTE={'n':"#e377c2",#7, pink
                     'Q4t':"#ffb482",#2, orange pastel
                     'Q4Rep. Threshold':"#ffb482",
                     'Q4Reputation Threshold':"#ffb482",
+                    'Q4h':"#d0bbff",#5, purple pastel
+                    'Q4Rep. History':"#d0bbff",
+                    'Q4Reputation History':"#d0bbff",
                     #5
                     'Q5n':"#fbafe4",#7, pink colorblind
                     'Q5Naive':"#fbafe4",
@@ -129,6 +142,9 @@ BEHAVIOUR_PALETTE={'n':"#e377c2",#7, pink
                     'Q5t':"#de8f05",#2, orange colorblind
                     'Q5Rep. Threshold':"#de8f05",
                     'Q5Reputation Threshold':"#de8f05",
+                    'Q5h':"#cc78bc",#5, purple colorblind
+                    'Q5Rep. History':"#cc78bc",
+                    'Q5Reputation History':"#cc78bc",
                     }
 BEHAV_PARAMS_COMBINATIONS={"n":[[]],
                                 "s":[[0.25]],
@@ -151,8 +167,34 @@ BEHAV_PARAMS_COMBINATIONS={"n":[[]],
                                     ["allmax",0.3],
                                     ["allmax",0.5],
                                     ["allmax",0.8]],
-                                "w":[[]]
+                                "w":[[]],
+                                "h":[
+                                    ["discrete","mean"],
+                                    ["difference","mean"],
+                                    ["aged","mean"],
+                                    ["derivative","mean"],
+                                    ["derivative2","mean"],
+                                    ["discrete","positive"],
+                                    ["difference","positive"],
+                                    ["aged","positive"],
+                                    ["derivative","positive"],
+                                    ["derivative2","positive"],
+                                    ],
                                 }
+
+# BEHAV_PARAMS_COMBINATIONS={     "h":[
+#                                     ["discrete","mean"],
+#                                     ["difference","mean"],
+#                                     ["aged","mean"],
+#                                     ["derivative","mean"],
+#                                     ["derivative2","mean"],
+#                                     ["discrete","positive"],
+#                                     ["difference","positive"],
+#                                     ["aged","positive"],
+#                                     ["derivative","positive"],
+#                                     ["derivative2","positive"],
+#                                     ],
+#                                 }
 
 
 ############################################################################################################
@@ -194,6 +236,7 @@ def dataframe_from_csv(filename,
                         data_folder_and_subfolder="",
                         metric="",
                         experiment_part="whole",
+                        noise_group="all",
                         post_processing=None,
                     ):
     '''
@@ -294,6 +337,25 @@ def dataframe_from_csv(filename,
             df_list.append(new_row)
         new_col_labels=col_labels[:-1]+[f"{metric}_{robot_id}" for robot_id in range(len(row_list))]
         df=pd.DataFrame(df_list,columns=new_col_labels)
+
+    if not noise_group=="all" or noise_group=="":
+        n_r=len(df.columns)
+        n_h, _, _, _, _, _, noise_params=params_from_filename(filename,compact_format=True)
+        n_h=int(n_h)
+        sab_performance=noise_params[2]
+        n_d=n_r-n_h
+        if sab_performance=="avg":
+            if "good" in noise_group:
+                df=df.iloc[:,:n_h//2+(1 if n_d==0 else 0)]
+            elif "bad" in noise_group:
+                df=df.iloc[:,n_h//2+(1 if n_d==0 else 0):n_h]
+        elif sab_performance=="perf":
+            if "good" in noise_group:
+                df=df.iloc[:,:n_r//2-n_d+1]
+            elif "bad" in noise_group:
+                df=df.iloc[:,n_r//2-n_d+1:n_h]
+        if "dish" in noise_group or 'sab' in noise_group:
+            df=df.iloc[:,n_h:]
 
     if post_processing is not None:
         #NOTE RETURN TYPE: pandas.Series
@@ -455,6 +517,7 @@ def performance_with_quality(
                         filenames,
                         experiment_part="whole",
                         performance_index="items",
+                        pair_plot=True,
                         quality_index="transactionsS",#"reward"
                         multi_quality=True,
                         title="",
@@ -473,6 +536,9 @@ def performance_with_quality(
     :param filenames: list of filenames to be plotted. Required format: [filename1, filename2, ...]
 
     :param performance_index: the performance index to be plotted. As for now, only "items" is supported.
+
+    : pair_plot: if True, second performance index will be plotted in a paired subplot. Default: False.
+        As for now, it primary performance metric are items, rewards will be paired, and viceversa.
 
     :param quality_index: the quality index to be plotted. Automatically fetced based on filenames.
             Required format: [quality_measure]-[quality_function]
@@ -493,9 +559,12 @@ def performance_with_quality(
     BASE_BOX_WIDTH=16
     BASE_BOX_HEIGHT=7
     base_title="Performance of Reputation Systems"
-    n_subplots=1
-    fig, axs = plt.subplots(1, n_subplots, sharey=True)#squeeze=False)#solves non subscriptable error
-    #BUG but causes error in case of saboteurs plot
+    if not pair_plot:
+        n_subplots=1
+    else:
+        n_subplots=2
+    fig, axs = plt.subplots(1, n_subplots, squeeze=False if n_subplots==1 else True)
+    if not pair_plot:axs=axs[0]
 
     if not quality_index=="":
         try:
@@ -513,213 +582,249 @@ def performance_with_quality(
         good_quality_list=[]
         bad_quality_list=[]
         dishonest_quality_list=[]
-        secondary_performance_list=[]
 
     if not x_labels:
         x_labels=[]
         auto_x_labels=True
     else:auto_x_labels=False
 
-    for i,f in enumerate(filenames):
-        if not f.endswith(".csv"):f+=".csv"
-        splitted_filename=f.split('.csv')[0].split("/")
-        df=dataframe_from_csv(f,experiment_part=experiment_part)
-        n_honest, honest_behavior, _, payment, _, behaviour_params, _=params_from_filename(f,compact_format=True)
+    for j in range (n_subplots):
+        current_filenames=filenames if not pair_plot else filenames[j]
         
-        if auto_x_labels:
-            behavior_params_text=""
-            for v,p in zip(behaviour_params,BEHAVIOR_PARAMS_DICT[honest_behavior]):
-                behavior_params_text+=f"{v} {p},\n"
-            x_labels.append(f"{BEHAVIORS_NAME_DICT[honest_behavior]}\n"
-            f"{behavior_params_text}"
-            f"{'no ' if payment=='NP' else ''}penalis.")
+        if show_dishonests:
+            honest_list=[]
+            dishonest_list=[]
+        else:
+            performance_list=[]
+        quality_list=[]
+        if multi_quality:
+            good_quality_list=[]
+            bad_quality_list=[]
+            dishonest_quality_list=[]
+
+        if not x_labels:
+            x_labels=[]
+            auto_x_labels=True
+        else:auto_x_labels=False
+
+        for i,f in enumerate(current_filenames):
+            if not f.endswith(".csv"):f+=".csv"
+            splitted_filename=f.split('.csv')[0].split("/")
+            df=dataframe_from_csv(f,experiment_part=experiment_part)
+            n_honest, honest_behavior, _, payment, _, behaviour_params, noise_params=params_from_filename(f,compact_format=True)
+            n_honest=int(n_honest)
+            n_robots=len(df.columns)
+            n_dishonest=n_robots-n_honest
+            saboteur_performance=noise_params[2]
+
+            if auto_x_labels:
+                behavior_params_text=""
+                for v,p in zip(behaviour_params,BEHAVIOR_PARAMS_DICT[honest_behavior]):
+                    behavior_params_text+=f"{v} {p},\n"
+                x_labels.append(f"{BEHAVIORS_NAME_DICT[honest_behavior]}\n"
+                f"{behavior_params_text}"
+                f"{'no ' if payment=='NP' else ''}penalis.")
+
+            if show_dishonests:
+                df_honest=df.iloc[:,:int(n_honest)]
+                df_dishonest=df.iloc[:,int(n_honest):]
+                df_honest['behavior']=BEHAVIORS_NAME_DICT[honest_behavior]
+                df_dishonest['behavior']=f"Saboteur {BEHAVIORS_NAME_DICT[honest_behavior]}"
+                df_honest['plot_order']=i
+                df_dishonest['plot_order']=i
+                honest_list.append(df_honest)
+                dishonest_list.append(df_dishonest)
+            else:
+                df['behavior']=BEHAVIORS_NAME_DICT[honest_behavior]
+                df['plot_order']=i
+                performance_list.append(df)
+
+            if quality_index:
+                if "trans" in quality_index:
+                    if "X" in quality_index:
+                        numerator_quality="combined"
+                        denominator_quality="completed"
+                    else:
+                        numerator_quality="completed"
+                        denominator_quality="attempted"
+
+                    if "B" in quality_index:
+                        numerator_quality+="_buyer"
+                        denominator_quality+="_buyer"
+                    elif "S" in quality_index:
+                        numerator_quality+="_seller"
+                        denominator_quality+="_seller"
+
+                    fq_num="/".join(splitted_filename[:-2]+["transactions"]+splitted_filename[-1:])+f"_{numerator_quality}.csv"
+                    fq_den="/".join(splitted_filename[:-2]+["transactions"]+splitted_filename[-1:])+f"_{denominator_quality}.csv"
+                    df_q_num=dataframe_from_csv(fq_num,post_processing="all-"+quality_function)
+                    df_q_den=dataframe_from_csv(fq_den,post_processing="all-"+quality_function)
+                    df_quality=df_q_num/df_q_den
+
+                    if multi_quality:
+
+                        df_q_num=dataframe_from_csv(fq_num,post_processing="col-"+quality_function)
+                        df_q_den=dataframe_from_csv(fq_den,post_processing="col-"+quality_function)
+
+                        if saboteur_performance=="avg":
+                            good_slice=n_honest//2+(1 if n_dishonest==0 else 0)
+                        elif saboteur_performance=="perf":
+                            good_slice=n_robots//2-n_dishonest+1
+                        bad_slice=-n_dishonest if n_dishonest>0 else None
+
+                        df_q_good_num=df_q_num.iloc[:good_slice]
+                        df_q_good_den=df_q_den.iloc[:good_slice]
+                        df_q_bad_num=df_q_num.iloc[good_slice:bad_slice]
+                        df_q_bad_den=df_q_den.iloc[good_slice:bad_slice]
+                        df_q_good=df_q_good_num/df_q_good_den
+                        df_q_bad=df_q_bad_num/df_q_bad_den
+                        if n_dishonest>0:
+                            df_q_dishonest_num=df_q_num.iloc[n_honest:]
+                            df_q_dishonest_den=df_q_den.iloc[n_honest:]
+                            df_q_dishonest=df_q_dishonest_num/df_q_dishonest_den
+                
+                elif "reward" in quality_index:
+                    fq="/".join(splitted_filename[:-2]+["rewards"]+splitted_filename[-1:])+".csv"
+                    df_quality=dataframe_from_csv(fq,post_processing="all-"+quality_function)
+
+                    if multi_quality:
+                        df_multi_q=dataframe_from_csv(fq,post_processing="col-"+quality_function)
+                        df_q_good=df_multi_q.iloc[:int(n_honest)//2]
+                        df_q_bad=df_multi_q.iloc[int(n_honest)//2:int(n_honest)]
+                        if n_dishonest>0:
+                            df_q_dishonest=df_multi_q.iloc[int(n_honest):]
+
+                df_quality=pd.DataFrame(df_quality,columns=[quality_index])
+                df_quality['behavior']="Q2"+BEHAVIORS_NAME_DICT[honest_behavior]
+                df_quality['plot_order']=i
+                quality_list.append(df_quality)
+
+                if multi_quality:
+                    df_q_good=pd.DataFrame(df_q_good,columns=[quality_index])
+                    #NOTE if quality_list.append() is used, every quality behavior: "Qi"+B must be different
+                    df_q_good['behavior']="Q4"+BEHAVIORS_NAME_DICT[honest_behavior]
+                    df_q_good['plot_order']=i
+                    df_q_bad=pd.DataFrame(df_q_bad,columns=[quality_index])
+                    df_q_bad['behavior']="Q4"+BEHAVIORS_NAME_DICT[honest_behavior]
+                    df_q_bad['plot_order']=i
+                    good_quality_list.append(df_q_good)
+                    bad_quality_list.append(df_q_bad)
+                    if n_dishonest>0:
+                        df_q_dishonest=pd.DataFrame(df_q_dishonest,columns=[quality_index])
+                        df_q_dishonest['behavior']="Q4"+BEHAVIORS_NAME_DICT[honest_behavior]
+                        df_q_dishonest['plot_order']=i
+                        dishonest_quality_list.append(df_q_dishonest)
+
+                    #NOTE following case: use single boxplot for median+specific quality
+                    # quality_list.append(df_q_good)
+                    # quality_list.append(df_q_bad)
+                    # quality_list.append(df_q_dishonest)
 
         if show_dishonests:
-            df_honest=df.iloc[:,:int(n_honest)]
-            df_dishonest=df.iloc[:,int(n_honest):]
-            df_honest['behavior']=BEHAVIORS_NAME_DICT[honest_behavior]
-            df_dishonest['behavior']=f"Saboteur {BEHAVIORS_NAME_DICT[honest_behavior]}"
-            df_honest['plot_order']=i
-            df_dishonest['plot_order']=i
-            honest_list.append(df_honest)
-            dishonest_list.append(df_dishonest)
-        else:
-            df['behavior']=BEHAVIORS_NAME_DICT[honest_behavior]
-            df['plot_order']=i
-            performance_list.append(df)
+            data_honest=pd.concat(honest_list)
+            data_dishonest=pd.concat(dishonest_list)
+            # performance_max=max(max(data_dishonest.iloc[:,int(n_honest):].apply(np.max)),
+            #                       max(data_honest[:,:int(n_honest)].apply(np.max)))
 
-        if quality_index:
-            if "trans" in quality_index:
-                if "X" in quality_index:
-                    numerator_quality="combined"
-                    denominator_quality="completed"
-                else:
-                    numerator_quality="completed"
-                    denominator_quality="attempted"
-
-                if "B" in quality_index:
-                    numerator_quality+="_buyer"
-                    denominator_quality+="_buyer"
-                elif "S" in quality_index:
-                    numerator_quality+="_seller"
-                    denominator_quality+="_seller"
-
-                fq_num="/".join(splitted_filename[:-2]+["transactions"]+splitted_filename[-1:])+f"_{numerator_quality}.csv"
-                fq_den="/".join(splitted_filename[:-2]+["transactions"]+splitted_filename[-1:])+f"_{denominator_quality}.csv"
-                df_q_num=dataframe_from_csv(fq_num,post_processing="all-"+quality_function)
-                df_q_den=dataframe_from_csv(fq_den,post_processing="all-"+quality_function)
-                df_quality=df_q_num/df_q_den
-
-                if multi_quality:
-                    df_q_num=dataframe_from_csv(fq_num,post_processing="col-"+quality_function)
-                    df_q_den=dataframe_from_csv(fq_den,post_processing="col-"+quality_function)
-                    df_q_good_num=df_q_num.iloc[:int(n_honest)//2]
-                    df_q_bad_num=df_q_num.iloc[int(n_honest)//2:int(n_honest)]
-                    df_q_dishonest_num=df_q_num.iloc[int(n_honest):]
-                    df_q_good_den=df_q_den.iloc[:int(n_honest)//2]
-                    df_q_bad_den=df_q_den.iloc[int(n_honest)//2:int(n_honest)]
-                    df_q_dishonest_den=df_q_den.iloc[int(n_honest):]
-                    df_q_good=df_q_good_num/df_q_good_den
-                    df_q_bad=df_q_bad_num/df_q_bad_den
-                    df_q_dishonest=df_q_dishonest_num/df_q_dishonest_den
-                    # if 'items' in performance_index:
-                    #     secondary_performance="rewards"
-                    # elif 'reward' in performance_index:
-                    #     secondary_performance="items_collected"
-                    # fq_second="/".join(splitted_filename[:-2]+[secondary_performance]+splitted_filename[-1:])+".csv"
-                    # df_p_second=dataframe_from_csv(fq_second,post_processing="all-"+quality_function)
-                    
-            elif "reward" in quality_index:
-                fq="/".join(splitted_filename[:-2]+["rewards"]+splitted_filename[-1:])+".csv"
-                df_quality=dataframe_from_csv(fq,post_processing="all-"+quality_function)
-
-                if multi_quality:
-                    df_multi_q=dataframe_from_csv(fq,post_processing="col-"+quality_function)
-                    df_q_good=df_multi_q.iloc[:int(n_honest)//2]
-                    df_q_bad=df_multi_q.iloc[int(n_honest)//2:int(n_honest)]
-                    df_q_dishonest=df_multi_q.iloc[int(n_honest):]
-
-            df_quality=pd.DataFrame(df_quality,columns=[quality_index])
-            df_quality['behavior']="Q2"+BEHAVIORS_NAME_DICT[honest_behavior]
-            df_quality['plot_order']=i
-            quality_list.append(df_quality)
-
-            if multi_quality:
-                df_q_good=pd.DataFrame(df_q_good,columns=[quality_index])
-                #NOTE if quality_list.append() is used, every quality behavior: "Qi"+B must be different
-                df_q_good['behavior']="Q4"+BEHAVIORS_NAME_DICT[honest_behavior]
-                df_q_good['plot_order']=i
-                df_q_bad=pd.DataFrame(df_q_bad,columns=[quality_index])
-                df_q_bad['behavior']="Q4"+BEHAVIORS_NAME_DICT[honest_behavior]
-                df_q_bad['plot_order']=i
-                df_q_dishonest=pd.DataFrame(df_q_dishonest,columns=[quality_index])
-                # df_q_dishonest['behavior']=f"Saboteur {BEHAVIORS_NAME_DICT[honest_behavior]}"
-                df_q_dishonest['behavior']="Q4"+BEHAVIORS_NAME_DICT[honest_behavior]
-                df_q_dishonest['plot_order']=i
-                # df_p_second=pd.DataFrame(df_p_second,columns=[secondary_performance])
-                # df_p_second['behavior']="Q3"+BEHAVIORS_NAME_DICT[honest_behavior]
-                # df_p_second['plot_order']=i
-                good_quality_list.append(df_q_good)
-                bad_quality_list.append(df_q_bad)
-                dishonest_quality_list.append(df_q_dishonest)
-                # secondary_performance_list.append(df_p_second)
-                #NOTE following case: use single boxplot for median+specific quality
-                # quality_list.append(df_q_good)
-                # quality_list.append(df_q_bad)
-                # quality_list.append(df_q_dishonest)
-
-    if show_dishonests:
-        data_honest=pd.concat(honest_list)
-        data_dishonest=pd.concat(dishonest_list)
-
-        #big and small paired boxplots
-        sns.boxplot(data=pd.melt(data_honest, id_vars=['behavior','plot_order']),
-                        x='plot_order',y='value', hue='behavior',palette=BEHAVIOUR_PALETTE,
-                        linewidth=1, dodge=False,width=.5)#
-        sns.boxplot(data=pd.melt(data_dishonest, id_vars=['behavior','plot_order']),
-                        x='plot_order',y='value', hue='behavior',palette=BEHAVIOUR_PALETTE,
-                        linewidth=1.65, dodge=True, saturation=0.85, width=0.5, ax=axs)
-        #same size paired boxplots
-        #BUG label not aligned
-        # data_full=pd.concat([data_honest,data_dishonest])
-        # sns.boxplot(data=pd.melt(data_full, id_vars=['behavior','plot_order']),
-        #                 x='plot_order',y='value', hue='behavior',palette=BEHAVIOUR_PALETTE,
-        #                 linewidth=1, dodge=True,width=2.5)
-        # performance_max=max(max(data_dishonest.iloc[:,int(n_honest):].apply(np.max)),max(data_honest[:,:int(n_honest)].apply(np.max)))
-    else:
-        data_performance=pd.concat(performance_list)
-        sns.boxplot(data=pd.melt(data_performance, id_vars=['behavior','plot_order']),
-                        x='plot_order',y='value', hue='behavior',palette=BEHAVIOUR_PALETTE,
-                        linewidth=1, dodge=False,width=.5)
-        # performance_max=max(data_performance.iloc[:,:24].apply(np.max))
-
-    fig.set_size_inches(BASE_BOX_WIDTH*n_subplots,BASE_BOX_HEIGHT+1)
-    # axs.set_ylim(0,25)#int(1.25*performance_max))
-    #TODO AX2 YTICKS look like  "-" signs\
-    if "items" in performance_index:
-        performance_label="items collected"
-    else:
-        performance_label=performance_index
-    axs.set_ylabel(performance_label)
-
-    if not quality_index=="":
-        data_quality=pd.concat(quality_list)
-        if multi_quality:
-            data_quality_good=pd.concat(good_quality_list)
-            data_quality_bad=pd.concat(bad_quality_list)
-            data_quality_dishonest=pd.concat(dishonest_quality_list)
-            # data_secondary_performance=pd.concat(secondary_performance_list)
+            #big and small paired boxplots
+            sns.boxplot(data=pd.melt(data_honest, id_vars=['behavior','plot_order']),
+                            x='plot_order',y='value', hue='behavior',palette=BEHAVIOUR_PALETTE,
+                            linewidth=1, dodge=False,width=.5,ax=axs[j])#
+            sns.boxplot(data=pd.melt(data_dishonest, id_vars=['behavior','plot_order']),
+                            x='plot_order',y='value', hue='behavior',palette=BEHAVIOUR_PALETTE,
+                            linewidth=1.65, dodge=True, saturation=0.85, width=0.5, ax=axs[j])
             
-        if "trans" in quality_index:
-            quality_label=f"{numerator_quality}/{denominator_quality} transactions"
-            #TODO
-            if multi_plot:pass
-
-        elif "reward" in quality_index:
-            quality_label="reward\n(each value >0)"
-            #TODO
-            if multi_plot:pass
-
-        quality_label=f"{quality_function} {quality_label}"
-
-        ax2=axs.twinx()
-
-        if multi_quality:
-            sns.pointplot(data=pd.melt(data_quality_good,id_vars=['behavior','plot_order']),palette=BEHAVIOUR_PALETTE,
-                            x='plot_order',y='value', hue='behavior',ax=ax2,markers="o",join=False,errorbar=None)
-            sns.pointplot(data=pd.melt(data_quality_bad,id_vars=['behavior','plot_order']),palette=BEHAVIOUR_PALETTE,
-                            x='plot_order',y='value', hue='behavior',ax=ax2,markers=".",join=False,errorbar=None)
-            warnings.filterwarnings( "ignore", module = "seaborn\..*" )#ignore color of "x" warning
-            sns.pointplot(data=pd.melt(data_quality_dishonest,id_vars=['behavior','plot_order']),palette=BEHAVIOUR_PALETTE,
-                            x='plot_order',y='value', hue='behavior',ax=ax2,markers="x",join=False,errorbar=None)
-            warnings.filterwarnings( "default", module = "seaborn\..*" )
-            #TODO small secondary performance indicator
-            # sns.boxplot(data=pd.melt(data_secondary_performance, id_vars=['behavior','plot_order']),
+            #same size paired boxplots
+            #BUG label not aligned
+            # data_full=pd.concat([data_honest,data_dishonest])
+            # sns.boxplot(data=pd.melt(data_full, id_vars=['behavior','plot_order']),
             #                 x='plot_order',y='value', hue='behavior',palette=BEHAVIOUR_PALETTE,
-            #                 linewidth=1, dodge=True,width=.5,ax=ax2)
-            
-        sns.pointplot(data=pd.melt(data_quality,id_vars=['behavior','plot_order']),palette=BEHAVIOUR_PALETTE,
-                        x='plot_order',y='value', hue='behavior',
-                        markers="*",
-                        # markers=["*","+","o","."]*5,
-                        ax=ax2,join=False,errorbar=None)
+            #                 linewidth=1, dodge=True,width=2.5)
+        else:
+            data_performance=pd.concat(performance_list)
+            sns.boxplot(data=pd.melt(data_performance, id_vars=['behavior','plot_order']),
+                            x='plot_order',y='value', hue='behavior',palette=BEHAVIOUR_PALETTE,
+                            linewidth=1, dodge=False,width=.5,ax=axs[j])
+            # performance_max=max(data_performance.iloc[:,:24].apply(np.max))
 
-        ax2.set_ylabel(quality_label)
-        axs.legend().set_visible(False)
-        # ax2.legend(title="quality index (right axis)"+("\n(small boxplots: dishonests)" \
-        #     if show_dishonests else ""), loc="upper left")
-        ax2.legend().set_visible(False)
+        fig.set_size_inches(BASE_BOX_WIDTH*n_subplots,BASE_BOX_HEIGHT+1)
+        #TODO AX2 YTICKS look like  "-" signs\
 
-        if not title:title=base_title+" with Quality Index"
-    else:
-        axs.legend(title="(red boxplots: dishonests)", loc="lower left", labels=[])
-        if not title:title=base_title
-        ax2=None
+        if not quality_index=="":
+            data_quality=pd.concat(quality_list)
+            if multi_quality:
+                data_quality_good=pd.concat(good_quality_list)
+                data_quality_bad=pd.concat(bad_quality_list)
+                if n_dishonest>0:
+                    data_quality_dishonest=pd.concat(dishonest_quality_list)
+                
+            if "trans" in quality_index:
+                quality_label=f"{numerator_quality}/{denominator_quality} transactions"
+                #TODO
+                if multi_plot:pass
 
-    fig.suptitle(title,fontweight="bold")
-    axs.set_xticklabels(x_labels)
-    axs.set_xlabel('')
+            elif "reward" in quality_index:
+                quality_label="reward\n(each value >0)"
+                #TODO
+                if multi_plot:pass
+
+            quality_label=f"{quality_function} {quality_label}"
+
+            ax2=axs[j].twinx()
+
+            if not pair_plot or pair_plot and j>0:
+                if multi_quality:
+                    sns.pointplot(data=pd.melt(data_quality_good,id_vars=['behavior','plot_order']),palette=BEHAVIOUR_PALETTE,
+                                    x='plot_order',y='value', hue='behavior',ax=ax2,markers="o",join=False,errorbar=None)
+                    sns.pointplot(data=pd.melt(data_quality_bad,id_vars=['behavior','plot_order']),palette=BEHAVIOUR_PALETTE,
+                                    x='plot_order',y='value', hue='behavior',ax=ax2,markers=".",join=False,errorbar=None)
+                    if n_dishonest>0:
+                        warnings.filterwarnings( "ignore", module = "seaborn\..*" )#ignore color of "x" warning
+                        sns.pointplot(data=pd.melt(data_quality_dishonest,id_vars=['behavior','plot_order']),palette=BEHAVIOUR_PALETTE,
+                                        x='plot_order',y='value', hue='behavior',ax=ax2,markers="x",join=False,errorbar=None)
+                        warnings.filterwarnings( "default", module = "seaborn\..*" )
+                    #TODO small secondary performance indicator
+                    # sns.boxplot(data=pd.melt(data_secondary_performance, id_vars=['behavior','plot_order']),
+                    #                 x='plot_order',y='value', hue='behavior',palette=BEHAVIOUR_PALETTE,
+                    #                 linewidth=1, dodge=True,width=.5,ax=ax2)
+                    
+                sns.pointplot(data=pd.melt(data_quality,id_vars=['behavior','plot_order']),palette=BEHAVIOUR_PALETTE,
+                                x='plot_order',y='value', hue='behavior',
+                                markers="*",
+                                # markers=["*","+","o","."]*5,
+                                ax=ax2,join=False,errorbar=None)
+
+                ax2.legend().set_visible(False)
+
+            if not title:title=base_title+" with Quality Index"
+        else:
+            axs[j].legend(title="(red boxplots: dishonests)", loc="lower left", labels=[])
+            if not title:title=base_title
+            ax2=None
+
+        plt.sca(axs[j])
+        plt.legend().set_visible(False)
+        plt.xticks(np.arange(0,len(current_filenames)),x_labels[:len(current_filenames)])
+        if "items" in performance_index:
+            if j==0:performance_label="items collected"
+            else: performance_label="reward"
+        else:
+            if j==0:performance_label=performance_index
+            if j>0: performance_label="items collected"
+        plt.ylabel(performance_label)
+        plt.ylim(0 if 'item' in performance_label else None,
+                        25 if 'item' in performance_label and experiment_part=='whole' else \
+                        14 if 'item' in performance_label and 'last' in experiment_part \
+                            else None)#int(1.25*performance_max))
+        if not pair_plot:
+            ax2.set_ylabel(quality_label)
+        else: 
+            if j>0:ax2.set_ylabel(quality_label)
+            else: ax2.set_ylabel("")
+
+        axs[j].set_xlabel('')
     sns.despine(fig,trim=False, )
+    fig.suptitle(title,fontweight="bold")
 
     if not multi_plot and not save_plot:plt.show()
     if save_plot:plt.savefig(f"{join(save_folder,save_name)}.png", bbox_inches='tight')
@@ -732,6 +837,7 @@ def compare_behaviors_performance_quality(
                                         experiment="",
                                         experiment_part="whole",
                                         performance_metric="",
+                                        pair_plot=False,
                                         quality_index="",
                                         multi_quality=False,
                                         show_dishonests=False,
@@ -807,13 +913,17 @@ def compare_behaviors_performance_quality(
     if 'item' in performance_metric:
         if experiment_part=="whole":
             performance_folder="items_collected"
+            if pair_plot:secondary_performance_folder="rewards"
         else:
             performance_folder="items_evolution"
+            if pair_plot:secondary_performance_folder="rewards_evolution"
     elif 'reward' in performance_metric:
         if experiment_part=="whole":
             performance_folder="rewards"
+            if pair_plot:secondary_performance_folder="items_collected"
         else:
             performance_folder="rewards_evolution"
+            if pair_plot:secondary_performance_folder="items_evolution"
 
     for n_honest in n_honests:
         lie_angle=0 if n_honest==n_robots else 90
@@ -848,7 +958,7 @@ def compare_behaviors_performance_quality(
                                                             [0.25],
                                                             noise_type,noise_params_values),
                                         ]
-                                    filenames=[join(data_folder,experiment,SUB_FOLDERS_DICT[b_i],\
+                                    filenames=[join(data_folder,"FULL_TEST",SUB_FOLDERS_DICT[b_i],\
                                         performance_folder,f)+(".csv" if not f.endswith(".csv") else "")\
                                             for f,b_i in zip(filenames,['n','n','s','s'])]
 
@@ -880,8 +990,15 @@ def compare_behaviors_performance_quality(
 
                                             if compare_best_of and is_best_param_combination(f):best_list.append(f)
 
+                                    #TODO
+                                    if 'last' in experiment_part:
+                                        n_last_part=float(re.findall(r"[-+]?(?:\d*\.*\d+)", experiment_part)[0])
+                                        if n_last_part<=1: n_last_part*=100
+                                        part_text=f"last {n_last_part}% of "
+                                    else: part_text="whole "
+                                    stable_part_title=f" for the {part_text}experiment\n"
                                     title=f"Performance comparison for {BEHAVIORS_NAME_DICT[behavior_initials]} behavior,\n"\
-                                        f"{'with quality index ,' if quality_index else ''} for the {'stable part of the ' if 'last' in experiment_part else 'whole '}experiment\n"\
+                                        f"{'with quality index ,' if quality_index else ''}{stable_part_title}"\
                                         f"{COMBINE_STRATEGY_NAME_DICT[combine_stategy_initials]} combine strategy\n"\
                                         f"for {n_honest} honests, {lie_angle}° lie angle,\n"\
                                         f"{noise_mu} mean noise, {noise_range} noise range, {'perfect' if saboteur_performance=='perf' else 'average'} saboteur performance\n"\
@@ -889,10 +1006,17 @@ def compare_behaviors_performance_quality(
                                     save_name=f"{n_honest}_{behavior_initials}_{payment_system}_{lie_angle}_{noise_mu}_{noise_range}_{saboteur_performance}"
                                     
                                     if len(filenames)==4:continue
+
+                                    if pair_plot:
+                                        secondary_filenames=[f.replace(performance_folder,secondary_performance_folder) for f in filenames]
+                                        filenames=[filenames,secondary_filenames]
+                                    
+                                    # print(filenames)
                                     performance_with_quality(
                                                             filenames,
                                                             experiment_part=experiment_part,
                                                             performance_index=performance_metric,
+                                                            pair_plot=pair_plot,
                                                             quality_index=quality_index,
                                                             multi_quality=multi_quality,
                                                             title=title,
@@ -907,13 +1031,18 @@ def compare_behaviors_performance_quality(
 
                         if compare_best_of:
                             best_save_name=f"best_{n_honest}_{lie_angle}_{noise_mu}_{noise_range}_{saboteur_performance}"
+                            
+                            best_list=(filenames[:4] if not pair_plot else filenames[0][:4])\
+                                        +[fb for b_i in behaviours for fb in best_list \
+                                            if params_from_filename(fb,compact_format=True)[1]==b_i]
+                            if pair_plot:
+                                best_list=[best_list,[f.replace(performance_folder,secondary_performance_folder) for f in best_list]]
 
-                            best_list=filenames[:4]+[fb for b_i in behaviours for fb in best_list \
-                                if params_from_filename(fb,compact_format=True)[1]==b_i]
                             performance_with_quality(
                                                     best_list,
                                                     experiment_part=experiment_part,
                                                     performance_index=performance_metric,
+                                                    pair_plot=pair_plot,
                                                     quality_index=quality_index,
                                                     multi_quality=multi_quality,
                                                     title=title,
@@ -1106,18 +1235,20 @@ if __name__ == '__main__':
     #                     amount_to_find=3,
     #                 )
 
-    # print(dataframe_from_csv(filename="24r_waaCS_P_90LIA_0.3RT_0.051NMU_0.1NRANG_avgSAB.csv",
-    #                 data_folder_and_subfolder=join(CONFIG_FILE.DATA_DIR,"QUALITY_TRANS/ranking"),
-    #                 metric="transactionsAB",
+    # print(dataframe_from_csv(filename="22r_waaCS_NP_90LIA_0.3RT_0.051NMU_0.1NRANG_avgSAB.csv",
+    #                 data_folder_and_subfolder=join(CONFIG_FILE.DATA_DIR,"FULL_TEST/ranking"),
+    #                 metric="items",
     #                 experiment_part="whole",
+    #                 noise_group="s",
     #                 post_processing="row-mean"
     #                 ))
 
 compare_behaviors_performance_quality(
                                         data_folder=CONFIG_FILE.DATA_DIR,
-                                        experiment="QUALITY_TRANS",
-                                        experiment_part="last.4",
+                                        experiment="NEW_REPUTATION",
+                                        experiment_part="last.5",
                                         performance_metric="items",
+                                        pair_plot=True,
                                         quality_index="transactionsS",
                                         multi_quality=True,
                                         show_dishonests=True,
@@ -1132,3 +1263,4 @@ compare_behaviors_performance_quality(
                                         save_plot=False,
                                         save_folder=join(CONFIG_FILE.PLOT_DIR,"behav_compar_quality")
                                     )
+                             
