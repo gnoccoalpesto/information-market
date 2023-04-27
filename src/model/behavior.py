@@ -125,7 +125,7 @@ BEST_PARAM_COMBINATIONS_DICT={
                             "w": [],
                             "h": [
                                 ['P', ['discrete', 'mean']],
-                                ['P', ['derivative', 'mean']],
+                                ['P', ['aged', 'mean']],
                                 ],
                             }
 
@@ -199,21 +199,21 @@ BAD_PARAM_COMBINATIONS_DICT={
                     "h": [
                         ['P', ['discrete', 'positive']],
                         ['P', ['difference', 'positive']],
+                        ['P', ['recency', 'positive']],
                         ['P', ['aged', 'positive']],
-                        ['P', ['derivative', 'positive']],
-                        ['P', ['derivative2', 'positive']],
+                        ['P', ['aged2', 'positive']],
                         ['NP', ['discrete', 'positive']],
                         ['NP', ['difference', 'positive']],
+                        ['NP', ['recency', 'positive']],
                         ['NP', ['aged', 'positive']],
-                        ['NP', ['derivative', 'positive']],
-                        ['NP', ['derivative2', 'positive']],
-                        ['P', ['aged', 'mean']],
-                        ['P', ['derivative2', 'mean']],
+                        ['NP', ['aged2', 'positive']],
+                        ['P', ['recency', 'mean']],
+                        ['P', ['aged2', 'mean']],
                         ['NP', ['discrete', 'mean']],
                         ['NP', ['difference', 'mean']],
+                        ['NP', ['recency', 'mean']],
                         ['NP', ['aged', 'mean']],
-                        ['NP', ['derivative', 'mean']],
-                        ['NP', ['derivative2', 'mean']],
+                        ['NP', ['aged2', 'mean']],
                     ],
                 }
 
@@ -301,7 +301,7 @@ class TemplateBehaviour(Behavior):
                 session.record_transaction('attempted',seller_id)
 
                 if self.test_data_validity(location,data,payment_database,seller_id):
-                    # session.record_transaction('validated',seller_id)
+                    session.record_transaction('validated',seller_id)
 
                     try:
                         target=self.navigation_table.get_information_entry(location)
@@ -551,7 +551,7 @@ class NaiveBehavior(Behavior):
                 session.record_transaction('attempted',bot_id)
 
                 if data["age"] < self.navigation_table.get_age_for_location(location):
-                    # session.record_transaction('validated',bot_id)
+                    session.record_transaction('validated',bot_id)
                     try:
                         other_target = session.make_transaction(neighbor_id=bot_id, location=location)
                         new_target = self.strategy.combine(self.navigation_table.get_information_entry(location),
@@ -689,7 +689,7 @@ class ScepticalBehavior(NaiveBehavior):
 
                 if data["age"] < self.navigation_table.get_age_for_location(location) and bot_id not in \
                         self.pending_information[location]:
-                    # session.record_transaction('validated', bot_id)
+                    session.record_transaction('validated', bot_id)
 
                     try:
                         other_target = session.make_transaction(neighbor_id=bot_id, location=location)
@@ -1061,11 +1061,11 @@ class ReputationHistoryBehavior(TemplateBehaviour):
                     increment=np.sign(h)
                 elif self.verification_method=="difference":
                     increment=h
-                elif self.verification_method=="aged":
+                elif self.verification_method=="recency":
                     increment=h*(i+1)
-                elif self.verification_method=="derivative":
+                elif self.verification_method=="aged":
                     increment=h/(len(valid_history)-i)
-                elif self.verification_method=="derivative2":
+                elif self.verification_method=="aged2":
                     increment=h/(len(valid_history)-i)**2
                 reputation+=increment
 

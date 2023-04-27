@@ -26,7 +26,7 @@ class CommunicationSession:
         '''
         :param type:str   type of transaction. Accepted values are:
             "attempted", "A", "a" : the client attempted to buy information from a neighbor
-            [UNUSED]"validated", "V", "v" : the client validated information from a neighbor
+            "validated", "V", "v" : the client validated information from a neighbor
             "completed", "C", "c" : the client successfully bought information from a neighbor
             "combined", "X", "x" : the client combined information from multiple neighbors
         '''
