@@ -123,7 +123,10 @@ BEST_PARAM_COMBINATIONS_DICT={
                                 ['P', ['allavg', '05']],
                                 ],
                             "w": [],
-                            "h": [],
+                            "h": [
+                                ['P', ['discrete', 'mean']],
+                                ['P', ['derivative', 'mean']],
+                                ],
                             }
 
 BAD_PARAM_COMBINATIONS_DICT={
@@ -193,7 +196,25 @@ BAD_PARAM_COMBINATIONS_DICT={
                         ['NP',[]],
                         ['P',[]],
                     ],
-                    "h": [],
+                    "h": [
+                        ['P', ['discrete', 'positive']],
+                        ['P', ['difference', 'positive']],
+                        ['P', ['aged', 'positive']],
+                        ['P', ['derivative', 'positive']],
+                        ['P', ['derivative2', 'positive']],
+                        ['NP', ['discrete', 'positive']],
+                        ['NP', ['difference', 'positive']],
+                        ['NP', ['aged', 'positive']],
+                        ['NP', ['derivative', 'positive']],
+                        ['NP', ['derivative2', 'positive']],
+                        ['P', ['aged', 'mean']],
+                        ['P', ['derivative2', 'mean']],
+                        ['NP', ['discrete', 'mean']],
+                        ['NP', ['difference', 'mean']],
+                        ['NP', ['aged', 'mean']],
+                        ['NP', ['derivative', 'mean']],
+                        ['NP', ['derivative2', 'mean']],
+                    ],
                 }
 
 
