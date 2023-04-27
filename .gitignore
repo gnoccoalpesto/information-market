@@ -5,3 +5,4 @@ plots*
 src/error*
 !src/config.py
 assets/prova.json
+!data_analysis.py
