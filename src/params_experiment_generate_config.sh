@@ -44,9 +44,9 @@ DATA_TRANSACTIONS_LOG=false
 #robots
 NUMBER_OF_ROBOTS=25
 HONEST_POPULATION_LIST=(
-							# 22
-							24
+							22
 							25
+							24
 						)
 DISHONEST_LIE_ANGLES=(
 						90
@@ -54,11 +54,12 @@ DISHONEST_LIE_ANGLES=(
 # behaviors ----------------------------------------------------
 BEHAVIOR_LIST=(
 				# "w" 
-				# "n" "s"
-				# "r" 
+				"n"
+				"s"
+				"r" 
 				"t" 
 				"Nv"
-				# "h"
+				"h"
 			)
 			
 # naive: n ; new naive: Nn ; wealth weighted: w
@@ -78,7 +79,7 @@ rRANKING_THRESHOLD_LIST=(
 # variable scepticism: v ; new variable scepticism: Nv
 ###################################################### -params:{comparison_method,scaling,scepticism_threshold,weight_method}
 vCOMPARISON_METHOD_LIST=(
-							# "allavg" 
+							"allavg" 
 							"allmax"
 							)
 vSCALING_LIST=(
@@ -95,7 +96,7 @@ vWEIGHT_METHOD_LIST=(
 # wealth threshold: t
 ##################### -params:{comparison_method,scaling}
 tCOMPARISON_METHOD_LIST=(
-							# "allavg" 
+							"allavg" 
 							"allmax"
 							)
 tSCALING_LIST=(
@@ -109,9 +110,9 @@ tSCALING_LIST=(
 hVERIFICATION_METHOD_LIST=(
 							"discrete" 
 							"difference" 
+							"recency" 
 							"aged" 
-							"derivative" 
-							"derivative2"
+							"aged2"
 						)
 hTHRESHOLD_METHOD_LIST=(
 						"positive" 

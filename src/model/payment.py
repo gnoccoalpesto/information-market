@@ -38,9 +38,6 @@ class PaymentDB:
     - n_validated_transactions (int): the number of transactions that pass the information validity test;
     - n_completed_transactions (int): the number of transactions where the robot bought information;
     - n_combined_transactions (int): the number of transactions where the robot used the data;
-    - reward_trend (?): the trend of the reward of the robot. Could be expressed
-        qith derivative, difference or sign of the difference;
-    - n_transactions_trend (?): the trend of the number of transactions of the robot.
     """
     def __init__(self, population_ids, payment_system_params):
         #TODO hardcoded
@@ -53,11 +50,10 @@ class PaymentDB:
                                         "wallet_age": 0,
                                         #TODO make n_transactions a DICT
                                         "n_attempted_transactions": [0]*len(population_ids),
-                                        #UNUSED "n_validated_transactions": 0,
+                                        "n_validated_transactions": [0]*len(population_ids),
                                         "n_completed_transactions": [0]*len(population_ids),
                                         "n_combined_transactions" : [0]*len(population_ids),
-                                        #NOTE history is loaded bottom->top
-                                        "history": [None]*self.history_span,
+                                        "history": [None]*self.history_span, #NOTE history is loaded bottom->top
                                         # "reward_trend": 0,
                                         # "n_transactions_trend": 0,
                                         # LOCATIONS COULD PUT TOO MUCH STRESS <- CONTINUOUS UPDATE
@@ -102,8 +98,8 @@ class PaymentDB:
             if CONFIG_FILE.LOG_COMPLETED_TRANSATIONS: self.log_completed_transaction(transaction)
         elif type=="attempted" or type=="A" or type=="a":
             self.database[buyer_id]["n_attempted_transactions"][seller_id] += 1
-        # elif type=="validated" or type=="V" or type=="v":
-        #     self.database[buyer_id]["n_validated_transactions"][seller_id] += 1
+        elif type=="validated" or type=="V" or type=="v":
+            self.database[buyer_id]["n_validated_transactions"][seller_id] += 1
         elif type=="combined" or type=="X" or type=="x":
             self.database[buyer_id]["n_combined_transactions"][seller_id] += 1
         else:
@@ -155,11 +151,11 @@ class PaymentDB:
                             increment=np.sign(h)
                         elif verification_method=="difference":
                             increment=h
-                        elif verification_method=="aged":
+                        elif verification_method=="recency":
                             increment=h*(i+1)
-                        elif verification_method=="derivative":
+                        elif verification_method=="aged":
                             increment=h/(len(valid_history)-i)
-                        elif verification_method=="derivative2":
+                        elif verification_method=="aged2":
                             increment=h/(len(valid_history)-i)**2
                         reputation+=increment
 
