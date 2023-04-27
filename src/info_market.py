@@ -341,7 +341,7 @@ class InformationMarket():
                 pd.concat(dataframes).to_csv(join(output_directory, "items_evolution", current_filename))
             elif "transactions" in metric:
                 Path(join(output_directory, "transactions")).mkdir(parents=True, exist_ok=True)
-                types_of_interest=["attempted","completed","combined"]
+                types_of_interest=["attempted","validated","completed","combined"]
                 roles_of_interest=["buyer","seller"]
                 #TODO role from the config: scan for metric in metrics if mmetric.startswith("transactions")
                 # if m=="transactions" for m in metric then roles_of_interest=["buyer","seller"]
