@@ -188,14 +188,14 @@ BEHAV_PARAMS_COMBINATIONS={"n":[[]],
                                 "h":[
                                     ["discrete","mean"],
                                     ["difference","mean"],
+                                    ["recency","mean"],
                                     ["aged","mean"],
-                                    ["derivative","mean"],
-                                    ["derivative2","mean"],
+                                    ["aged2","mean"],
                                     ["discrete","positive"],
                                     ["difference","positive"],
+                                    ["recency","positive"],
                                     ["aged","positive"],
-                                    ["derivative","positive"],
-                                    ["derivative2","positive"],
+                                    ["aged2","positive"],
                                     ],
                                 }
 
@@ -641,7 +641,8 @@ def performance_with_quality(
                         numerator_quality="completed"
                     else:
                         numerator_quality="combined"
-                    denominator_quality="attempted"
+                    # denominator_quality="attempted"
+                    denominator_quality="validated"
 
                     if "B" in quality_index:
                         numerator_quality+="_buyer"
@@ -771,7 +772,7 @@ def performance_with_quality(
                     if multi_quality:
                         #matplotlib markers https://matplotlib.org/3.1.0/api/markers_api.html
                         sns.pointplot(data=pd.melt(data_quality_good,id_vars=['behavior','plot_order']),palette=BEHAVIOUR_PALETTE,
-                                        x='plot_order',y='value', hue='behavior',ax=ax2,markers="s",join=False,errorbar=None)
+                                        x='plot_order',y='value', hue='behavior',ax=ax2,markers="o",join=False,errorbar=None)
                         # sns.pointplot(data=pd.melt(data_quality_bad,id_vars=['behavior','plot_order']),palette=BEHAVIOUR_PALETTE,
                         #                 x='plot_order',y='value', hue='behavior',ax=ax2,markers=".",join=False,errorbar=None)
                         if n_dishonest>0:
@@ -962,7 +963,7 @@ def compare_behaviors_performance_quality(
                                                             [0.25],
                                                             noise_type,noise_params_values),
                                         ]
-                                    filenames=[join(data_folder,"FULL_REWARD",SUB_FOLDERS_DICT[b_i],\
+                                    filenames=[join(data_folder,"UNIFORM",SUB_FOLDERS_DICT[b_i],\
                                         performance_folder,f)+(".csv" if not f.endswith(".csv") else "")\
                                             for f,b_i in zip(filenames,['n','n','s','s'])]
                                     BASIC_BEHAV_LEN=len(filenames)
@@ -1267,7 +1268,7 @@ if __name__ == '__main__':
 
 compare_behaviors_performance_quality(
                                         data_folder=CONFIG_FILE.DATA_DIR,
-                                        experiment="AT_VALIDATION_R",
+                                        experiment="UNIFORM",
                                         # experiment_part="whole",
                                         experiment_part="last.33",
                                         performance_metric="items",
@@ -1279,14 +1280,14 @@ compare_behaviors_performance_quality(
                                         auto_xlabels=False,
                                         n_honests=[
                                             24,
-                                            22,
-                                            25
+                                            # 22,
+                                            # 25
                                             ],
                                         behaviours=[
                                             'r',
                                             't' ,
-                                            # 'Nv',
-                                            # 'h'
+                                            'Nv',
+                                            'h'
                                             ],#to compare w/ n+NP,n+P,s+NP,s+P 
                                         behavior_params_experiments=BEHAV_PARAMS_COMBINATIONS,
                                         payment_systems=[
@@ -1296,7 +1297,7 @@ compare_behaviors_performance_quality(
                                         saboteur_performance_list=["perf","avg"],
                                         compare_best_of=True,
                                         multi_plot=True,
-                                        save_plot=0,
-                                        save_folder=join(CONFIG_FILE.PLOT_DIR,"behav_compar_quality")
+                                        save_folder=join(CONFIG_FILE.PLOT_DIR,"behav_compar_quality"),
+                                        save_plot=False
                                     )
                              
