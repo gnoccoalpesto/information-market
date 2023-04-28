@@ -111,25 +111,26 @@ BEST_PARAM_COMBINATIONS_DICT={
                                 ['P',['025']],
                                 ],
                             "r": [
-                                ['P', ['03']],
+                                # ['P', ['03']],
                                 ],
                             "v": [],
                             "Nv": [
-                                ['P', ['allavg', '03', '025', 'exponential']],
-                                ['P', ['allavg', '03', '025', 'ratio']],
+                                # ['P', ['allavg', '03', '025', 'exponential']],
+                                # ['P', ['allavg', '03', '025', 'ratio']],
                                 ],
                             "t": [
-                                ['P', ['allavg', '03']],
-                                ['P', ['allavg', '05']],
+                                # ['P', ['allavg', '03']],
+                                # ['P', ['allavg', '05']],
                                 ],
                             "w": [],
                             "h": [
                                 ['P', ['discrete', 'mean']],
-                                ['P', ['aged', 'mean']],
+                                # ['P', ['aged', 'mean']],
                                 ],
                             }
 
 BAD_PARAM_COMBINATIONS_DICT={
+                    #TODO could use dots in filenames
                     "n": [],
                     "Nn": [],
                     "s": [],
@@ -167,31 +168,6 @@ BAD_PARAM_COMBINATIONS_DICT={
                         ['P', ['allmax', '08']],
                         ],
                     "w": [],
-                    #TODO dots in filenames
-                    #     ['NP', ['allavg', '0.3', '0.25', 'exponential']],
-                    #     ['NP', ['allavg', '0.5', '0.25', 'exponential']],
-                    #     ['NP', ['allavg', '0.8', '0.25', 'exponential']],
-                    #     ['NP', ['allmax', '0.3', '0.25', 'exponential']],
-                    #     ['NP', ['allmax', '0.8', '0.25', 'exponential']],
-                    #     ['NP', ['allavg', '0.8', '0.25', 'exponential']],
-                    #     ['P', ['allavg', '0.8', '0.25', 'exponential']],
-                    #     ['P', ['allavg', '0.8', '0.25', 'ratio']],
-                    #     ['P', ['allmax', '0.3', '0.25', 'exponential']],
-                    #     ['P', ['allmax', '0.3', '0.25', 'ratio']],
-                    #     ['P', ['allmax', '0.5', '0.25', 'exponential']],
-                    #     ['P', ['allmax', '0.5', '0.25', 'ratio']],
-                    #     ['P', ['allmax', '0.8', '0.25', 'exponential']],
-                    #     ['P', ['allmax', '0.8', '0.25', 'ratio']],
-                    #     ],
-                    # "t": [
-                    #     ['NP', ['allavg', '0.3']],
-                    #     ['NP', ['allavg', '0.5']],
-                    #     ['NP', ['allavg', '0.8']],
-                    #     ['NP', ['allmax', '0.3']],
-                    #     ['NP', ['allmax', '0.5']],
-                    #     ['P', ['allmax', '0.5']],
-                    #     ['P', ['allmax', '0.8']],
-                    #     ],\\
                     "w": [
                         ['NP',[]],
                         ['P',[]],
