@@ -80,7 +80,7 @@ class PaymentDB:
 
 
     def pay_reward(self, robot_id, reward=1):
-        self.database[robot_id]["reward"] += reward
+        self.database[robot_id]["reward"] += (1-self.database[robot_id]["payment_system"].information_share)*reward
 
 
     def transfer(self, from_id, to_id, amount):
@@ -312,10 +312,6 @@ class DelayedPaymentPaymentSystem(PaymentSystem):
 
 
     def calculate_shares_mapping(self, reward_share_to_distribute):
-        #TODO test
-        #  if self.transaction:
-        #   ...;return final_mapping
-        #   return {}
         if len(self.transactions) == 0:
             return {}
         seller_ids = [t.seller_id for t in self.transactions]
