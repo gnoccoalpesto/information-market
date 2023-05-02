@@ -185,7 +185,8 @@ class NaiveBehavior(Behavior):
 class ReputationWealthBehaviour(NaiveBehavior):
     def __init__(self):
         super(ReputationWealthBehaviour, self).__init__()
-        #TODO if reputation level raises, has pending info sense?
+        #TODO if reputation level raises, give priority to data BUT
+        #   few transactions combined pending
         # self.pending_information = {location: {} for location in Location}
         self.required_information=RequiredInformation.GLOBAL
 
@@ -203,6 +204,7 @@ class ReputationWealthBehaviour(NaiveBehavior):
             metadata_sorted_by_age = sorted(metadata.items(), key=lambda item: item[1]["age"])
             for bot_id, data in metadata_sorted_by_age:
                 if data["age"] < self.navigation_table.get_age_for_location(location):
+                    #TODO test if already tried to sell (rejected info)
                     #  and bot_id not in self.pending_information[location]:
                     try:
                         other_target = session.make_transaction(neighbor_id=bot_id, location=location)
@@ -215,7 +217,6 @@ class ReputationWealthBehaviour(NaiveBehavior):
                                                                other_target,
                                                                np.array([0, 0]))
                             self.navigation_table.replace_information_entry(location, new_target)
-                            # self.pending_information[location].clear()
                     except InsufficientFundsException:
                         pass
                     except NoInformationSoldException:
@@ -227,16 +228,13 @@ class ReputationWealthBehaviour(NaiveBehavior):
 class ReputationTresholdBehaviour(ReputationWealthBehaviour):
     def __init__(self):
         super(ReputationTresholdBehaviour, self).__init__()
-        #TODO if reputation level raises, has pending info sense?
-        # self.pending_information = {location: {} for location in Location}
 
     @abstractmethod
-    #TODO
-    # def get_threshold_value(self, session: CommunicationSession):
     def get_threshold_value(self):
         pass
 
     def verify_reputation(self,payment_database:PaymentDB, session: CommunicationSession, bot_id):
+        #TODO local data tested for drops in reputation and avoid to buy if suspicious
         # return self.get_reputation_score(session, bot_id) >\
         return self.get_reputation_score(payment_database, bot_id) >\
                  self.get_threshold_value(payment_database, session)
@@ -258,17 +256,6 @@ class ReputationDynamicThresholdBehavior(ReputationTresholdBehaviour):
         self.scaling=scaling
 
     def get_threshold_value(self, payment_database:PaymentDB,session: CommunicationSession):
-        """
-        allmax: selects only above a certain percentage of maximum wealth (wealthiest bots), of all robots
-        allavg:selects only above certain percentage of average wealth, considering all robots
-        allmin: selects only above a certain percentage of minimum wealth (poorest bots), of all robots
-        TODO: all_rise:  selects above a certaint value, increasing with time, starting from a certain level, of all robots
-
-        DEPRECATED:
-        neighmax: selects only above a certain percentage of maximum wealth (wealthiest bots), of neighbors
-        neighavg: selects only above certain percentage of average wealth, considering neighbors
-        neighmin: selects only above a certain percentage of minimum wealth (poorest bots), of neighbors
-        """
         # extension, metric=re.split("_",self.comparison_method)
         extension, metric=self.comparison_method[:-3],self.comparison_method[-3:]
         reputation_dict = {"all":{
@@ -324,7 +311,6 @@ class VariableScepticalBehavior(NaiveBehavior):
 
     def get_skepticism_threshold(self,payment_database:PaymentDB,bot_id):
         reputation_score=self.get_reputation_score(payment_database,bot_id)
-        # extension, metric=re.split("_",self.comparison_method)
         extension, metric=self.comparison_method[:-3],self.comparison_method[-3:]
         reputation_dict = {"all":{
                             "max":payment_database.get_highest_reward,
@@ -333,15 +319,12 @@ class VariableScepticalBehavior(NaiveBehavior):
                             },
                         }
         try:
-            # return self.weighted_sceticism(reputation_score,reputation_dict[extension][metric])
             return self.weight_scepticism(reputation_score,reputation_dict[extension][metric]())
         except KeyError:
             return self.scepticism_threshold
 
 
     def weight_scepticism(self,reputation_score,metric_score):
-        #TODO fix wrong initialization of behaviour, causing some to have default
-        # print(self.weight_method)
         try:
             if self.weight_method=="linear":
                 if reputation_score>metric_score:

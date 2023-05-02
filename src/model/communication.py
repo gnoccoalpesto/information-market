@@ -13,6 +13,9 @@ class CommunicationSession:
 
     def get_metadata(self, location):
         metadata = {n_id:{"age": n.get_info_from_behavior(location).get_age(),
+                          #TODO what if no check on blockch, full trust-> faster, but should use local data only?
+                          #          ---> scepticism        OR
+                          #TODO add bc reward seller here if more practical? but where bc?
                             # "reward": payment_database.get_reward(n_id),#(n_id, location), if different rewards
                         }
                         for n_id, n in self._neighbors.items() 
@@ -30,7 +33,6 @@ class CommunicationSession:
             "completed", "C", "c" : the client successfully bought information from a neighbor
             "combined", "X", "x" : the client combined information from multiple neighbors
         '''
-        #TODO
         self._client.record_transaction(type,seller_id, transaction)
 
 
@@ -55,23 +57,19 @@ class CommunicationSession:
         return rotate(distance, -self._client.orientation)
 
 
-    def get_own_reward(self):
-        return self._client.reward()
+    # def get_own_reward(self):
+    #     return self._client.reward()
 
+    # def get_neighbor_reward(self, neighbor_id):
+    #     return self._neighbors[neighbor_id].reward()
 
-    def get_neighbor_reward(self, neighbor_id):
-        return self._neighbors[neighbor_id].reward()
+    # def get_average_neighbor_reward(self):
+    #     return sum([n.reward() for n in self._neighbors.values()]) / len(self._neighbors)
 
+    # def get_max_neighboor_reward(self):
+    #     return max([n.reward() for n in self._neighbors.values()])
 
-    def get_average_neighbor_reward(self):
-        return sum([n.reward() for n in self._neighbors.values()]) / len(self._neighbors)
-
-
-    def get_max_neighboor_reward(self):
-        return max([n.reward() for n in self._neighbors.values()])
-
-
-    def get_min_neighboor_reward(self):
-        return min([n.reward() for n in self._neighbors.values()])
+    # def get_min_neighboor_reward(self):
+    #     return min([n.reward() for n in self._neighbors.values()])
 
         

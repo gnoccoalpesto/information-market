@@ -1,18 +1,3 @@
-not buying if low reputation
--instead of checking after validation, check before and refuse the sell
---this could make the byz not be punished cause it's not losing money
-
-
-fix reward below zero exception:
--reward should always be >=0
--this problem only with honests and penalisation
---possibly because they lose money with stacking, but shouldnt be allowed to sell
-    they cannot cover the cost
-
-
-not compare with past performance but only with stacking
--do not use last_h>=<h, but only use the current value
---trying to enforce continuos improvement is not working
 
 
 
@@ -20,17 +5,59 @@ not compare with past performance but only with stacking
 --volker's idea on how penalize the byz, if they're not by stacking
 
 
-REMOVE WORST PERFORMING Nv
---the first one of the best ones (no pen)
+############################################
+avg sab
+
+9.271878844264535,3.77192022795428,0.012280990514015822,6.713103274216812,16.750533996492816,0.3067828097582611,1.1694081779502659,1.929371733055938,13.48620761763654,1.7330823363481185,1.2135388295785066,19.733565229412,6.703816343341016,6.748757478150488,0.03957343654761751,16.947528615154337,0.012892206940368623,10.435087841558971,2.3517517741810807,0.06533160522327096,5.845778912629099,
+0.09333434680293153,0.04579116301918376,1.148658719756651,0.06872896423336881
+rewards
+
+3981,1814,229,3808,4083,732,2557,3685,3755,1844,3065,3766,3823,2315,345,4304,868,3728,2364,459,2360,
+25,27,2200,1
+transactions combined seller
+
+7309,14294,20480,6380,5862,18269,4572,9031,8604,11639,6028,5545,6555,6732,14437,6145,6704,5769,5670,8172,8599,
+10689,13032,4215,15904
+completed seller
+
+2266,2563,2822,2218,2116,2841,2108,2376,2379,2600,2204,1946,2623,2135,2539,2215,1495,2239,1730,1754,2449,
+2044,2053,1978,2445
+combined buyer
+
+22,21,19,22,22,21,20,20,20,19,17,19,21,19,19,18,11,18,13,14,18,
+16,15,14,16-> working greately, good buyers! no sellers!
+
+##############################################################################
 
 
-plot both reward for new behav
-- for the new behav, and to check if everything is ok with nofundexception
+REVIEWS (OTHER SCORE ON BC):
+everytime reputation<>=0 -> review <>=0
 
-only null and mean, no positive history
+TEST REVIEWS FOR TREND
+
+also fo priority
+if reputation level raises, give priority to data BUT
+#   few transactions combined pending
+# self.pending_information = {location: {} for location in Location}
 
 
+TEST RECIDIVO INFO BRUTTE
+for bot_id, data in metadata_sorted_by_age:
+	if data["age"] < self.navigation_table.get_age_for_location(location):
+			and bot_id not in self.pending_information[location]:
+		try:
+		
 
+TEST PERDITE LOCALI REWARD X CATTIVE INFORMAZIONI CIRCOLANTI
+
+for robot in session:
+    buy()
+    
+  def start_buy(self,session,bc):
+         #rejects buy if some conditions not met
+        	return bc.get_reward(session)>=SCALE bc.reward('mean')		
+        
+      
 
 LUDERIC DRIVE
 https://drive.google.com/drive/folders/16iAl7eeitXAf_gAv4wz5sreHP5u6hpPb
