@@ -8,8 +8,6 @@ from os.path import join, exists, isfile, isdir
 from os import listdir, system
 from sys import argv
 import logging
-# import argparse
-# from json.decoder import JSONDecodeError
 
 import config as CONFIG_FILE
 from controllers.main_controller import MainController, Configuration
@@ -24,16 +22,6 @@ logging.basicConfig(filename=CONFIG_FILE.ERRORS_LOG_FILE, level=logging.DEBUG)
 
 
 ### UTILITIES ######################################################################
-# #TODO
-# def parse_args():
-#     parser = argparse.ArgumentParser()
-#     parser.add_argument('-a', '--all',action='store_true',required=False,
-#                     help='use all files from a single folder')
-#     args=parser.parse_args()
-#     if args.all:
-#         select_all=True
-#     return select_all
-
 
 def params_from_filename(filename:str, compact_format:bool=False):
     """
@@ -167,7 +155,6 @@ def generate_filename(config:Configuration,):
 
 def is_bad_param_combination(filename:str):
     _, h_behav, combine, payment, _, behav_params, _ = params_from_filename(filename,compact_format=True)
-    #TODO add combine strategy to bad params
     if [payment, behav_params] in BAD_PARAM_COMBINATIONS_DICT[h_behav]:
         return True
     return False
@@ -193,11 +180,10 @@ def prune_params_combinations(filenames:list,best_mode=False):
         print(f"- - - - - ATTENTION: pruned {count} bad combinations of payment & behavioural parameters - - - - -\n")
     return filenames
 
+
 ####################################################################################
 ####################################################################################
-#TODO
-
-
+####################################################################################
 def main():
     try:
         filenames=[]

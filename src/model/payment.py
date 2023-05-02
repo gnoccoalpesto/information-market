@@ -26,6 +26,7 @@ class PaymentAPI:
         self.apply_cost = payment_db.apply_cost
         self.transfer = payment_db.transfer
         self.update_history = payment_db.update_history
+        self.stake_amount = payment_db.stake_amount
 
 
 class PaymentDB:
@@ -64,23 +65,56 @@ class PaymentDB:
                                     }
         self.completed_transactions_log=[]
 
+    #[ ] 
+    def add_newcomers(self, newcomers_ids,payment_system_params):
+        for robot_id in newcomers_ids:
+            self.database[robot_id] = {"reward": payment_system_params["initial_reward"],
+                                       "payment_system": eval(payment_system_params['class'])(
+                                                                **payment_system_params['parameters']),
+                                        "wallet_age": 0,
+                                        "n_attempted_transactions": [0]*(len(self.database)+len(newcomers_ids)),
+                                        "n_validated_transactions": [0]*(len(self.database)+len(newcomers_ids)),
+                                        "n_completed_transactions": [0]*(len(self.database)+len(newcomers_ids)),
+                                        "n_combined_transactions" : [0]*(len(self.database)+len(newcomers_ids)),
+                                        "history": [None]*self.history_span,
+                                    }
+        for robot_id in self.database.keys():
+            self.database[robot_id] = {
+                                        "n_attempted_transactions": self.database[robot_id]["n_attempted_transactions"]+[0]*len(newcomers_ids),
+                                        "n_validated_transactions": self.database[robot_id]["n_validated_transactions"]+[0]*len(newcomers_ids),
+                                        "n_completed_transactions": self.database[robot_id]["n_completed_transactions"]+[0]*len(newcomers_ids),
+                                        "n_combined_transactions" : self.database[robot_id]["n_combined_transactions"]+[0]*len(newcomers_ids),
+                                    }
+
 
     def update_history(self,robot_id,redistribution):
-        #[ ]
         self.database[robot_id]["history"].pop(0)
         self.database[robot_id]["history"].append(redistribution)
 
+    #[ ]
+    def stake_amount(self,stake_amount,robot_id):
+        robot_reputation=self.get_reputation(robot_id,method='h')
+        stake_ratio_0=1
+        stake_ratio_min=0.5
+        stake_ratio_max=3
+        history_len=10
+        if CONFIG_FILE.REPUTATION_STAKE and robot_reputation is not None:
+            stake_ratio=(stake_ratio_min+(stake_ratio_0-stake_ratio_min)*np.exp(-robot_reputation/history_len) \
+                                        -(stake_ratio_0-stake_ratio_max)*np.exp(-robot_reputation/history_len))/3
+            return stake_amount*stake_ratio
+        return stake_amount
+        
 
     def get_history(self,robot_id):
-        #[ ]
         return self.database[robot_id]["history"]
 
     def increment_wallet_age(self, robot_id):
         self.database[robot_id]["wallet_age"] += 1
 
-
+    
     def pay_reward(self, robot_id, reward=1):
         self.database[robot_id]["reward"] += (1-self.database[robot_id]["payment_system"].information_share)*reward
+        #[ ]originally += reward
 
 
     def transfer(self, from_id, to_id, amount):
@@ -120,11 +154,9 @@ class PaymentDB:
         #TODO remove
         return self.database[robot_id]["reward"]
 
-
-    #[ ] 
     #TODO PAYMENT SHOULD ONLY RETURN THE FULL LIST,
     #     COMPUTATION, EVEN MAX,MEAN,... SHOULD BE DONE BY THE CALLER
-    def get_reputation(self, robot_id,method="reward",verification_method="difference"):
+    def get_reputation(self, robot_id,method="reward",verification_method="discrete"):
         if method=="reward" or method=="r" or method=="R" or method=="w":
             if isinstance(robot_id,int):
                 return self.get_reward(robot_id)
@@ -172,7 +204,7 @@ class PaymentDB:
             else:
                 raise ValueError("Robot id not recognized")
 
-    def get_mean_reputation(self,method="reward",verification_method="difference"):
+    def get_mean_reputation(self,method="reward",verification_method="discrete"):
         if method=="reward" or method=="r" or method=="R" or method=="w":
             return self.get_mean_reward()
         elif method=="history" or method=="h" or method=="H":
@@ -181,7 +213,7 @@ class PaymentDB:
             valid_reputations=[r for r in reputations if r is not None]
             return np.mean([r for r in valid_reputations]) if len(valid_reputations)>0 else None
 
-    def get_highest_reputation(self,method="reward",verification_method="difference"):
+    def get_highest_reputation(self,method="reward",verification_method="discrete"):
         if method=="reward" or method=="r" or method=="R" or method=="w":
             return self.get_highest_reward()
         elif method=="history" or method=="h" or method=="H":
@@ -229,14 +261,11 @@ class PaymentDB:
         #TODO remove?
         if method=="reward" or method=="r" or method=="R" or method=="w":
             return self.get_reward_ranking(robot_id)
-        #[ ]
         elif method=="history" or method=="h" or method=="H":
                 reputations=[self.get_reputation(robot_id,method="history") for robot_id in self.database]
                 valid_reputations=[r for r in reputations if r is not None]
                 return valid_reputations[np.argmax(valid_reputations)] if len(valid_reputations)>0 else None
                     
-
-
 
     def get_number_of_wallets(self):
         return len(self.database)
@@ -247,7 +276,16 @@ class PaymentDB:
         if cost < 0:
             raise ValueError("Cost must be positive")
         if self.database[robot_id]["reward"] < cost:
-            raise InsufficientFundsException
+            #BUG outer except cannot catch this
+            # conditions: P, any behav, initial_reward=1, share=0.5, berry_reward=1
+            #generated by:
+            # check_location-> deposit_food -> pay_creditors -> new_reward ->
+            #    transfer-> apply_cost -> InsufficientFundsException
+            #TODO test NOT GENERATED BY BUY (FOR NOW)
+            # if test: handle the exception locally, else...
+            raise InsufficientFundsException(robot_id)
+            # print(f"EXCEPTION: robot {robot_id} has insufficient funds to pay {cost}!")
+            # pass
         else:
             self.database[robot_id]["reward"] -= cost
 
@@ -305,7 +343,8 @@ class DelayedPaymentPaymentSystem(PaymentSystem):
         shares_mapping = self.calculate_shares_mapping(reward_to_distribute)
         for seller_id, share in shares_mapping.items():
             payment_api.transfer(rewarded_id, seller_id, share)
-            last_redistribution= share-(self.stake_amount if hasattr(self,"stake_amount") else 0)
+
+            last_redistribution= share
             payment_api.update_history(seller_id, last_redistribution)
 
         self.reset_transactions()
@@ -335,21 +374,33 @@ class OutlierPenalisationPaymentSystem(PaymentSystem):
         self.pot_amount = 0
         self.stake_amount=1/25
 
+#[ ]
+    def get_stake_amount(self,payment_api:PaymentAPI,robot_id):
+        return payment_api.stake_amount(self.stake_amount,robot_id)
+         
 
     def new_transaction(self, transaction: Transaction, payment_api: PaymentAPI):
-        payment_api.apply_cost(transaction.seller_id, self.stake_amount)
-        self.pot_amount += self.stake_amount
+        stake_amount=self.get_stake_amount(payment_api,transaction.seller_id)
+        payment_api.apply_cost(transaction.seller_id, stake_amount)
+        self.pot_amount += stake_amount
         self.transactions.add(transaction)
 
 
     def new_reward(self, reward, payment_api:PaymentAPI, rewarded_id):
-        reward_share_to_distribute = self.information_share * reward
-        payment_api.apply_gains(rewarded_id, self.pot_amount)
-        shares_mapping = self.calculate_shares_mapping(reward_share_to_distribute)
+        #[ ] originally:self_reward=self.pot_amount
+        self_reward=self.pot_amount*(1-self.information_share)
+        payment_api.apply_gains(rewarded_id, self_reward)
 
+        reward_share_to_distribute = self.information_share * (reward + self.pot_amount)
+        shares_mapping = self.calculate_shares_mapping(reward_share_to_distribute)
         for seller_id, share in shares_mapping.items():
             payment_api.transfer(rewarded_id, seller_id, share)
-            last_redistribution= share-(self.stake_amount if hasattr(self,"stake_amount") else 0)
+
+            #TODO use current stake amount, base stake amount, or stake amount at the time of the transaction?
+            # seller_stake_amount=self.get_stake_amount(payment_api,seller_id)#stake(t)k
+            seller_stake_amount=self.stake_amount#stake(0)
+            #stake(k) for some past contribution k ???
+            last_redistribution= share-seller_stake_amount #if hasattr(self,"stake_amount") else 0)
             payment_api.update_history(seller_id, last_redistribution)
 
         self.reset_transactions()
@@ -381,7 +432,8 @@ class OutlierPenalisationPaymentSystem(PaymentSystem):
         total_shares = sum(final_mapping.values())
         for seller in final_mapping:
             final_mapping[seller] = final_mapping[seller] * (
-                    reward_share_to_distribute + self.pot_amount) / total_shares
+                    #[ ] originally:  reward_share_to_distribute + self.pot_amount) / total_shares
+                    reward_share_to_distribute) / total_shares
         return final_mapping
 
 

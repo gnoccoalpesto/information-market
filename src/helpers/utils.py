@@ -29,6 +29,9 @@ def distance_between(robot1, robot2):
 
 
 class InsufficientFundsException(Exception):
+    # def __init__(self, robot_id):
+    #     self.robot_id = robot_id
+        # print(f"Robot {robot_id} has insufficient funds to buy this item.")
     pass
 
 

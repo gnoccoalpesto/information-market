@@ -21,8 +21,7 @@ from model.behavior import BAD_PARAM_COMBINATIONS_DICT, BEHAVIORS_NAME_DICT, BEH
 ############################################################################################################
 ############################################################################################################
 ####################################### UTILITIES ##########################################################
-#TODO
-# def parse_args():
+#TODO def parse_args():
 #     parser = argparse.ArgumentParser()
 #     parser.add_argument('-a', '--all',action='store_true',required=False,
 #                     help='use all files from a single folder')
@@ -192,9 +191,8 @@ class InformationMarket():
 
 
     @staticmethod
-    #BUG not working with transactions
-    def check_filename_existence(output_directory,metric,filename):
-        new_filename = filename
+    def check_filename_existence(output_directory,metric,filename:str):
+        new_filename = filename.split('/')[-1]
         if exists(join(output_directory, metric, filename)):
             exist_count = len([f for f in Path(join(output_directory, metric)).iterdir() \
                 if f.name.startswith(new_filename.split(".csv")[0])])
@@ -256,7 +254,7 @@ class InformationMarket():
                 self.run_processes(c)
                 if exists(join(CONFIG_FILE.CONFIG_ERRORS_DIR,f.split('/')[-1])):
                     system(f"rm {join(CONFIG_FILE.CONFIG_ERRORS_DIR,f.split('/')[-1])}")
-                    print(f"#-#-#- [[successfully removing {join(CONFIG_FILE.CONFIG_ERRORS_DIR,f.split('/')[-1])}]]\n")
+                    print(f"#-#-#- [[successfully removed {join(CONFIG_FILE.CONFIG_ERRORS_DIR,f.split('/')[-1])}]]\n")
                 else: print()
 
             except Exception as e:
@@ -269,7 +267,7 @@ class InformationMarket():
                 system(f"cp {f} {join(CONFIG_FILE.CONFIG_ERRORS_DIR,f.split('/')[-1])}")
 
                 print(f"LOGGED ERROR: {e}\n")
-                continue
+                pass
 
             
     def run_processes(self,config: Configuration):
@@ -304,7 +302,7 @@ class InformationMarket():
         for metric in config.value_of("data_collection")["metrics"]:
         #TODO reintroduce append option, increment SEED by data already present
             if metric=="rewards":
-                #TODO make more compact
+                #TODO substitute "metric" w metric
                 rewards_df = pd.DataFrame([controller.get_rewards() for controller in controllers])
                 Path(join(output_directory, "rewards")).mkdir(parents=True, exist_ok=True)
                 current_filename=self.check_filename_existence(output_directory,metric,filename)
@@ -341,18 +339,17 @@ class InformationMarket():
                 pd.concat(dataframes).to_csv(join(output_directory, "items_evolution", current_filename))
             elif "transactions" in metric:
                 Path(join(output_directory, "transactions")).mkdir(parents=True, exist_ok=True)
-                types_of_interest=["attempted","validated","completed","combined"]
-                roles_of_interest=["buyer","seller"]
-                #TODO role from the config: scan for metric in metrics if mmetric.startswith("transactions")
-                # if m=="transactions" for m in metric then roles_of_interest=["buyer","seller"]
-                # else roles_of_interest=m.split("_")[1] for m in metric
-                for transaction_type in types_of_interest:
-                    for transaction_role in roles_of_interest:
+                transaction_types=["attempted","validated","completed","combined"]
+                roles_transaction=["buyer","seller"]
+                for transaction_type in transaction_types:
+                    for transaction_role in roles_transaction:
                         transactions_df = pd.DataFrame([controller.get_transactions_list(transaction_type,transaction_role) \
                                                             for controller in controllers])
-                        complete_filename=join(output_directory, "transactions", filename.split(".csv")[0]+f"_{transaction_type}_{transaction_role}.csv")
-                        current_filename=self.check_filename_existence("","",complete_filename)
-                        transactions_df.to_csv(current_filename, index=False, header=False)
+                        Path(join(output_directory, "transactions")).mkdir(parents=True, exist_ok=True)
+                
+                        complete_filename=join(filename.split(".csv")[0]+f"_{transaction_type}_{transaction_role}.csv")
+                        current_filename=self.check_filename_existence(output_directory,metric,complete_filename)
+                        transactions_df.to_csv(join(output_directory, "transactions", current_filename), index=False, header=False)
             else:
                 print(f"[WARNING] Could not record metric: '{metric}'. Metric name is not valid.")
 
