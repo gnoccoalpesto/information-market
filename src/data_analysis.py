@@ -162,6 +162,22 @@ BEHAVIOUR_PALETTE={'n':"#e377c2",#7, pink
                     'QDh':"#e8000b",
                     'QDRep. History':"#e8000b",
                     'QDReputation History':"#e8000b",
+                    'NEWn':"#a3a3a3",# grey
+                    'NEWNaive':"#a3a3a3",
+                    'NEWs':"#a3a3a3",
+                    'NEWSceptical':"#a3a3a3",
+                    'NEWr':"#a3a3a3",
+                    'NEWRep. Ranking':"#a3a3a3",
+                    'NEWReputation Ranking':"#a3a3a3",
+                    'NEWNv':"#a3a3a3",
+                    'NEWVariable Sc.':"#a3a3a3",
+                    'NEWVariable Scepticism':"#a3a3a3",
+                    'NEWt':"#a3a3a3",
+                    'NEWRep. Threshold':"#a3a3a3",
+                    'NEWReputation Threshold':"#a3a3a3",
+                    'NEWh':"#a3a3a3",
+                    'NEWRep. History':"#a3a3a3",
+                    'NEWReputation History':"#a3a3a3",
                     }
 BEHAV_PARAMS_COMBINATIONS={"n":[[]],
                                 "s":[[0.25]],
@@ -666,10 +682,12 @@ def performance_with_quality(
                         elif saboteur_performance=="perf":
                             good_slice=n_robots//2-n_dishonest+1
                         bad_slice=-n_dishonest if n_dishonest>0 else None
-                        df_q_good_num=df_q_num.iloc[:good_slice]
-                        df_q_good_den=df_q_den.iloc[:good_slice]
-                        df_q_bad_num=df_q_num.iloc[good_slice:bad_slice]
-                        df_q_bad_den=df_q_den.iloc[good_slice:bad_slice]
+                        #TODO narrower good/bad groups
+                        narrow_slice=0#BUG  empty color sequence error
+                        df_q_good_num=df_q_num.iloc[:good_slice-narrow_slice]
+                        df_q_good_den=df_q_den.iloc[:good_slice-narrow_slice]
+                        df_q_bad_num=df_q_num.iloc[good_slice-narrow_slice:bad_slice+narrow_slice]
+                        df_q_bad_den=df_q_den.iloc[good_slice-narrow_slice:bad_slice+narrow_slice]
                         df_q_good=100*df_q_good_num/df_q_good_den
                         df_q_bad=100*df_q_bad_num/df_q_bad_den
 
@@ -720,16 +738,23 @@ def performance_with_quality(
             # performance_max=max(max(data_dishonest.iloc[:,int(n_honest):].apply(np.max)),
             #                       max(data_honest[:,:int(n_honest)].apply(np.max)))
 
+            #TODO newcomers data joined with dishonests
+            # data_newcomers=
+            # data_newcomers['behavior']="NEW"+BEHAVIORS_NAME_DICT[honest_behavior]
+            # data_small=pd.concat([data_newcomers,data_dishonest])
+
             #big and small paired boxplots
             sns.boxplot(data=pd.melt(data_honest, id_vars=['behavior','plot_order']),
                             x='plot_order',y='value', hue='behavior',palette=BEHAVIOUR_PALETTE,
                             linewidth=1, dodge=False,width=.5,ax=axs[j])#
+            # sns.boxplot(data=pd.melt(data_small, id_vars=['behavior','plot_order']),
+            #                 x='plot_order',y='value', hue='behavior',palette=BEHAVIOUR_PALETTE,
+            #                 linewidth=1.65, dodge=True, saturation=0.85, width=0.7, ax=axs[j])
             sns.boxplot(data=pd.melt(data_dishonest, id_vars=['behavior','plot_order']),
                             x='plot_order',y='value', hue='behavior',palette=BEHAVIOUR_PALETTE,
                             linewidth=1.65, dodge=True, saturation=0.85, width=0.5, ax=axs[j])
             
-            #same size paired boxplots
-            #BUG label not aligned
+            #BUG same size paired boxplots label not aligned
             # data_full=pd.concat([data_honest,data_dishonest])
             # sns.boxplot(data=pd.melt(data_full, id_vars=['behavior','plot_order']),
             #                 x='plot_order',y='value', hue='behavior',palette=BEHAVIOUR_PALETTE,
@@ -773,17 +798,11 @@ def performance_with_quality(
                         #matplotlib markers https://matplotlib.org/3.1.0/api/markers_api.html
                         sns.pointplot(data=pd.melt(data_quality_good,id_vars=['behavior','plot_order']),palette=BEHAVIOUR_PALETTE,
                                         x='plot_order',y='value', hue='behavior',ax=ax2,markers="o",join=False,errorbar=None)
-                        # sns.pointplot(data=pd.melt(data_quality_bad,id_vars=['behavior','plot_order']),palette=BEHAVIOUR_PALETTE,
-                        #                 x='plot_order',y='value', hue='behavior',ax=ax2,markers=".",join=False,errorbar=None)
                         if n_dishonest>0:
                             warnings.filterwarnings( "ignore", module = "seaborn\..*" )#ignore color of "x" warning
                             sns.pointplot(data=pd.melt(data_quality_dishonest,id_vars=['behavior','plot_order']),palette=BEHAVIOUR_PALETTE,
                                             x='plot_order',y='value', hue='behavior',ax=ax2,markers="x",join=False,errorbar=None)
                             warnings.filterwarnings( "default", module = "seaborn\..*" )
-                        #TODO small secondary performance indicator
-                        # sns.boxplot(data=pd.melt(data_secondary_performance, id_vars=['behavior','plot_order']),
-                        #                 x='plot_order',y='value', hue='behavior',palette=BEHAVIOUR_PALETTE,
-                        #                 linewidth=1, dodge=True,width=.5,ax=ax2)
                         
                     sns.pointplot(data=pd.melt(data_quality,id_vars=['behavior','plot_order']),palette=BEHAVIOUR_PALETTE,
                                     x='plot_order',y='value', hue='behavior',
