@@ -82,6 +82,20 @@ REPUTATION======================================================
 
 
 
+not buying if low reputation
+-instead of checking after validation, check before and refuse the sell
+--this could make the byz not be punished cause it's not losing money
+-----> in fact, NOT WORKING
+
+
+
+not compare with past performance but only with stacking
+-do not use last_h>=<h, but only use the current value
+--trying to enforce continuos improvement is not working
+
+
+
+
 ================
 TASK ALLOCATION=================================================
 

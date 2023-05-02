@@ -3,6 +3,7 @@ import numpy as np
 
 from helpers import random_walk
 from model.environment import Environment
+import config as CONFIG_FILE
 
 
 class Configuration:
@@ -62,15 +63,20 @@ class MainController:
             if "items_evolution" in self.config.value_of("data_collection")["metrics"]:
                 self.items_evolution += f"{self.tick},{self.get_items_collected_stats()}"
                 self.items_evolution_list.append([self.tick, self.get_items_collected()])
-        #TODO is this test needed since we use a limited cycle?
-        if self.tick < self.config.value_of("simulation_steps"):
-            self.tick += 1
-            self.environment.step()
+
+        self.tick += 1
+        self.environment.step()
             
 
     def start_simulation(self):
         for _ in range(self.config.value_of("simulation_steps")):
             self.step()
+        #[ ]
+        #NEWCOMERS PHASE
+        if CONFIG_FILE.NEWCOMER_PHASE:
+            self.environment.create_newcomers(CONFIG_FILE.NEWCOMER_TYPE, CONFIG_FILE.NEWCOMER_AMOUNT)
+            for _ in range(CONFIG_FILE.NEWCOMER_PHASE_DURATION):
+                self.step()
 
 
     def get_sorted_reward_stats(self):

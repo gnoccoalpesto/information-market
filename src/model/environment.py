@@ -102,6 +102,7 @@ class Environment:
         self.create_robots(agent_params, behavior_params,combine_strategy_params)
         self.best_bot_id = self.get_best_bot_id()
         self.payment_database = PaymentDB([bot.id for bot in self.population], payment_system_params)
+        self.payment_system_params = payment_system_params
         self.market = market_factory(market_params)
         self.img = None
         self.timestep = 0
@@ -132,8 +133,46 @@ class Environment:
 
     def load_images(self):
         pass
-        #OVERLOADED IN gui.py
-        # self.img = ImageTk.PhotoImage(file="../assets/strawberry.png")
+        #NOTE OVERLOADED IN gui.py: self.img = ImageTk.PhotoImage(file="../assets/strawberry.png")
+
+    #[ ]
+    def create_newcomers(self, newcomers_type, newcomers_amount):
+        if newcomers_type=='honest':selected=0
+        elif newcomers_type=='dishonest':selected=1
+        behavior_params=self.behavior_params[selected]
+        behavior_params["parameters"]["combine_strategy"]=self.combine_strategy_params["class"]
+        robot_id=len(self.population)+1
+        for i in range(newcomers_amount):
+            if self.agent_params["noise"]["class"]=="UniformNoise":
+                self.agent_params["noise"]["parameters"]["noise_mu"] = self.generated_fixed_noise[len(self.population)//2+1-newcomers_amount+i]
+                #random spawn
+                # robot_x=randint(self.agent_params['radius'], self.width - 1 - self.agent_params['radius'])
+                # robot_y=randint(self.agent_params['radius'], self.height - 1 -self.agent_params['radius'])
+                
+                #spawn randomly around nest
+                # rand_distance=3*self.agent_params['radius']*np.random.random()
+                # rand_angle=2*np.pi*np.random.random()
+                # robot_x=int(self.nest[0]+rand_distance*np.cos(rand_angle))
+                # robot_y=int(self.nest[1]+rand_distance*np.sin(rand_angle))
+                
+                #spawn randomly around food
+                # rand_distance=3*self.agent_params['radius']*np.random.random()
+                # rand_angle=2*np.pi*np.random.random()
+                # robot_x=int(self.food[0]+rand_distance*np.cos(rand_angle))
+                # robot_y=int(self.food[1]+rand_distance*np.sin(rand_angle))
+               
+                #spawn at nest
+                robot_x=self.nest[0]
+                robot_y=self.nest[1]
+                robot = Agent(robot_id=robot_id,
+                              x=robot_x,
+                              y=robot_y,
+                              environment=self,
+                              behavior_params=behavior_params,
+                              **self.agent_params)
+                robot_id += 1
+                self.population.append(robot)
+        self.payment_database.add_newcomers([bot.id for bot in self.population[-newcomers_amount:]],self.payment_system_params)
 
 
     def create_robots(self, agent_params, behavior_params,combine_strategy_params):
@@ -150,6 +189,10 @@ class Environment:
                                                             random_switch=True,
                                                             random_seed=self.SIMULATION_SEED*20
                                                     )
+        self.behavior_params=behavior_params
+        self.combine_strategy_params=combine_strategy_params
+        self.agent_params=agent_params
+        self.generated_fixed_noise=generated_fixed_noise
         random_seeder(self.SIMULATION_SEED)#no need to waste samples if not random_switch      
         for behavior_params in behavior_params:
             behavior_params["parameters"]["combine_strategy"]=combine_strategy_params["class"]
