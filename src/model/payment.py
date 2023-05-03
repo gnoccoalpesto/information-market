@@ -94,13 +94,15 @@ class PaymentDB:
     #[ ]
     def stake_amount(self,stake_amount,robot_id):
         robot_reputation=self.get_reputation(robot_id,method='h')
-        stake_ratio_0=1
+        # stake_ratio_0=1
         stake_ratio_min=0.5
-        stake_ratio_max=3
+        # stake_ratio_max=3
         history_len=10
         if CONFIG_FILE.REPUTATION_STAKE and robot_reputation is not None:
-            stake_ratio=(stake_ratio_min+(stake_ratio_0-stake_ratio_min)*np.exp(-robot_reputation/history_len) \
-                                        -(stake_ratio_0-stake_ratio_max)*np.exp(-robot_reputation/history_len))/3
+            stake_ratio=stake_ratio_min**(2*robot_reputation/history_len)
+            # stake_ratio=(stake_ratio_min+(stake_ratio_0-stake_ratio_min)*np.exp(-robot_reputation/history_len) \
+            #                             -(stake_ratio_0-stake_ratio_max)*np.exp(-robot_reputation/history_len))/3
+            
             return stake_amount*stake_ratio
         return stake_amount
         
@@ -113,8 +115,7 @@ class PaymentDB:
 
     
     def pay_reward(self, robot_id, reward=1):
-        self.database[robot_id]["reward"] += (1-self.database[robot_id]["payment_system"].information_share)*reward
-        #[ ]originally += reward
+        self.database[robot_id]["reward"] += reward
 
 
     def transfer(self, from_id, to_id, amount):
@@ -386,11 +387,8 @@ class OutlierPenalisationPaymentSystem(PaymentSystem):
 
 
     def new_reward(self, reward, payment_api:PaymentAPI, rewarded_id):
-        #[ ] originally:self_reward=self.pot_amount
-        self_reward=self.pot_amount*(1-self.information_share)
-        payment_api.apply_gains(rewarded_id, self_reward)
-
-        reward_share_to_distribute = self.information_share * (reward + self.pot_amount)
+        #[ ] originally: payment_api.apply_gains(rewarded_id, self.pot_amount)
+        reward_share_to_distribute = self.information_share * reward + self.pot_amount
         shares_mapping = self.calculate_shares_mapping(reward_share_to_distribute)
         for seller_id, share in shares_mapping.items():
             payment_api.transfer(rewarded_id, seller_id, share)

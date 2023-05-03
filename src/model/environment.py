@@ -381,8 +381,12 @@ class Environment:
         self.foraging_spawns[Location.NEST].pop(robot.id)
 
         reward = self.market.sell_strawberry(robot.id)
+        information_share=self.payment_database.database[robot.id]["payment_system"].information_share
+        debitor_reward=reward*(1-information_share)
+        # creditor_reward=reward*information_share
 
-        self.payment_database.pay_reward(robot.id, reward=reward)
+        self.payment_database.pay_reward(robot.id, reward=debitor_reward)
+        #NOTE total reward passed: scaled by information share in pay_creditors()
         self.payment_database.pay_creditors(robot.id, total_reward=reward)
 
 
