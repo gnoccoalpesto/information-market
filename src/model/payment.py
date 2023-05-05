@@ -92,17 +92,17 @@ class PaymentDB:
         self.database[robot_id]["history"].append(redistribution)
 
     #[ ]
-    def stake_amount(self,stake_amount,robot_id):
-        robot_reputation=self.get_reputation(robot_id,method='h')
+    def stake_amount(self,stake_amount,robot_id,variable_stake,reputation_method='h'):
+        robot_reputation=self.get_reputation(robot_id,method=reputation_method)
         # stake_ratio_0=1
         stake_ratio_min=0.5
         # stake_ratio_max=3
         history_len=10
-        if CONFIG_FILE.REPUTATION_STAKE and robot_reputation is not None:
+        print(variable_stake,reputation_method)
+        if variable_stake and robot_reputation is not None:
             stake_ratio=stake_ratio_min**(2*robot_reputation/history_len)
             # stake_ratio=(stake_ratio_min+(stake_ratio_0-stake_ratio_min)*np.exp(-robot_reputation/history_len) \
             #                             -(stake_ratio_0-stake_ratio_max)*np.exp(-robot_reputation/history_len))/3
-            
             return stake_amount*stake_ratio
         return stake_amount
         
@@ -125,11 +125,12 @@ class PaymentDB:
         self.apply_gains(to_id, amount)
 
 
-    def record_transaction(self,type:str,buyer_id:int,seller_id:int,transaction:Transaction=None):
+    def record_transaction(self,type:str,buyer_id:int,seller_id:int,transaction:Transaction=None,variable_stake:bool=False,reputation_method:str='h'):
         #TODO make this more similar to self.get_transactions()
         if type=="completed" or type=="C" or type=="c":
             self.database[transaction.buyer_id]["n_completed_transactions"][seller_id] += 1
-            self.database[transaction.buyer_id]["payment_system"].new_transaction(transaction, PaymentAPI(self))
+            self.database[transaction.buyer_id]["payment_system"].new_transaction(transaction, PaymentAPI(self),
+                                                                    variable_stake=variable_stake,reputation_method=reputation_method)
             if CONFIG_FILE.LOG_COMPLETED_TRANSATIONS: self.log_completed_transaction(transaction)
         elif type=="attempted" or type=="A" or type=="a":
             self.database[buyer_id]["n_attempted_transactions"][seller_id] += 1
@@ -319,7 +320,7 @@ class PaymentDB:
 ############################################################################################################
 class PaymentSystem(ABC):
     @abstractmethod
-    def new_transaction(self, transaction: Transaction, payment_api: PaymentAPI):
+    def new_transaction(self, transaction: Transaction, payment_api: PaymentAPI,variable_stake:bool):
         pass
 
     @abstractmethod
@@ -334,7 +335,7 @@ class DelayedPaymentPaymentSystem(PaymentSystem):
         self.transactions = set()
 
 
-    def new_transaction(self, transaction: Transaction, payment_api: PaymentAPI):
+    def new_transaction(self, transaction: Transaction, payment_api: PaymentAPI,variable_stake:bool,reputation_method:str):
         self.transactions.add(transaction)
 
 
@@ -346,8 +347,8 @@ class DelayedPaymentPaymentSystem(PaymentSystem):
 
             last_redistribution= share
             payment_api.update_history(seller_id, last_redistribution)
-
         self.reset_transactions()
+
 
 
     def calculate_shares_mapping(self, reward_share_to_distribute):
@@ -375,20 +376,21 @@ class OutlierPenalisationPaymentSystem(PaymentSystem):
         self.stake_amount=1/25
 
 #[ ]
-    def get_stake_amount(self,payment_api:PaymentAPI,robot_id):
-        return payment_api.stake_amount(self.stake_amount,robot_id)
+    def get_stake_amount(self,payment_api:PaymentAPI,robot_id,variable_stake:bool,reputation_method:str):
+        return payment_api.stake_amount(self.stake_amount,robot_id,variable_stake,reputation_method)
          
 
-    def new_transaction(self, transaction: Transaction, payment_api: PaymentAPI):
-        stake_amount=self.get_stake_amount(payment_api,transaction.seller_id)
+    def new_transaction(self, transaction: Transaction, payment_api: PaymentAPI,variable_stake:bool,reputation_method:str):
+        stake_amount=self.get_stake_amount(payment_api,transaction.seller_id,variable_stake,reputation_method)
         payment_api.apply_cost(transaction.seller_id, stake_amount)
         self.pot_amount += stake_amount
         self.transactions.add(transaction)
 
 
     def new_reward(self, reward, payment_api:PaymentAPI, rewarded_id):
-        #[ ] originally: payment_api.apply_gains(rewarded_id, self.pot_amount)
-        reward_share_to_distribute = self.information_share * reward + self.pot_amount
+        reward_share_to_distribute = self.information_share * reward
+        payment_api.apply_gains(rewarded_id, self.pot_amount)
+        
         shares_mapping = self.calculate_shares_mapping(reward_share_to_distribute)
         for seller_id, share in shares_mapping.items():
             payment_api.transfer(rewarded_id, seller_id, share)
@@ -429,8 +431,7 @@ class OutlierPenalisationPaymentSystem(PaymentSystem):
         total_shares = sum(final_mapping.values())
         for seller in final_mapping:
             final_mapping[seller] = final_mapping[seller] * (
-                    #[ ] originally:  reward_share_to_distribute + self.pot_amount) / total_shares
-                    reward_share_to_distribute) / total_shares
+                    reward_share_to_distribute + self.pot_amount) / total_shares
         return final_mapping
 
 

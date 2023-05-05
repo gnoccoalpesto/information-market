@@ -58,6 +58,7 @@ def params_from_filename(filename:str, compact_format:bool=False):
     PAYMENTSYSTEM =     "NP": "No Penalization",
                         "P": "Penalization",
 
+                        
     lieangle =          [0, 90]
 
     behaviorparams =    "n","Nn","w":   {}, NOTE: CS: combine strategy for all just for simplicity
@@ -69,6 +70,12 @@ def params_from_filename(filename:str, compact_format:bool=False):
                                         "WM": "weight method"},
                         "t":            {"CM": "comparison method",
                                         "SC": "scaling"}
+
+                        "h":            {"VM":verification method,
+                                        "TM": threshold method,
+                                        "SC": scaling,
+                                        "KD": differential controller coeff,
+                                        "RS": reputation staking,}
                                             
     noiseparams =       "bimodal":      {"SMU": "noise sampling mean",
                                         "SSD": "noise sampling standard deviation",

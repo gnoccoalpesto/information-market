@@ -73,10 +73,10 @@ class MainController:
             self.step()
         #[ ]
         #NEWCOMERS PHASE
-        if CONFIG_FILE.NEWCOMER_PHASE:
-            self.environment.create_newcomers(CONFIG_FILE.NEWCOMER_TYPE, CONFIG_FILE.NEWCOMER_AMOUNT)
-            for _ in range(CONFIG_FILE.NEWCOMER_PHASE_DURATION):
-                self.step()
+        # if CONFIG_FILE.NEWCOMER_PHASE:
+        #     self.environment.create_newcomers(CONFIG_FILE.NEWCOMER_TYPE, CONFIG_FILE.NEWCOMER_AMOUNT)
+        #     for _ in range(CONFIG_FILE.NEWCOMER_PHASE_DURATION):
+        #         self.step()
 
 
     def get_sorted_reward_stats(self):
@@ -182,10 +182,3 @@ class MainController:
         if role=="buyer":
             return transaction_matrix.sum(axis=1)
         return transaction_matrix.sum(axis=0)
-        
-        # in this case, the list contains the transactions per seller
-        transactions=[0]*len(self.environment.population)
-        for bot in self.environment.population:
-            buyer_transactions=self.environment.payment_database.get_transactions(bot.id,type)
-            transaction=[t+bt for t,bt in zip(transactions,buyer_transactions)]
-        return transaction

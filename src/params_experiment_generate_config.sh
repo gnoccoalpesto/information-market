@@ -76,6 +76,10 @@ rRANKING_THRESHOLD_LIST=(
 						0.5
 						)
 
+rREPUTATION_STAKE_LIST=(
+						true 
+						false
+)
 # variable scepticism: v ; new variable scepticism: Nv
 ###################################################### -params:{comparison_method,scaling,scepticism_threshold,weight_method}
 vCOMPARISON_METHOD_LIST=(
@@ -93,6 +97,10 @@ vWEIGHT_METHOD_LIST=(
 						"exponential"
 						)
 
+vREPUTATION_STAKE_LIST=(
+						true 
+						false
+)
 # wealth threshold: t
 ##################### -params:{comparison_method,scaling}
 tCOMPARISON_METHOD_LIST=(
@@ -105,8 +113,12 @@ tSCALING_LIST=(
 				0.3
 				)
 
+tREPUTATION_STAKE_LIST=(
+						true 
+						false
+)
 # reputation history: h
-######################## -params:{verification_method,threshold_method}
+######################## -params:{verification_method,threshold_method,scaling,kd}
 hVERIFICATION_METHOD_LIST=(
 							"discrete" 
 							"difference" 
@@ -118,4 +130,20 @@ hTHRESHOLD_METHOD_LIST=(
 						"positive" 
 						"mean"
 						)
-
+hSCALING_LIST=(
+				1.0
+				0.8 
+				0.5 
+				0.3
+				)
+hKD_LIST=(
+			1.0
+			0.7
+			1.3
+			1.6
+			2.0
+)
+hREPUTATION_STAKE_LIST=(
+						true 
+						false
+)
