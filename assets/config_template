@@ -45,7 +45,7 @@
     "class": "PAYMENT_SYSTEM_CLASS",
     "initial_reward": PAYMENT_SYSTEM_INITIAL_REWARD,
     "parameters": {
-      "information_share": PAYMENT_SYSTEM_INFORAMTION_SHARE
+      "information_share": PAYMENT_SYSTEM_INFORMATION_SHARE
     }
   },
   "market": {

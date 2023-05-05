@@ -83,24 +83,24 @@ declare -A HONEST_PARAMETERS
 	HONEST_PARAMETERS[Nn]=""
 	HONEST_PARAMETERS[s]="\"threshold\": SCEPTICISM_THRESHOLD"
 	HONEST_PARAMETERS[Ns]="\"scepticism_threshold\": SCEPTICISM_THRESHOLD"
-	HONEST_PARAMETERS[r]="\"ranking_threshold\": RANKING_THRESHOLD"
-	HONEST_PARAMETERS[v]="\"comparison_method\": \"COMPARISON_METHOD\",\n\t\t\t\"scaling\": SCALING,\n\t\t\t\"scepticism_threshold\": SCEPTICISM_THRESHOLD,\n\t\t\t\"weight_method\": \"WEIGHT_METHOD\""
-	HONEST_PARAMETERS[Nv]="\"comparison_method\": \"COMPARISON_METHOD\",\n\t\t\t\"scaling\": SCALING,\n\t\t\t\"scepticism_threshold\": SCEPTICISM_THRESHOLD,\n\t\t\t\"weight_method\": \"WEIGHT_METHOD\""
+	HONEST_PARAMETERS[r]="\"ranking_threshold\": RANKING_THRESHOLD,\n\t\t\t\"reputation_stake\": REPUTATION_STAKE"
+	HONEST_PARAMETERS[v]="\"comparison_method\": \"COMPARISON_METHOD\",\n\t\t\t\"scaling\": SCALING,\n\t\t\t\"scepticism_threshold\": SCEPTICISM_THRESHOLD,\n\t\t\t\"weight_method\": \"WEIGHT_METHOD\",\n\t\t\t\"reputation_stake\": REPUTATION_STAKE"
+	HONEST_PARAMETERS[Nv]="\"comparison_method\": \"COMPARISON_METHOD\",\n\t\t\t\"scaling\": SCALING,\n\t\t\t\"scepticism_threshold\": SCEPTICISM_THRESHOLD,\n\t\t\t\"weight_method\": \"WEIGHT_METHOD\",\n\t\t\t\"reputation_stake\": REPUTATION_STAKE"
 	HONEST_PARAMETERS[w]=""
-	HONEST_PARAMETERS[t]="\"comparison_method\": \"COMPARISON_METHOD\",\n\"scaling\": SCALING"
-	HONEST_PARAMETERS[h]="\"verification_method\": \"VERIFICATION_METHOD\",\n\t\t\t\"threshold_method\": \"THRESHOLD_METHOD\""
+	HONEST_PARAMETERS[t]="\"comparison_method\": \"COMPARISON_METHOD\",\n\t\t\t\"scaling\": SCALING,\n\t\t\t\"reputation_stake\": REPUTATION_STAKE"
+	HONEST_PARAMETERS[h]="\"verification_method\": \"VERIFICATION_METHOD\",\n\t\t\t\"threshold_method\": \"THRESHOLD_METHOD\",\n\t\t\t\"scaling\": SCALING,\n\t\t\t\"kd\": KDIFF,\n\t\t\t\"reputation_stake\": REPUTATION_STAKE"
 
 declare -A DISHONEST_PARAMETERS
 	DISHONEST_PARAMETERS[n]="\"lie_angle\": DISHONEST_LIE_ANGLE"
 	DISHONEST_PARAMETERS[Nn]="\"lie_angle\": DISHONEST_LIE_ANGLE"
 	DISHONEST_PARAMETERS[s]="\"lie_angle\": DISHONEST_LIE_ANGLE,\n\t\t\t\"threshold\": SCEPTICISM_THRESHOLD"
 	DISHONEST_PARAMETERS[Ns]="\"lie_angle\": DISHONEST_LIE_ANGLE,\n\t\t\t\"scepticism_threshold\": SCEPTICISM_THRESHOLD"
-	DISHONEST_PARAMETERS[r]="\"lie_angle\": DISHONEST_LIE_ANGLE,\n\t\t\t\"ranking_threshold\": RANKING_THRESHOLD"
-	DISHONEST_PARAMETERS[v]="\"lie_angle\": DISHONEST_LIE_ANGLE,\n\t\t\t\"comparison_method\": \"COMPARISON_METHOD\",\n\t\t\t\"scaling\": SCALING,\n\t\t\t\"scepticism_threshold\": SCEPTICISM_THRESHOLD,\n\t\t\t\"weight_method\": \"WEIGHT_METHOD\""
-	DISHONEST_PARAMETERS[Nv]="\"lie_angle\": DISHONEST_LIE_ANGLE,\n\t\t\t\"comparison_method\": \"COMPARISON_METHOD\",\n\t\t\t\"scaling\": SCALING,\n\t\t\t\"scepticism_threshold\": SCEPTICISM_THRESHOLD,\n\t\t\t\"weight_method\": \"WEIGHT_METHOD\""
+	DISHONEST_PARAMETERS[r]="\"lie_angle\": DISHONEST_LIE_ANGLE,\n\t\t\t\"ranking_threshold\": RANKING_THRESHOLD,\n\t\t\t\"reputation_stake\": REPUTATION_STAKE"
+	DISHONEST_PARAMETERS[v]="\"lie_angle\": DISHONEST_LIE_ANGLE,\n\t\t\t\"comparison_method\": \"COMPARISON_METHOD\",\n\t\t\t\"scaling\": SCALING,\n\t\t\t\"scepticism_threshold\": SCEPTICISM_THRESHOLD,\n\t\t\t\"weight_method\": \"WEIGHT_METHOD\",\n\t\t\t\"reputation_stake\": REPUTATION_STAKE"
+	DISHONEST_PARAMETERS[Nv]="\"lie_angle\": DISHONEST_LIE_ANGLE,\n\t\t\t\"comparison_method\": \"COMPARISON_METHOD\",\n\t\t\t\"scaling\": SCALING,\n\t\t\t\"scepticism_threshold\": SCEPTICISM_THRESHOLD,\n\t\t\t\"weight_method\": \"WEIGHT_METHOD\",\n\t\t\t\"reputation_stake\": REPUTATION_STAKE"
 	DISHONEST_PARAMETERS[w]="\"lie_angle\": DISHONEST_LIE_ANGLE"
-	DISHONEST_PARAMETERS[t]="\"lie_angle\": DISHONEST_LIE_ANGLE,\n\t\t\t\"comparison_method\": \"COMPARISON_METHOD\",\n\"scaling\": SCALING"
-	DISHONEST_PARAMETERS[h]="\"lie_angle\": DISHONEST_LIE_ANGLE,\n\t\t\t\"verification_method\": \"VERIFICATION_METHOD\",\n\t\t\t\"threshold_method\": \"THRESHOLD_METHOD\""
+	DISHONEST_PARAMETERS[t]="\"lie_angle\": DISHONEST_LIE_ANGLE,\n\t\t\t\"comparison_method\": \"COMPARISON_METHOD\",\n\t\t\t\"scaling\": SCALING,\n\t\t\t\"reputation_stake\": REPUTATION_STAKE"
+	DISHONEST_PARAMETERS[h]="\"lie_angle\": DISHONEST_LIE_ANGLE,\n\t\t\t\"verification_method\": \"VERIFICATION_METHOD\",\n\t\t\t\"threshold_method\": \"THRESHOLD_METHOD\",\n\t\t\t\"scaling\": SCALING,\n\t\t\t\"kd\": KDIFF,\n\t\t\t\"reputation_stake\": REPUTATION_STAKE"
 
 declare -A BEHAVIOR_INITIALS
 	BEHAVIOR_INITIALS[n]="n"
@@ -130,13 +130,13 @@ declare -A BEHAVIOUR_FILENAME_ADDITIONAL_INFO
 	BEHAVIOUR_FILENAME_ADDITIONAL_INFO[n]=""
 	BEHAVIOUR_FILENAME_ADDITIONAL_INFO[Nn]=""
 	BEHAVIOUR_FILENAME_ADDITIONAL_INFO[s]="_SCEPTICISM_THRESHOLDST"
-	BEHAVIOUR_FILENAME_ADDITIONAL_INFO[Ns]="_SCEPTICISM_THRESHOLDSY"
-	BEHAVIOUR_FILENAME_ADDITIONAL_INFO[r]="_RANKING_THRESHOLDRT"
-	BEHAVIOUR_FILENAME_ADDITIONAL_INFO[v]="_COMPARISON_METHODCM_SCALINGSC_SCEPTICISM_THRESHOLDST_WEIGHT_METHODWM"
-	BEHAVIOUR_FILENAME_ADDITIONAL_INFO[Nv]="_COMPARISON_METHODCM_SCALINGSC_SCEPTICISM_THRESHOLDST_WEIGHT_METHODWM"
-	BEHAVIOUR_FILENAME_ADDITIONAL_INFO[t]="_COMPARISON_METHODCM_SCALINGSC"
+	BEHAVIOUR_FILENAME_ADDITIONAL_INFO[Ns]="_SCEPTICISM_THRESHOLDST"
+	BEHAVIOUR_FILENAME_ADDITIONAL_INFO[r]="_RANKING_THRESHOLDRT_REPUTATION_STAKERS"
+	BEHAVIOUR_FILENAME_ADDITIONAL_INFO[v]="_COMPARISON_METHODCM_SCALINGSC_SCEPTICISM_THRESHOLDST_WEIGHT_METHODWM_REPUTATION_STAKERS"
+	BEHAVIOUR_FILENAME_ADDITIONAL_INFO[Nv]="_COMPARISON_METHODCM_SCALINGSC_SCEPTICISM_THRESHOLDST_WEIGHT_METHODWM_REPUTATION_STAKERS"
+	BEHAVIOUR_FILENAME_ADDITIONAL_INFO[t]="_COMPARISON_METHODCM_SCALINGSC_REPUTATION_STAKERS"
 	BEHAVIOUR_FILENAME_ADDITIONAL_INFO[w]=""
-	BEHAVIOUR_FILENAME_ADDITIONAL_INFO[h]="_VERIFICATION_METHODVM_THRESHOLD_METHODTM"
+	BEHAVIOUR_FILENAME_ADDITIONAL_INFO[h]="_VERIFICATION_METHODVM_THRESHOLD_METHODTM_SCALINGSC_KDIFFKD_REPUTATION_STAKERS"
 
 
 # information combine strategy
@@ -161,6 +161,10 @@ declare -A COMBINE_STRATEGIES_INITIALS
 declare -A PAYMENT_SYSTEM_NAME
 	PAYMENT_SYSTEM_NAME[OutlierPenalisationPaymentSystem]="P"
 	PAYMENT_SYSTEM_NAME[DelayedPaymentPaymentSystem]="NP"
+
+declare -A REPUTATION_STAKING_NAME_PREFIX
+	REPUTATION_STAKING_NAME_PREFIX[true]=""
+	REPUTATION_STAKING_NAME_PREFIX[false]="N"
 
 
 # agents' noise
@@ -269,7 +273,7 @@ for AGENT_NOISE_ASSIGNATION in ${AGENT_NOISE_ASSIGNATION_LIST[*]} ; do
 									-e "s|COMBINE_STRATEGY_CLASS|${COMBINE_STRATEGY_CLASS}|" \
 									-e "s|PAYMENT_SYSTEM_CLASS|${PAYMENT_SYSTEM_CLASS}|" \
 									-e "s|PAYMENT_SYSTEM_INITIAL_REWARD|${PAYMENT_SYSTEM_INITIAL_REWARD}|" \
-									-e "s|PAYMENT_SYSTEM_INFORAMTION_SHARE|${PAYMENT_SYSTEM_INFORAMTION_SHARE}|" \
+									-e "s|PAYMENT_SYSTEM_INFORMATION_SHARE|${PAYMENT_SYSTEM_INFORMATION_SHARE}|" \
 									-e "s|MARKET_CLASS|${MARKET_CLASS}|" \
 									-e "s|MARKET_REWARD|${MARKET_REWARD}|" \
 									-e "s|DATA_OUTPUT_DIRECTORY|${DATA_OUTPUT_DIRECTORY}|" \
@@ -305,14 +309,20 @@ for AGENT_NOISE_ASSIGNATION in ${AGENT_NOISE_ASSIGNATION_LIST[*]} ; do
 									else
 										if [[ ${BEHAVIOR} == "r" ]]; then
 											for RANKING_THRESHOLD in ${rRANKING_THRESHOLD_LIST[*]} ; do
+											for REPUTATION_STAKE in ${rREPUTATION_STAKE_LIST[*]} ; do
 												CURRENT_DATA_FILENAME=$( echo ${DATA_FILENAME} | 
 															sed -e "s|RANKING_THRESHOLD|${RANKING_THRESHOLD}|"  \
+																	-e "s|REPUTATION_STAKE|${REPUTATION_STAKING_NAME_PREFIX[${REPUTATION_STAKE}]}|" \
 																	-e "s|[\.]||g")
 												FINAL_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}/${CURRENT_DATA_FILENAME}.json"
 												sed -e "s|RANKING_THRESHOLD|${RANKING_THRESHOLD}|" \
+													-e "s|REPUTATION_STAKE|${REPUTATION_STAKE}|" \
+													-e "s|falseRS|NRS|" \
+													-e "s|trueRS|RS|" \
 													${TEMP_CONFIG_FILENAME} > ${FINAL_CONFIG_FILENAME}
 												GENERATED_FILENAMES+=(${FINAL_CONFIG_FILENAME})
 												COUNT=$((COUNT + 1))
+											done
 											done
 										else
 											if [[ ${BEHAVIOR} == "v" ]] || [[ ${BEHAVIOR} == "Nv" ]]; then
@@ -320,20 +330,26 @@ for AGENT_NOISE_ASSIGNATION in ${AGENT_NOISE_ASSIGNATION_LIST[*]} ; do
 												for SCALING in ${vSCALING_LIST[*]} ; do
 												for SCEPTICISM_THRESHOLD in ${vSCEPTICISM_THRESHOLD_LIST[*]} ; do
 												for WEIGHT_METHOD in ${vWEIGHT_METHOD_LIST[*]} ; do
+												for REPUTATION_STAKE in ${vREPUTATION_STAKE_LIST[*]} ; do
 													CURRENT_DATA_FILENAME=$( echo ${DATA_FILENAME} | 
 																sed -e "s|COMPARISON_METHOD|${COMPARISON_METHOD}|" \
 																-e "s|SCALING|${SCALING}|" \
 																-e "s|SCEPTICISM_THRESHOLD|${SCEPTICISM_THRESHOLD}|" \
 																-e "s|WEIGHT_METHOD|${WEIGHT_METHOD}|" \
+																-e "s|REPUTATION_STAKE|${REPUTATION_STAKING_NAME_PREFIX[${REPUTATION_STAKE}]}|" \
 																	-e "s|[\.]||g" )
 													FINAL_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}/${CURRENT_DATA_FILENAME}.json"
 													sed -e "s|COMPARISON_METHOD|${COMPARISON_METHOD}|" \
 														-e "s|SCALING|${SCALING}|" \
 														-e "s|SCEPTICISM_THRESHOLD|${SCEPTICISM_THRESHOLD}|" \
 														-e "s|WEIGHT_METHOD|${WEIGHT_METHOD}|" \
+														-e "s|REPUTATION_STAKE|${REPUTATION_STAKE}|" \
+														-e "s|falseRS|NRS|" \
+														-e "s|trueRS|RS|" \
 														${TEMP_CONFIG_FILENAME} > ${FINAL_CONFIG_FILENAME}
 													GENERATED_FILENAMES+=(${FINAL_CONFIG_FILENAME})
 													COUNT=$((COUNT + 1))
+												done
 												done
 												done
 												done
@@ -342,32 +358,52 @@ for AGENT_NOISE_ASSIGNATION in ${AGENT_NOISE_ASSIGNATION_LIST[*]} ; do
 												if [[ ${BEHAVIOR} == "t" ]]; then
 													for COMPARISON_METHOD in ${tCOMPARISON_METHOD_LIST[*]} ; do
 													for SCALING in ${tSCALING_LIST[*]} ; do
+													for REPUTATION_STAKE in ${tREPUTATION_STAKE_LIST[*]} ; do
 														CURRENT_DATA_FILENAME=$( echo ${DATA_FILENAME} | 
 																	sed -e "s|COMPARISON_METHOD|${COMPARISON_METHOD}|" \
 																	-e "s|SCALING|${SCALING}|" \
+																	-e "s|REPUTATION_STAKE|${REPUTATION_STAKING_NAME_PREFIX[${REPUTATION_STAKE}]}|" \
 																	-e "s|[\.]||g")
 														FINAL_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}/${CURRENT_DATA_FILENAME}.json"
 														sed -e "s|COMPARISON_METHOD|${COMPARISON_METHOD}|" \
 															-e "s|SCALING|${SCALING}|" \
+															-e "s|REPUTATION_STAKE|${REPUTATION_STAKE}|" \
+															-e "s|falseRS|NRS|" \
+															-e "s|trueRS|RS|" \
 															${TEMP_CONFIG_FILENAME} > ${FINAL_CONFIG_FILENAME}
 														GENERATED_FILENAMES+=(${FINAL_CONFIG_FILENAME})
 														COUNT=$((COUNT + 1))
+													done
 													done
 													done
 												else
 													if [[ ${BEHAVIOR} == "h" ]]; then
 														for VERIFICATION_METHOD in ${hVERIFICATION_METHOD_LIST[*]} ; do
 														for THRESHOLD_METHOD in ${hTHRESHOLD_METHOD_LIST[*]} ; do
+														for SCALING in ${hSCALING_LIST[*]} ; do
+														for KDIFF in ${hKD_LIST[*]} ; do
+														for REPUTATION_STAKE in ${hREPUTATION_STAKE_LIST[*]} ; do
 															CURRENT_DATA_FILENAME=$( echo ${DATA_FILENAME} | 
 																		sed -e "s|VERIFICATION_METHOD|${VERIFICATION_METHOD}|" \
 																		-e "s|THRESHOLD_METHOD|${THRESHOLD_METHOD}|" \
+																		-e "s|SCALING|${SCALING}|" \
+																		-e "s|KDIFF|${KDIFF}|" \
+																		-e "s|REPUTATION_STAKE|${REPUTATION_STAKING_NAME_PREFIX[${REPUTATION_STAKE}]}|" \
 																		-e "s|[\.]||g")
 															FINAL_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}/${CURRENT_DATA_FILENAME}.json"
 															sed -e "s|VERIFICATION_METHOD|${VERIFICATION_METHOD}|" \
 																-e "s|THRESHOLD_METHOD|${THRESHOLD_METHOD}|" \
+																-e "s|SCALING|${SCALING}|" \
+																-e "s|KDIFF|${KDIFF}|" \
+																-e "s|REPUTATION_STAKE|${REPUTATION_STAKE}|" \
+																-e "s|falseRS|NRS|" \
+																-e "s|trueRS|RS|" \
 																${TEMP_CONFIG_FILENAME} > ${FINAL_CONFIG_FILENAME}
 															GENERATED_FILENAMES+=(${FINAL_CONFIG_FILENAME})
 															COUNT=$((COUNT + 1))
+														done
+														done
+														done
 														done
 														done
 													fi
@@ -379,10 +415,10 @@ for AGENT_NOISE_ASSIGNATION in ${AGENT_NOISE_ASSIGNATION_LIST[*]} ; do
 								rm ${TEMP_CONFIG_FILENAME}
 							done
 						done
+						done
 					done
 				done
 			done
-		done
 		done
 		done
 	else #------------------- FIXED NOISE EXPERIMENTS -------------------#
@@ -395,7 +431,7 @@ for AGENT_NOISE_ASSIGNATION in ${AGENT_NOISE_ASSIGNATION_LIST[*]} ; do
 					DISHONEST_POPULATION=$((NUMBER_OF_ROBOTS-HONEST_POPULATION))
 					for PAYMENT_SYSTEM_CLASS in ${PAYMENT_SYSTEM_CLASS_LIST[*]} ; do
 						for DISHONEST_LIE_ANGLE in ${DISHONEST_LIE_ANGLES[*]} ; do
-							for COMBINE_STRATEGY in ${COMBINE_STRATEGY_LIST[*]} ; do
+							for COMBINE_STRATEGY in ${COMBINE_STRATEGY_LIST[*]} ; do								
 								HONEST_CLASS=${HONEST_DICTIONARY[${BEHAVIOR}]}
 								DISHONEST_CLASS=${DISHONEST_DICTIONARY[${BEHAVIOR}]}
 								HONEST_PARAMS=${HONEST_PARAMETERS[${BEHAVIOR}]}
@@ -454,7 +490,7 @@ for AGENT_NOISE_ASSIGNATION in ${AGENT_NOISE_ASSIGNATION_LIST[*]} ; do
 									-e "s|COMBINE_STRATEGY_CLASS|${COMBINE_STRATEGY_CLASS}|" \
 									-e "s|PAYMENT_SYSTEM_CLASS|${PAYMENT_SYSTEM_CLASS}|" \
 									-e "s|PAYMENT_SYSTEM_INITIAL_REWARD|${PAYMENT_SYSTEM_INITIAL_REWARD}|" \
-									-e "s|PAYMENT_SYSTEM_INFORAMTION_SHARE|${PAYMENT_SYSTEM_INFORAMTION_SHARE}|" \
+									-e "s|PAYMENT_SYSTEM_INFORMATION_SHARE|${PAYMENT_SYSTEM_INFORMATION_SHARE}|" \
 									-e "s|MARKET_CLASS|${MARKET_CLASS}|" \
 									-e "s|MARKET_REWARD|${MARKET_REWARD}|" \
 									-e "s|DATA_OUTPUT_DIRECTORY|${DATA_OUTPUT_DIRECTORY}|" \
@@ -465,7 +501,7 @@ for AGENT_NOISE_ASSIGNATION in ${AGENT_NOISE_ASSIGNATION_LIST[*]} ; do
 									DATA_FILENAME=$( echo ${DATA_FILENAME} | 
 												sed -e "s|AGENT_NOISE_MU|${AGENT_NOISE_MU}|"\
 												-e "s|AGENT_NOISE_RANGE|${AGENT_NOISE_RANGE}|" )
-								
+
 								# 	BEHAVIOUR PARAMS_SUBSTITUTION
 								if [[ ${BEHAVIOR} == "n" ]] || [[ ${BEHAVIOR} == "Nn" ]] || [[ ${BEHAVIOR} == "w" ]]; then
 									CURRENT_DATA_FILENAME=$( echo ${DATA_FILENAME} | 
@@ -489,14 +525,20 @@ for AGENT_NOISE_ASSIGNATION in ${AGENT_NOISE_ASSIGNATION_LIST[*]} ; do
 									else
 										if [[ ${BEHAVIOR} == "r" ]]; then
 											for RANKING_THRESHOLD in ${rRANKING_THRESHOLD_LIST[*]} ; do
+											for REPUTATION_STAKE in ${rREPUTATION_STAKE_LIST[*]} ; do
 												CURRENT_DATA_FILENAME=$( echo ${DATA_FILENAME} | 
 															sed -e "s|RANKING_THRESHOLD|${RANKING_THRESHOLD}|"  \
+																-e "s|REPUTATION_STAKE|${REPUTATION_STAKING_NAME_PREFIX[${REPUTATION_STAKE}]}|" \
 																	-e "s|[\.]||g")
 												FINAL_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}/${CURRENT_DATA_FILENAME}.json"
 												sed -e "s|RANKING_THRESHOLD|${RANKING_THRESHOLD}|" \
+													-e "s|REPUTATION_STAKE|${REPUTATION_STAKE}|" \
+													-e "s|falseRS|NRS|" \
+													-e "s|trueRS|RS|" \
 													${TEMP_CONFIG_FILENAME} > ${FINAL_CONFIG_FILENAME}
 												GENERATED_FILENAMES+=(${FINAL_CONFIG_FILENAME})
 												COUNT=$((COUNT + 1))
+											done
 											done
 										else
 											if [[ ${BEHAVIOR} == "v" ]] || [[ ${BEHAVIOR} == "Nv" ]]; then
@@ -504,20 +546,26 @@ for AGENT_NOISE_ASSIGNATION in ${AGENT_NOISE_ASSIGNATION_LIST[*]} ; do
 												for SCALING in ${vSCALING_LIST[*]} ; do
 												for SCEPTICISM_THRESHOLD in ${vSCEPTICISM_THRESHOLD_LIST[*]} ; do
 												for WEIGHT_METHOD in ${vWEIGHT_METHOD_LIST[*]} ; do
+												for REPUTATION_STAKE in ${vREPUTATION_STAKE_LIST[*]} ; do
 													CURRENT_DATA_FILENAME=$( echo ${DATA_FILENAME} | 
 																sed -e "s|COMPARISON_METHOD|${COMPARISON_METHOD}|" \
 																-e "s|SCALING|${SCALING}|" \
 																-e "s|SCEPTICISM_THRESHOLD|${SCEPTICISM_THRESHOLD}|" \
 																-e "s|WEIGHT_METHOD|${WEIGHT_METHOD}|" \
+																-e "s|REPUTATION_STAKE|${REPUTATION_STAKING_NAME_PREFIX[${REPUTATION_STAKE}]}|" \
 																	-e "s|[\.]||g" )
 													FINAL_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}/${CURRENT_DATA_FILENAME}.json"
 													sed -e "s|COMPARISON_METHOD|${COMPARISON_METHOD}|" \
 														-e "s|SCALING|${SCALING}|" \
 														-e "s|SCEPTICISM_THRESHOLD|${SCEPTICISM_THRESHOLD}|" \
 														-e "s|WEIGHT_METHOD|${WEIGHT_METHOD}|" \
+														-e "s|REPUTATION_STAKE|${REPUTATION_STAKE}|" \
+														-e "s|falseRS|NRS|" \
+														-e "s|trueRS|RS|" \
 														${TEMP_CONFIG_FILENAME} > ${FINAL_CONFIG_FILENAME}
 													GENERATED_FILENAMES+=(${FINAL_CONFIG_FILENAME})
 													COUNT=$((COUNT + 1))
+												done
 												done
 												done
 												done
@@ -526,32 +574,52 @@ for AGENT_NOISE_ASSIGNATION in ${AGENT_NOISE_ASSIGNATION_LIST[*]} ; do
 												if [[ ${BEHAVIOR} == "t" ]]; then
 													for COMPARISON_METHOD in ${tCOMPARISON_METHOD_LIST[*]} ; do
 													for SCALING in ${tSCALING_LIST[*]} ; do
+													for REPUTATION_STAKE in ${tREPUTATION_STAKE_LIST[*]} ; do
 														CURRENT_DATA_FILENAME=$( echo ${DATA_FILENAME} | 
 																	sed -e "s|COMPARISON_METHOD|${COMPARISON_METHOD}|" \
 																	-e "s|SCALING|${SCALING}|" \
+																	-e "s|REPUTATION_STAKE|${REPUTATION_STAKING_NAME_PREFIX[${REPUTATION_STAKE}]}|" \
 																	-e "s|[\.]||g" )
 														FINAL_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}/${CURRENT_DATA_FILENAME}.json"
 														sed -e "s|COMPARISON_METHOD|${COMPARISON_METHOD}|" \
 															-e "s|SCALING|${SCALING}|" \
+															-e "s|REPUTATION_STAKE|${REPUTATION_STAKE}|" \
+															-e "s|falseRS|NRS|" \
+															-e "s|trueRS|RS|" \
 															${TEMP_CONFIG_FILENAME} > ${FINAL_CONFIG_FILENAME}
 														GENERATED_FILENAMES+=(${FINAL_CONFIG_FILENAME})
 														COUNT=$((COUNT + 1))
+													done
 													done
 													done
 												else
 													if [[ ${BEHAVIOR} == "h" ]]; then
 														for VERIFICATION_METHOD in ${hVERIFICATION_METHOD_LIST[*]} ; do
 														for THRESHOLD_METHOD in ${hTHRESHOLD_METHOD_LIST[*]} ; do
+														for SCALING in ${hSCALING_LIST[*]} ; do
+														for REPUTATION_STAKE in ${hREPUTATION_STAKE_LIST[*]} ; do
+														for KDIFF in ${hKD_LIST[*]} ; do
 															CURRENT_DATA_FILENAME=$( echo ${DATA_FILENAME} | 
 																		sed -e "s|VERIFICATION_METHOD|${VERIFICATION_METHOD}|" \
 																		-e "s|THRESHOLD_METHOD|${THRESHOLD_METHOD}|" \
+																		-e "s|SCALING|${SCALING}|" \
+																		-e "s|KDIFF|${KDIFF}|" \
+																		-e "s|REPUTATION_STAKE|${REPUTATION_STAKING_NAME_PREFIX[${REPUTATION_STAKE}]}|" \
 																		-e "s|[\.]||g")
 															FINAL_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}/${CURRENT_DATA_FILENAME}.json"
 															sed -e "s|VERIFICATION_METHOD|${VERIFICATION_METHOD}|" \
 																-e "s|THRESHOLD_METHOD|${THRESHOLD_METHOD}|" \
+																-e "s|SCALING|${SCALING}|" \
+																-e "s|KDIFF|${KDIFF}|" \
+																-e "s|REPUTATION_STAKE|${REPUTATION_STAKE}|" \
+																-e "s|falseRS|NRS|" \
+																-e "s|trueRS|RS|" \
 																${TEMP_CONFIG_FILENAME} > ${FINAL_CONFIG_FILENAME}
 															GENERATED_FILENAMES+=(${FINAL_CONFIG_FILENAME})
 															COUNT=$((COUNT + 1))
+														done
+														done
+														done
 														done
 														done
 													fi
