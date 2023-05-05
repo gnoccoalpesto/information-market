@@ -274,7 +274,8 @@ class InformationMarket():
                 system(f"cp {f} {join(CONFIG_FILE.CONFIG_ERRORS_DIR,f.split('/')[-1])}")
 
                 print(f"LOGGED ERROR: {e}\n")
-                pass
+                continue
+                #[ ] pass #could resolve the InsufficientFunds bug
 
             
     def run_processes(self,config: Configuration):

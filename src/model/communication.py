@@ -25,7 +25,9 @@ class CommunicationSession:
         return metadata
 
 
-    def record_transaction(self,type:str ,seller_id:int=None, transaction:Transaction=None,variable_stake:bool=False,reputation_method:str='h')->None:
+    def record_transaction(self,type:str ,seller_id:int=None, transaction:Transaction=None,
+                        # [ ] variable_stake:bool=False,reputation_method:str='h'
+                           )->None:
         '''
         :param type:str   type of transaction. Accepted values are:
             "attempted", "A", "a" : the client attempted to buy information from a neighbor
@@ -33,10 +35,14 @@ class CommunicationSession:
             "completed", "C", "c" : the client successfully bought information from a neighbor
             "combined", "X", "x" : the client combined information from multiple neighbors
         '''
-        self._client.record_transaction(type,seller_id, transaction,variable_stake,reputation_method)
+        self._client.record_transaction(type,seller_id, transaction,
+                                        #[ ]variable_stake,reputation_method
+                                        )
 
 
-    def make_transaction(self, neighbor_id:int, location:Location,variable_stake:bool=False,reputation_method:str='h') -> Target:
+    def make_transaction(self, neighbor_id, location,
+                         #[ ] variable_stake:bool=False,reputation_method:str='h'
+                         ) -> Target:
         target = copy.deepcopy(self._neighbors[neighbor_id].get_info_from_behavior(location))
         if target is None:
             raise NoInformationSoldException
@@ -46,7 +52,9 @@ class CommunicationSession:
                                   location,
                                   get_orientation_from_vector(target.get_distance()),
                                   None)
-        self.record_transaction("completed",neighbor_id,transaction,variable_stake,reputation_method)
+        self.record_transaction("completed",neighbor_id,transaction,
+                                #[ ]variable_stake,reputation_method
+                                )
         self._client.communication_happened()
         self._neighbors[neighbor_id].communication_happened()
         return target
