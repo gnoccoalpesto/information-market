@@ -36,12 +36,8 @@ COMBINE_STRATEGY_LIST=(
 #payment system
 PAYMENT_SYSTEM_CLASS_LIST=(
 							"OutlierPenalisationPaymentSystem" 
-							"DelayedPaymentPaymentSystem"
+							# "DelayedPaymentPaymentSystem"
 							)
-PAYMENT_SYSTEM_REPUTATION_STAKE_LIST=(
-										false
-										# true
-)
 #data collection
 DATA_PRECISE_RECORDING_INTERVAL=100
 DATA_TRANSACTIONS_LOG=false
@@ -60,9 +56,9 @@ BEHAVIOR_LIST=(
 				# "w" 
 				"n"
 				"s"
-				# "r" 
-				# "t" 
-				# "Nv"
+				"r" 
+				"t" 
+				"Nv"
 				"h"
 			)
 			
@@ -80,59 +76,74 @@ rRANKING_THRESHOLD_LIST=(
 						0.5
 						)
 
+rREPUTATION_STAKE_LIST=(
+						true 
+						false
+)
 # variable scepticism: v ; new variable scepticism: Nv
 ###################################################### -params:{comparison_method,scaling,scepticism_threshold,weight_method}
 vCOMPARISON_METHOD_LIST=(
 							"allavg" 
-							"allmax"
+							# "allmax"
 							)
 vSCALING_LIST=(
-				0.8 
+				# 0.8 
 				0.5 
 				0.3
 				)
 vSCEPTICISM_THRESHOLD_LIST=(0.25)
 vWEIGHT_METHOD_LIST=(
 						"ratio" 
-						"exponential"
+						# "exponential"
 						)
 
+vREPUTATION_STAKE_LIST=(
+						true 
+						false
+)
 # wealth threshold: t
 ##################### -params:{comparison_method,scaling}
 tCOMPARISON_METHOD_LIST=(
 							"allavg" 
-							"allmax"
+							# "allmax"
 							)
 tSCALING_LIST=(
-				0.8 
+				# 0.8 
 				0.5 
-				0.3
+				# 0.3
 				)
 
+tREPUTATION_STAKE_LIST=(
+						true 
+						false
+)
 # reputation history: h
-######################## -params:{verification_method,threshold_method}
+######################## -params:{verification_method,threshold_method,scaling,kd}
 hVERIFICATION_METHOD_LIST=(
 							"discrete" 
-							"difference" 
-							"recency" 
+							# "difference" 
+							# "recency" 
 							"aged" 
-							"aged2"
+							# "aged2"
 						)
 hTHRESHOLD_METHOD_LIST=(
-						"positive" 
+						# "positive" 
 						"mean"
 						)
 hSCALING_LIST=(
-				1
-				0.8 
-				0.5 
-				0.3
+				1.0
+				# 0.8 
+				# 0.5 
+				# 0.3
 				)
 hKD_LIST=(
-			1
-			0.7
-			1.3
-			1.6
-			2.0
+			1.0
+			# 0.7
+			# 1.3
+			# 1.6
+			# 2.0
 )
-
+hREPUTATION_STAKE_LIST=(
+						true 
+						false
+)

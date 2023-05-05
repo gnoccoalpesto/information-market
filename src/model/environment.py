@@ -135,7 +135,7 @@ class Environment:
         pass
         #NOTE OVERLOADED IN gui.py: self.img = ImageTk.PhotoImage(file="../assets/strawberry.png")
 
-    #[ ]
+    #[ ] NEWCOMERS
     def create_newcomers(self, newcomers_type, newcomers_amount):
         if newcomers_type=='honest':selected=0
         elif newcomers_type=='dishonest':selected=1
