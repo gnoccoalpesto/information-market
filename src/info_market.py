@@ -95,8 +95,9 @@ def params_from_filename(filename:str, compact_format:bool=False):
 
     #TODO look for specific keywords instead of using position
     n_honest=re.search('[0-9]+', params[0]).group()
-    lie_angle=re.search('[0-9]+', params[3]).group()
-    behaviour_params_list=params[4:-3]
+    lie_angle=re.search('[0-9]+', params[4]).group()
+    reputation_stake=True if params[3].split("RS")[0]=="" else False
+    behaviour_params_list=params[5:-3]
     noise_params_list=params[-3:]
 
     if compact_format:
@@ -109,7 +110,7 @@ def params_from_filename(filename:str, compact_format:bool=False):
         noise_params=[]
         for p in noise_params_list:
             noise_params.append("".join(re.findall('[0-9a-z]+', p)))
-        return n_honest, honest_behavior,combine_strategy, payment, lie_angle, behaviour_params, noise_params
+        return n_honest, honest_behavior,combine_strategy, payment, reputation_stake, lie_angle, behaviour_params, noise_params
 
     honest_behavior=BEHAVIORS_NAME_DICT["".join(re.findall('[a-zA-Z]+', params[0]))]
     combine_strategy=COMBINE_STRATEGY_NAME_DICT["".join(re.findall('[a-z]+', params[1]))]
@@ -130,7 +131,7 @@ def params_from_filename(filename:str, compact_format:bool=False):
     
     message=f"{n_honest} {honest_behavior},\n {combine_strategy},\n{payment}, lie_angle: {lie_angle},\n{behaviour_params},\n{noise_params}"
     
-    return n_honest, honest_behavior, combine_strategy, payment, lie_angle, behaviour_params, noise_params, message
+    return n_honest, honest_behavior, combine_strategy, payment, reputation_stake, lie_angle, behaviour_params, noise_params, message
         
 
 def filename_from_params(n_honests:int,
@@ -155,14 +156,14 @@ def filename_from_params(n_honests:int,
 
 
 def is_bad_param_combination(filename:str):
-    _, h_behav, _, payment, _, behav_params, _ = params_from_filename(filename,compact_format=True)
+    _, h_behav, _, payment, _,_, behav_params, _ = params_from_filename(filename,compact_format=True)
     if [payment, behav_params] in BAD_PARAM_COMBINATIONS_DICT[h_behav]:
         return True
     return False
     
 
 def is_best_param_combination(filename:str):
-    _, h_behav, _, payment, _, behav_params, _ = params_from_filename(filename,compact_format=True)
+    _, h_behav, _, payment, _,_, behav_params, _ = params_from_filename(filename,compact_format=True)
     if [payment, behav_params] in BEST_PARAM_COMBINATIONS_DICT[h_behav]:
         return True
     return False
@@ -286,8 +287,13 @@ class InformationMarket():
         with Pool() as pool:
             controllers = pool.starmap(self.run, [(config, i) for i in range(nb_runs)])
             if CONFIG_FILE.RECORD_DATA: 
-                self.record_data(config, controllers)
-                if CONFIG_FILE.CONFIG_RUN_LOG: self.log_config(config,self.generate_filename(config),output_log=True)
+                items_filename=self.record_data(config, controllers)
+                if CONFIG_FILE.CONFIG_RUN_LOG:
+                    #TODO use as output name in log the one with similar filenames counter 
+                    # if items_filename is None:
+                    self.log_config(config,self.generate_filename(config),output_log=True)
+                    # else:
+                    #     self.log_config(None,items_filename,output_log=True)
         print(f'###### {datetime.datetime.now()}\tFinished {nb_runs} runs in {time.time()-start: .02f} seconds')
 
 
@@ -307,6 +313,7 @@ class InformationMarket():
     def record_data(self,config:Configuration, controllers):
         output_directory = config.value_of("data_collection")["output_directory"]
         filename=self.generate_filename(config)
+        CAN_RETURN=False
         for metric in config.value_of("data_collection")["metrics"]:
         #TODO reintroduce append option, increment SEED by data already present
             if metric=="rewards":
@@ -314,6 +321,8 @@ class InformationMarket():
                 rewards_df = pd.DataFrame([controller.get_rewards() for controller in controllers])
                 Path(join(output_directory, "rewards")).mkdir(parents=True, exist_ok=True)
                 current_filename=self.check_filename_existence(output_directory,metric,filename)
+                items_filename=current_filename
+                CAN_RETURN=True
                 rewards_df.to_csv(join(output_directory, "rewards", current_filename), index=False, header=False)
             elif metric=="items_collected":
                 items_collected_df = pd.DataFrame([controller.get_items_collected() for controller in controllers])
@@ -373,13 +382,16 @@ class InformationMarket():
             current_filename=self.check_filename_existence(output_directory,metric,filename)
             pd.concat(transaction_logs).to_csv(join(output_directory, "transactions", current_filename))
 
+        return items_filename if CAN_RETURN else None
+
 
     @staticmethod
     def log_config(c,f,output_log=False):
         """
         log file of config runs in the selected output folder
         """
-        output_directory = c.value_of("data_collection")["output_directory"]
+        output_directory = c.value_of("data_collection")["output_directory"] if c is not None \
+                        else "/".join(f.split("/")[:-1])
         if not output_log:
             log_message=f"{datetime.datetime.now()}: {f}"
         else:

@@ -10,13 +10,13 @@
 #simulation
 SIMULATION_STEPS=15000
 SIMULATION_SEED=5684436
-NUMBER_RUNS=20
+NUMBER_RUNS=1
 #visualisation
 VISUALISATION_ACTIVATE=false
 #noise
 AGENT_NOISE_ASSIGNATION_LIST=(
 							"average" 
-							"perfect"
+							# "perfect"
 							)
 # bimodal:
 AGENT_NOISE_SAMPLING_MU_LIST=(0.05)
@@ -36,11 +36,11 @@ COMBINE_STRATEGY_LIST=(
 #payment system
 PAYMENT_SYSTEM_CLASS_LIST=(
 							"OutlierPenalisationPaymentSystem" 
-							"DelayedPaymentPaymentSystem"
+							# "DelayedPaymentPaymentSystem"
 							)
 PAYMENT_SYSTEM_REPUTATION_STAKE_LIST=(
-										false
-										# true
+										# false
+										true
 )
 #data collection
 DATA_PRECISE_RECORDING_INTERVAL=100
@@ -52,7 +52,8 @@ HONEST_POPULATION_LIST=(
 							# 25
 							24
 						)
-DISHONEST_LIE_ANGLES=(
+DISHONEST_LIE_ANGLE_LIST=(
+						0 
 						90
 					)
 # behaviors ----------------------------------------------------
@@ -60,9 +61,9 @@ BEHAVIOR_LIST=(
 				# "w" 
 				"n"
 				"s"
-				# "r" 
-				# "t" 
-				# "Nv"
+				"r" 
+				"t" 
+				"Nv"
 				"h"
 			)
 			
@@ -76,7 +77,7 @@ sSCEPTICISM_THRESHOLD_LIST=(0.25)
 # ranking: r
 ############ -params:{ranking_threshold}
 rRANKING_THRESHOLD_LIST=(
-						0.3 
+						# 0.3 
 						0.5
 						)
 
@@ -84,55 +85,55 @@ rRANKING_THRESHOLD_LIST=(
 ###################################################### -params:{comparison_method,scaling,scepticism_threshold,weight_method}
 vCOMPARISON_METHOD_LIST=(
 							"allavg" 
-							"allmax"
+							# "allmax"
 							)
 vSCALING_LIST=(
-				0.8 
-				0.5 
+				# 0.8 
+				# 0.5 
 				0.3
 				)
 vSCEPTICISM_THRESHOLD_LIST=(0.25)
 vWEIGHT_METHOD_LIST=(
 						"ratio" 
-						"exponential"
+						# "exponential"
 						)
 
 # wealth threshold: t
 ##################### -params:{comparison_method,scaling}
 tCOMPARISON_METHOD_LIST=(
 							"allavg" 
-							"allmax"
+							# "allmax"
 							)
 tSCALING_LIST=(
-				0.8 
+				# 0.8 
 				0.5 
-				0.3
+				# 0.3
 				)
 
 # reputation history: h
 ######################## -params:{verification_method,threshold_method}
 hVERIFICATION_METHOD_LIST=(
 							"discrete" 
-							"difference" 
-							"recency" 
-							"aged" 
-							"aged2"
+							# "difference" 
+							# "recency" 
+							# "aged" 
+							# "aged2"
 						)
 hTHRESHOLD_METHOD_LIST=(
-						"positive" 
+						# # "positive" 
 						"mean"
 						)
 hSCALING_LIST=(
 				1
-				0.8 
-				0.5 
-				0.3
+				# 0.8 
+				# 0.5 
+				# 0.3
 				)
 hKD_LIST=(
 			1
-			0.7
-			1.3
-			1.6
-			2.0
+			# 0.7
+			# 1.3
+			# 1.6
+			# 2.0
 )
 
