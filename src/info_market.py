@@ -58,6 +58,9 @@ def params_from_filename(filename:str, compact_format:bool=False):
     PAYMENTSYSTEM =     "NP": "No Penalization",
                         "P": "Penalization",
 
+    REPUTATION STAKE =  "RS": "ReputationStake",
+                        "NRS": "NoReputationStake",
+
                         
     lieangle =          [0, 90]
 
@@ -138,11 +141,16 @@ def filename_from_params(n_honests:int,
                         behavior_initials:str,
                         combine_strategy_initials:str,
                         payment_system:str,
+                        reputation_stake:bool,
                         lie_angle:int,
                         behavior_params_values:list,
                         noise_type:str,
                         noise_params_values:list
                         ):
+    if isinstance(reputation_stake, bool):
+    #NOTE else it is supposed to be a string ={"RS","NRS"}
+        if reputation_stake: reputation_stake="RS"
+        else: reputation_stake="NRS"
     behavior_params=""
     if behavior_params_values:
         for x,y in zip(behavior_params_values,BEHAVIOR_PARAMS_DICT[behavior_initials]):
