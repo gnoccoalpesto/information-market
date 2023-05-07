@@ -60,6 +60,8 @@ PARAMS_NAME_DICT={
                     "CS": "combine strategy",
                     "P": "penalization",
                     "NP": "non penalization",
+                    "RS": "reputation staking",
+                    "NRS": "no reputation staking",
                     "LIA": "lie angle",
                     "SMU": "bimodal noise sampling mean",
                     "SSD": "bimodal noise sampling stdev",
@@ -69,17 +71,18 @@ PARAMS_NAME_DICT={
                     "SAB": "saboteur performance",
                     "VM": "verification method",
                     "TM": "threshold method",
+                    "KD": "derivative controller coeff"
                     }
 BEHAVIOR_PARAMS_DICT = {"n": [],
                         "Nn": [],
                         "s": ["ST"],
                         "Ns": ["ST"],
-                        "r": ["RT"],
-                        "v": ["CM","SC","ST","WM"],
-                        "Nv": ["CM","SC","ST","WM"],
-                        "t": ["CM","SC"],
+                        "r": ["RT"],#"RS"
+                        "v": ["CM","SC","ST","WM"],#"RS"
+                        "Nv": ["CM","SC","ST","WM"],#"RS"
+                        "t": ["CM","SC"],#"RS"
                         "w": [],
-                        "h": ["VM","TM"],
+                        "h": ["VM","TM"],#"SC","KD","RS"],
                         }
 COMBINE_STRATEGY_DICT = {
                             "waa" : "WeightedAverageAgeStrategy",
@@ -108,14 +111,15 @@ BEST_PARAM_COMBINATIONS_DICT={
                             # "Nn": [['NP',[]],['P',[]],],
                             "s": [
                                 # ['NP',['025']],
-                                ['P',['025']],],
+                                ['P',['025']],
+                                ],
                             # "Ns": [['NP',['025']],['P',['025']],],
                             "r": [
                                 ['P', ['03']],
                                 ],
                             "v": [],
                             "Nv": [
-                                ['P', ['allavg', '03', '025', 'exponential']],
+                                # ['P', ['allavg', '03', '025', 'exponential']],
                                 ['P', ['allavg', '03', '025', 'ratio']],
                                 ],
                             "t": [
@@ -270,7 +274,7 @@ class TemplateBehaviour(Behavior):
 
 
     def buy_info(self, payment_database:PaymentDB, session: CommunicationSession):
-        #TODO if self.start_buying():
+        if self.start_buying():
             for location in Location:
                 sorted_metadata=self.get_ordered_metadata(location, payment_database, session)
 
@@ -300,27 +304,27 @@ class TemplateBehaviour(Behavior):
 
 
     def get_ordered_metadata(self,location: Location, payment_database: PaymentDB,session: CommunicationSession):
-        #TODO reward ordering bypassed
+        #TODO reward ordering bypass
         metadata = session.get_metadata(location)
-        # if self.information_ordering_metric == "reputation":
-        #     for bot_id in metadata:
-        #         metadata[bot_id]["reputation"] = payment_database.get_reward(bot_id)
+        if self.information_ordering_metric == "reputation":
+            for bot_id in metadata:
+                metadata[bot_id]["reputation"] = payment_database.get_reward(bot_id)
         sorted_metadata= sorted(metadata.items(), key=lambda item:
-                     item[1]["age"])
-                    #  item[1][self.information_ordering_metric])
-        # return reversed(sorted_metadata) if self.information_ordering_metric == "reputation" \
-        #         else sorted_metadata
-        return sorted_metadata
+                     item[1][self.information_ordering_metric])
+        return reversed(sorted_metadata) if self.information_ordering_metric == "reputation" \
+                else sorted_metadata
 
 
     def start_buying(self):
+        #TODO use this as a sort of integral controller: the robot understands that is getting bad reputation
+        # and it decides not to sell anymore. Can this interfere with good robots?
         return True
-    
+
 
     def test_data_validity(self,location:Location,data,payment_database,bot_id):
         """
         test if data is valid to be bought; could also have behaviour specific traits
-        TODO return self.strategy.should_combine(data[self.information_ordering_metric])"""
+        TODO should use return self.strategy.should_combine(data[self.information_ordering_metric])"""
         return True
 
 
@@ -338,6 +342,7 @@ class TemplateBehaviour(Behavior):
         tests if data is good enough to be combined with local data; behaviour and strategy specific
         # return data[self.information_ordering_metric] < self.navigation_table.get_age_for_location(location)
         """
+        # return self.strategy.should_combine(data[self.information_ordering_metric])
         return True
 
 
@@ -398,7 +403,7 @@ class TemplateBehaviour(Behavior):
                         other_target,
                         my_reputation,
                         seller_reputation)
-                        
+
         self.navigation_table.replace_information_entry(location, new_target)
 
 
@@ -839,7 +844,7 @@ class NewScepticalBehavior(TemplateBehaviour):
 
 class NewScaboteurBehavior(NewScepticalBehavior):
     def __init__(self,lie_angle=90,scepticism_threshold=.25,combine_strategy="WeightedAverageAgeStrategy"):
-        super().__init__(combine_strategy=combine_strategy, 
+        super().__init__(combine_strategy=combine_strategy,
                         scepticism_threshold=scepticism_threshold)
         self.color = "red"
         self.lie_angle = lie_angle
@@ -881,7 +886,7 @@ class SaboteurWealthWeightedBehavior(WealthWeightedBehavior):
         t = copy.deepcopy(self.navigation_table.get_information_entry(location))
         t.rotate(self.lie_angle)
         return t
-    #############
+
 
 class ReputationRankingBehavior(TemplateBehaviour):
     def __init__(self,ranking_threshold=.5,combine_strategy="WeightedAverageAgeStrategy"):
@@ -889,7 +894,7 @@ class ReputationRankingBehavior(TemplateBehaviour):
         self.required_information=RequiredInformation.GLOBAL
         self.information_ordering_metric="age"
         self.ranking_threshold=ranking_threshold
-    
+
 
     def test_data_validity(self, location: Location, data,_,__):
         return data["age"] < self.navigation_table.get_age_for_location(location)
@@ -908,10 +913,10 @@ class ReputationRankingBehavior(TemplateBehaviour):
             return True
         percentile=1-rank/payment_database.get_number_of_wallets()
         return percentile >= self.ranking_threshold
-    
 
-    def stop_buying(self):
-        return False
+
+    # def stop_buying(self):
+    #     return False
 
 
 class SaboteurReputationRankingBehavior(ReputationRankingBehavior):
@@ -984,7 +989,8 @@ class WealthThresholdBehavior(TemplateBehaviour):
 
 
 class SaboteurWealthThresholdBehavior(WealthThresholdBehavior):
-    def __init__(self,lie_angle=90,comparison_method="allavg",scaling=.3,combine_strategy="WeightedAverageAgeStrategy"):
+    def __init__(self,lie_angle=90,comparison_method="allavg",scaling=.3,
+                    combine_strategy="WeightedAverageAgeStrategy"):
         super().__init__(comparison_method=comparison_method,
                         scaling=scaling,
                         combine_strategy=combine_strategy)
@@ -996,15 +1002,19 @@ class SaboteurWealthThresholdBehavior(WealthThresholdBehavior):
         t.rotate(self.lie_angle)
         return t
 
-#[ ]
+
 class ReputationHistoryBehavior(TemplateBehaviour):
     def __init__(self,combine_strategy="WeightedAverageAgeStrategy",
-                     verification_method="discrete",threshold_method='positive'):
+                     verification_method="discrete",threshold_method='positive',
+                     scaling=1,kd=1,
+                     ):
         super().__init__(combine_strategy=combine_strategy)
         self.required_information=RequiredInformation.GLOBAL
         self.information_ordering_metric="age"
         self.verification_method=verification_method
         self.threshold_method=threshold_method
+        self.scaling=scaling
+        self.kd=kd
 
 
     def test_data_validity(self, location: Location, data,_,__):
@@ -1022,17 +1032,15 @@ class ReputationHistoryBehavior(TemplateBehaviour):
         return False
 
 
-        #[ ]
+    #[ ] DIFFERENTIAL CONTROLLER
+    # NOTE this should behave as a derivative controller, since
+    #       reputation can be considered as a discrete derivative of income
     def verify_reputation(self,payment_database:PaymentDB,seller_id):
         valid_history=[h for h in payment_database.get_history(seller_id) 
                         if h is not None]
         if len(valid_history)>0:
             reputation=0
             for i,h in enumerate(valid_history):
-                #[ ]
-                #TODO this should behave as a derivative controller, since
-                # reputation can be ocnsidered as a discrete derivative of income
-                Kd=CONFIG_FILE.KD_HISTORY_CONTROLLER
                 if self.verification_method=="discrete":
                     increment=np.sign(h)
                 elif self.verification_method=="difference":
@@ -1043,10 +1051,9 @@ class ReputationHistoryBehavior(TemplateBehaviour):
                     increment=h/(len(valid_history)-i)
                 elif self.verification_method=="aged2":
                     increment=h/(len(valid_history)-i)**2
-                reputation+=Kd*increment
+                reputation+=increment
 
-            return reputation>=CONFIG_FILE.SCALING_HISTORY_THRESHOLD*\
-                                self.get_threshold_value(payment_database)
+            return self.kd*reputation>=self.scaling*self.get_threshold_value(payment_database)
         return True
 
 
@@ -1059,10 +1066,15 @@ class ReputationHistoryBehavior(TemplateBehaviour):
 
 class SaboteurReputationHistoryBehavior(ReputationHistoryBehavior):
     def __init__(self,lie_angle=90,combine_strategy="WeightedAverageAgeStrategy",
-                    verification_method="discrete",threshold_method='positive'):
+                    verification_method="discrete",threshold_method='positive',
+                    scaling=1,kd=1,
+                    ):
         super().__init__(verification_method=verification_method,
                         threshold_method=threshold_method,
-                        combine_strategy=combine_strategy)
+                        combine_strategy=combine_strategy,
+                        scaling=scaling,
+                        kd=kd,
+                        )
         self.color = "red"
         self.lie_angle = lie_angle
 
@@ -1084,9 +1096,8 @@ class NewVariableScepticalBehavior(NewScepticalBehavior):
         self.comparison_method=comparison_method
         self.weight_method=weight_method
 
-    #[ ]
+
     def get_scepticism_threshold(self,payment_database:PaymentDB,seller_id):
-        # reputation_score=payment_database.get_reward(seller_id)
         seller_reputation=payment_database.get_reputation(seller_id,"r")
         # extension, metric=re.split("_",self.comparison_method) #TODO could substitute with "-"
         extension, metric=self.comparison_method[:-3],self.comparison_method[-3:]

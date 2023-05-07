@@ -26,7 +26,7 @@ class PaymentAPI:
         self.apply_cost = payment_db.apply_cost
         self.transfer = payment_db.transfer
         self.update_history = payment_db.update_history
-        self.stake_amount = payment_db.stake_amount
+        self.reputation_stake_coeff = payment_db.reputation_stake_coeff
 
 
 class PaymentDB:
@@ -41,7 +41,6 @@ class PaymentDB:
     - n_combined_transactions (int): the number of transactions where the robot used the data;
     """
     def __init__(self, population_ids, payment_system_params):
-        #TODO hardcoded
         self.history_span=10
         self.database = {}
         for robot_id in population_ids:
@@ -49,7 +48,7 @@ class PaymentDB:
                                        "payment_system": eval(payment_system_params['class'])(
                                                                 **payment_system_params['parameters']),
                                         "wallet_age": 0,
-                                        #TODO make n_transactions a DICT
+                                        #TODO dict n_transactions would be cleaner
                                         "n_attempted_transactions": [0]*len(population_ids),
                                         "n_validated_transactions": [0]*len(population_ids),
                                         "n_completed_transactions": [0]*len(population_ids),
@@ -65,7 +64,7 @@ class PaymentDB:
                                     }
         self.completed_transactions_log=[]
 
-    #[ ] 
+    #[ ] NEWCOMERS
     def add_newcomers(self, newcomers_ids,payment_system_params):
         for robot_id in newcomers_ids:
             self.database[robot_id] = {"reward": payment_system_params["initial_reward"],
@@ -91,20 +90,22 @@ class PaymentDB:
         self.database[robot_id]["history"].pop(0)
         self.database[robot_id]["history"].append(redistribution)
 
-    #[ ]
-    def stake_amount(self,stake_amount,robot_id):
-        robot_reputation=self.get_reputation(robot_id,method='h')
+
+    def reputation_stake_coeff(self,robot_id,reputation_method='h'):
+        if reputation_method=='h':
+            robot_reputation=self.get_reputation(robot_id,method=reputation_method)
+        else:
+            robot_reputation=self.get_reputation(robot_id,method=reputation_method,verification_method='mean')
         # stake_ratio_0=1
         stake_ratio_min=0.5
         # stake_ratio_max=3
-        history_len=10
-        if CONFIG_FILE.REPUTATION_STAKE and robot_reputation is not None:
-            stake_ratio=stake_ratio_min**(2*robot_reputation/history_len)
+        if robot_reputation is not None:
+            #TODO requires tuning coeff for "r" reputation
+            stake_ratio=stake_ratio_min**(2*robot_reputation/self.history_span)
             # stake_ratio=(stake_ratio_min+(stake_ratio_0-stake_ratio_min)*np.exp(-robot_reputation/history_len) \
             #                             -(stake_ratio_0-stake_ratio_max)*np.exp(-robot_reputation/history_len))/3
-            
-            return stake_amount*stake_ratio
-        return stake_amount
+            return stake_ratio
+        return 1
         
 
     def get_history(self,robot_id):
@@ -129,7 +130,9 @@ class PaymentDB:
         #TODO make this more similar to self.get_transactions()
         if type=="completed" or type=="C" or type=="c":
             self.database[transaction.buyer_id]["n_completed_transactions"][seller_id] += 1
-            self.database[transaction.buyer_id]["payment_system"].new_transaction(transaction, PaymentAPI(self))
+            self.database[transaction.buyer_id]["payment_system"].new_transaction(transaction, PaymentAPI(self),
+                                                                    # variable_stake=variable_stake,reputation_method=reputation_method
+                                                                                  )
             if CONFIG_FILE.LOG_COMPLETED_TRANSATIONS: self.log_completed_transaction(transaction)
         elif type=="attempted" or type=="A" or type=="a":
             self.database[buyer_id]["n_attempted_transactions"][seller_id] += 1
@@ -147,12 +150,12 @@ class PaymentDB:
 
 
     def get_total_reward(self):
-        #TODO rework
+        #TODO integrate
         return sum([self.database[robot_id]["reward"] for robot_id in self.database])
         
 
     def get_reward(self, robot_id):
-        #TODO remove
+        #TODO integrate
         return self.database[robot_id]["reward"]
 
     #TODO PAYMENT SHOULD ONLY RETURN THE FULL LIST,
@@ -160,7 +163,10 @@ class PaymentDB:
     def get_reputation(self, robot_id,method="reward",verification_method="discrete"):
         if method=="reward" or method=="r" or method=="R" or method=="w":
             if isinstance(robot_id,int):
-                return self.get_reward(robot_id)
+                reward=self.get_reward(robot_id)
+                if verification_method=="mean":
+                    return reward-self.get_lowest_reward()*2
+                return reward
             elif robot_id=="all":
                 return self.get_total_reward()
             elif robot_id=="mean":
@@ -253,13 +259,13 @@ class PaymentDB:
         
     
     def get_reward_ranking(self,robot_id):
-        #TODO remove?
+        #TODO remove
         sorted_database = self.get_sorted_database()
         return list(sorted_database.keys()).index(robot_id)
 
     
     def get_reputation_ranking(self,robot_id,method="reward"):
-        #TODO remove?
+        #TODO remove
         if method=="reward" or method=="r" or method=="R" or method=="w":
             return self.get_reward_ranking(robot_id)
         elif method=="history" or method=="h" or method=="H":
@@ -277,15 +283,8 @@ class PaymentDB:
         if cost < 0:
             raise ValueError("Cost must be positive")
         if self.database[robot_id]["reward"] < cost:
-            #BUG outer except cannot catch this
-            # conditions: P, any behav, initial_reward=1, share=0.5, berry_reward=1
-            #generated by:
-            # check_location-> deposit_food -> pay_creditors -> new_reward ->
-            #    transfer-> apply_cost -> InsufficientFundsException
-            #TODO test NOT GENERATED BY BUY (FOR NOW)
-            # if test: handle the exception locally, else...
-            # raise InsufficientFundsException(robot_id)
-            pass
+            raise InsufficientFundsException()#robot_id)
+            #NOTE if changing market conditions gives error, bypass: pass
         else:
             self.database[robot_id]["reward"] -= cost
 
@@ -328,7 +327,8 @@ class PaymentSystem(ABC):
 
 
 class DelayedPaymentPaymentSystem(PaymentSystem):
-    def __init__(self, information_share):
+    #TODO create params for each payment system
+    def __init__(self, information_share,reputation_stake,reputation_metric):
         super().__init__()
         self.information_share = information_share
         self.transactions = set()
@@ -343,10 +343,8 @@ class DelayedPaymentPaymentSystem(PaymentSystem):
         shares_mapping = self.calculate_shares_mapping(reward_to_distribute)
         for seller_id, share in shares_mapping.items():
             payment_api.transfer(rewarded_id, seller_id, share)
-
-            last_redistribution= share
+            last_redistribution= share-(self.stake_amount if hasattr(self,"stake_amount") else 0)
             payment_api.update_history(seller_id, last_redistribution)
-
         self.reset_transactions()
 
 
@@ -367,16 +365,20 @@ class DelayedPaymentPaymentSystem(PaymentSystem):
 
 
 class OutlierPenalisationPaymentSystem(PaymentSystem):
-    def __init__(self, information_share):
+    def __init__(self, information_share:float,reputation_stake:bool,reputation_metric:str):
         super().__init__()
         self.transactions = set()
         self.information_share = information_share
         self.pot_amount = 0
         self.stake_amount=1/25
+        self.reputation_stake = reputation_stake
+        self.reputation_metric = reputation_metric
 
-#[ ]
+
     def get_stake_amount(self,payment_api:PaymentAPI,robot_id):
-        return payment_api.stake_amount(self.stake_amount,robot_id)
+        stake_coeff=payment_api.reputation_stake_coeff(robot_id,self.reputation_metric) \
+                    if self.reputation_stake else 1
+        return stake_coeff*self.stake_amount
          
 
     def new_transaction(self, transaction: Transaction, payment_api: PaymentAPI):
@@ -387,17 +389,18 @@ class OutlierPenalisationPaymentSystem(PaymentSystem):
 
 
     def new_reward(self, reward, payment_api:PaymentAPI, rewarded_id):
-        #[ ] originally: payment_api.apply_gains(rewarded_id, self.pot_amount)
-        reward_share_to_distribute = self.information_share * reward + self.pot_amount
+        reward_share_to_distribute = self.information_share * reward
+        payment_api.apply_gains(rewarded_id, self.pot_amount)
+        
         shares_mapping = self.calculate_shares_mapping(reward_share_to_distribute)
         for seller_id, share in shares_mapping.items():
             payment_api.transfer(rewarded_id, seller_id, share)
 
             #TODO use current stake amount, base stake amount, or stake amount at the time of the transaction?
             # seller_stake_amount=self.get_stake_amount(payment_api,seller_id)#stake(t)k
-            seller_stake_amount=self.stake_amount#stake(0)
+            # seller_stake_amount=self.stake_amount#stake(0)
             #stake(k) for some past contribution k ???
-            last_redistribution= share-seller_stake_amount #if hasattr(self,"stake_amount") else 0)
+            last_redistribution= share-(self.stake_amount if hasattr(self,"stake_amount") else 0)
             payment_api.update_history(seller_id, last_redistribution)
 
         self.reset_transactions()
@@ -429,8 +432,7 @@ class OutlierPenalisationPaymentSystem(PaymentSystem):
         total_shares = sum(final_mapping.values())
         for seller in final_mapping:
             final_mapping[seller] = final_mapping[seller] * (
-                    #[ ] originally:  reward_share_to_distribute + self.pot_amount) / total_shares
-                    reward_share_to_distribute) / total_shares
+                    reward_share_to_distribute + self.pot_amount) / total_shares
         return final_mapping
 
 
