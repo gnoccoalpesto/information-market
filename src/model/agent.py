@@ -309,18 +309,14 @@ class Agent:
         self.dr = dr
 
 
-    def record_transaction(self,type:str,seller_id:int=None,transaction:Transaction=None,
-                           # [ ] variable_stake:bool=False,reputation_method:str='h'
-                           ):
+    def record_transaction(self,type:str,seller_id:int=None,transaction:Transaction=None):
         if type=="attempted" or type=="a" or type=="A" or \
                 type=="validated" or type=="v" or type=="V" or \
                 type=="combined" or type=="x" or type=="X":
             self.environment.payment_database.record_transaction(type,self.id,seller_id)
         elif type=="completed" or type=="c" or type=="C":
             transaction.timestep = self.environment.timestep
-            self.environment.payment_database.record_transaction(type,self.id,seller_id,transaction,
-                                                            #[ ] variable_stake,reputation_method
-                                                                 )
+            self.environment.payment_database.record_transaction(type,self.id,seller_id,transaction)
         else:
             raise ValueError("Transaction type not recognized")
 

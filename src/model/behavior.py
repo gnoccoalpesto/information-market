@@ -332,13 +332,7 @@ class TemplateBehaviour(Behavior):
         """
         buys information and references it into local ref. frame
         """
-        #NOTE ugly
-        #[ ] default_vs=session.make_transaction.__defaults__[0]
-        # default_rm=session.make_transaction.__defaults__[1]
-        other_target = session.make_transaction(neighbor_id=seller_id, location=location,
-        #                                 variable_stake=self.reputation_stake if hasattr(self, "reputation_stake") else default_vs,
-        #                                 reputation_method=self.reputation_metric if hasattr(self, "reputation_metric") else default_rm
-                                        )
+        other_target = session.make_transaction(neighbor_id=seller_id, location=location)
         other_target.set_distance(other_target.get_distance() + session.get_distance_from(seller_id))
         return other_target
 
@@ -895,14 +889,11 @@ class SaboteurWealthWeightedBehavior(WealthWeightedBehavior):
 
 
 class ReputationRankingBehavior(TemplateBehaviour):
-    def __init__(self,ranking_threshold=.5,combine_strategy="WeightedAverageAgeStrategy",
-                #[ ]  reputation_stake=False
-                ):
+    def __init__(self,ranking_threshold=.5,combine_strategy="WeightedAverageAgeStrategy"):
         super().__init__(combine_strategy=combine_strategy)
         self.required_information=RequiredInformation.GLOBAL
         self.information_ordering_metric="age"
         self.ranking_threshold=ranking_threshold
-        # self.reputation_stake=reputation_stake
 
 
     def test_data_validity(self, location: Location, data,_,__):
@@ -929,11 +920,8 @@ class ReputationRankingBehavior(TemplateBehaviour):
 
 
 class SaboteurReputationRankingBehavior(ReputationRankingBehavior):
-    def __init__(self,lie_angle=90,ranking_threshold=.5,combine_strategy="WeightedAverageAgeStrategy",
-                 #[ ] reputation_stake=False
-                 ):
+    def __init__(self,lie_angle=90,ranking_threshold=.5,combine_strategy="WeightedAverageAgeStrategy"):
         super().__init__(ranking_threshold=ranking_threshold,
-                        # reputation_stake=reputation_stake,
                         combine_strategy=combine_strategy)
         self.color = "red"
         self.lie_angle = lie_angle
@@ -945,15 +933,12 @@ class SaboteurReputationRankingBehavior(ReputationRankingBehavior):
 
 
 class WealthThresholdBehavior(TemplateBehaviour):
-    def __init__(self,comparison_method="allavg",scaling=.3,combine_strategy="WeightedAverageAgeStrategy",
-                 #[ ] reputation_stake=False
-                 ):
+    def __init__(self,comparison_method="allavg",scaling=.3,combine_strategy="WeightedAverageAgeStrategy"):
         super().__init__(combine_strategy=combine_strategy)
         self.required_information=RequiredInformation.GLOBAL
         self.information_ordering_metric="age"
         self.scaling=scaling
         self.comparison_method=comparison_method
-        # self.reputation_stake=reputation_stake
 
 
     def test_data_validity(self, location: Location, data,_,__):
@@ -1005,11 +990,9 @@ class WealthThresholdBehavior(TemplateBehaviour):
 
 class SaboteurWealthThresholdBehavior(WealthThresholdBehavior):
     def __init__(self,lie_angle=90,comparison_method="allavg",scaling=.3,
-                    #[ ] reputation_stake=False,
                     combine_strategy="WeightedAverageAgeStrategy"):
         super().__init__(comparison_method=comparison_method,
                         scaling=scaling,
-                        # reputation_stake=reputation_stake,
                         combine_strategy=combine_strategy)
         self.color = "red"
         self.lie_angle = lie_angle
@@ -1024,7 +1007,6 @@ class ReputationHistoryBehavior(TemplateBehaviour):
     def __init__(self,combine_strategy="WeightedAverageAgeStrategy",
                      verification_method="discrete",threshold_method='positive',
                      scaling=1,kd=1,
-                    #[ ] reputation_stake=False,
                      ):
         super().__init__(combine_strategy=combine_strategy)
         self.required_information=RequiredInformation.GLOBAL
@@ -1033,7 +1015,6 @@ class ReputationHistoryBehavior(TemplateBehaviour):
         self.threshold_method=threshold_method
         self.scaling=scaling
         self.kd=kd
-        # self.reputation_stake=reputation_stake
 
 
     def test_data_validity(self, location: Location, data,_,__):
@@ -1050,16 +1031,16 @@ class ReputationHistoryBehavior(TemplateBehaviour):
     def stop_buying(self):
         return False
 
+
     #[ ] DIFFERENTIAL CONTROLLER
+    # NOTE this should behave as a derivative controller, since
+    #       reputation can be considered as a discrete derivative of income
     def verify_reputation(self,payment_database:PaymentDB,seller_id):
         valid_history=[h for h in payment_database.get_history(seller_id) 
                         if h is not None]
         if len(valid_history)>0:
             reputation=0
             for i,h in enumerate(valid_history):
-                #TODO this should behave as a derivative controller, since
-                # reputation can be ocnsidered as a discrete derivative of income
-                Kd=self.kd
                 if self.verification_method=="discrete":
                     increment=np.sign(h)
                 elif self.verification_method=="difference":
@@ -1070,11 +1051,9 @@ class ReputationHistoryBehavior(TemplateBehaviour):
                     increment=h/(len(valid_history)-i)
                 elif self.verification_method=="aged2":
                     increment=h/(len(valid_history)-i)**2
-                reputation+=Kd*increment
+                reputation+=increment
 
-            threshold_scaling=self.scaling
-            return reputation>=threshold_scaling*\
-                                self.get_threshold_value(payment_database)
+            return self.kd*reputation>=self.scaling*self.get_threshold_value(payment_database)
         return True
 
 
@@ -1089,14 +1068,12 @@ class SaboteurReputationHistoryBehavior(ReputationHistoryBehavior):
     def __init__(self,lie_angle=90,combine_strategy="WeightedAverageAgeStrategy",
                     verification_method="discrete",threshold_method='positive',
                     scaling=1,kd=1,
-                    #[ ] reputation_stake=False
                     ):
         super().__init__(verification_method=verification_method,
                         threshold_method=threshold_method,
                         combine_strategy=combine_strategy,
                         scaling=scaling,
                         kd=kd,
-                        # reputation_stake=reputation_stake
                         )
         self.color = "red"
         self.lie_angle = lie_angle
@@ -1110,7 +1087,6 @@ class SaboteurReputationHistoryBehavior(ReputationHistoryBehavior):
 
 class NewVariableScepticalBehavior(NewScepticalBehavior):
     def __init__(self,scepticism_threshold=.25,comparison_method="allavg",
-                #[ ]  reputation_stake=False,
                     scaling=.3,weight_method="ratio",combine_strategy="WeightedAverageAgeStrategy"):
         super().__init__(scepticism_threshold=scepticism_threshold,
                         combine_strategy=combine_strategy)
@@ -1119,7 +1095,6 @@ class NewVariableScepticalBehavior(NewScepticalBehavior):
         self.scaling=scaling
         self.comparison_method=comparison_method
         self.weight_method=weight_method
-        # self.reputation_stake=reputation_stake
 
 
     def get_scepticism_threshold(self,payment_database:PaymentDB,seller_id):
@@ -1157,13 +1132,11 @@ class NewVariableScepticalBehavior(NewScepticalBehavior):
 
 class NewSaboteurVariableScepticalBehavior(NewVariableScepticalBehavior):
     def __init__(self,scepticism_threshold=.25,comparison_method="allavg",
-                #[ ]  reputation_stake=False,
                     scaling=.3,weight_method="ratio",lie_angle=90,combine_strategy="WeightedAverageAgeStrategy"):
         super().__init__(scepticism_threshold=scepticism_threshold,
                         comparison_method=comparison_method,
                         scaling=scaling,
                         weight_method=weight_method,
-                        # reputation_stake=reputation_stake,
                         combine_strategy=combine_strategy)
         self.color = "red"
         self.lie_angle = lie_angle

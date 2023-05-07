@@ -46,7 +46,8 @@
     "initial_reward": PAYMENT_SYSTEM_INITIAL_REWARD,
     "parameters": {
       "information_share": PAYMENT_SYSTEM_INFORMATION_SHARE,
-      "reputation_stake": PAYMENT_SYSTEM_REPUTATION_STAKE
+      "reputation_stake": PAYMENT_SYSTEM_REPUTATION_STAKE,
+      "reputation_metric": "PAYMENT_SYSTEM_REPUTATION_METRIC"
     }
   },
   "market": {
