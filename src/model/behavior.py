@@ -77,12 +77,12 @@ BEHAVIOR_PARAMS_DICT = {"n": [],
                         "Nn": [],
                         "s": ["ST"],
                         "Ns": ["ST"],
-                        "r": ["RT"],#"RS"
-                        "v": ["CM","SC","ST","WM"],#"RS"
-                        "Nv": ["CM","SC","ST","WM"],#"RS"
-                        "t": ["CM","SC"],#"RS"
+                        "r": ["RT"],
+                        "v": ["CM","SC","ST","WM"],
+                        "Nv": ["CM","SC","ST","WM"],
+                        "t": ["CM","SC"],
                         "w": [],
-                        "h": ["VM","TM"],#"SC","KD","RS"],
+                        "h": ["VM","TM","SC","KD"],
                         }
 COMBINE_STRATEGY_DICT = {
                             "waa" : "WeightedAverageAgeStrategy",

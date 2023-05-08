@@ -141,7 +141,7 @@ class Environment:
         elif newcomers_type=='dishonest':selected=1
         behavior_params=self.behavior_params[selected]
         behavior_params["parameters"]["combine_strategy"]=self.combine_strategy_params["class"]
-        robot_id=len(self.population)+1
+        robot_id=len(self.population)
         for i in range(newcomers_amount):
             if self.agent_params["noise"]["class"]=="UniformNoise":
                 self.agent_params["noise"]["parameters"]["noise_mu"] = self.generated_fixed_noise[len(self.population)//2+1-newcomers_amount+i]

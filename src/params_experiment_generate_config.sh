@@ -10,13 +10,13 @@
 #simulation
 SIMULATION_STEPS=15000
 SIMULATION_SEED=5684436
-NUMBER_RUNS=1
+NUMBER_RUNS=20
 #visualisation
 VISUALISATION_ACTIVATE=false
 #noise
 AGENT_NOISE_ASSIGNATION_LIST=(
 							"average" 
-							# "perfect"
+							"perfect"
 							)
 # bimodal:
 AGENT_NOISE_SAMPLING_MU_LIST=(0.05)
@@ -36,11 +36,11 @@ COMBINE_STRATEGY_LIST=(
 #payment system
 PAYMENT_SYSTEM_CLASS_LIST=(
 							"OutlierPenalisationPaymentSystem" 
-							# "DelayedPaymentPaymentSystem"
+							"DelayedPaymentPaymentSystem"
 							)
 PAYMENT_SYSTEM_REPUTATION_STAKE_LIST=(
-										# false
-										true
+										false
+										# true
 )
 #data collection
 DATA_PRECISE_RECORDING_INTERVAL=100
@@ -48,8 +48,10 @@ DATA_TRANSACTIONS_LOG=false
 #robots
 NUMBER_OF_ROBOTS=25
 HONEST_POPULATION_LIST=(
-							# 22
-							# 25
+							# 20
+							# 17
+							22
+							25
 							24
 						)
 DISHONEST_LIE_ANGLE_LIST=(
@@ -89,7 +91,7 @@ vCOMPARISON_METHOD_LIST=(
 							)
 vSCALING_LIST=(
 				# 0.8 
-				# 0.5 
+				0.5 
 				0.3
 				)
 vSCEPTICISM_THRESHOLD_LIST=(0.25)
@@ -105,7 +107,7 @@ tCOMPARISON_METHOD_LIST=(
 							# "allmax"
 							)
 tSCALING_LIST=(
-				# 0.8 
+				0.8 	
 				0.5 
 				# 0.3
 				)
@@ -114,9 +116,9 @@ tSCALING_LIST=(
 ######################## -params:{verification_method,threshold_method}
 hVERIFICATION_METHOD_LIST=(
 							"discrete" 
-							# "difference" 
+							"difference" 
 							# "recency" 
-							# "aged" 
+							"aged" 
 							# "aged2"
 						)
 hTHRESHOLD_METHOD_LIST=(
@@ -125,14 +127,14 @@ hTHRESHOLD_METHOD_LIST=(
 						)
 hSCALING_LIST=(
 				1
-				# 0.8 
+				0.8 
 				# 0.5 
 				# 0.3
 				)
 hKD_LIST=(
 			1
-			# 0.7
-			# 1.3
+			0.7
+			1.3
 			# 1.6
 			# 2.0
 )
