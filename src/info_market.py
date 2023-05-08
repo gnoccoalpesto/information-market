@@ -159,7 +159,7 @@ def filename_from_params(n_honests:int,
     for x,y in zip(noise_params_values,NOISE_PARAMS_DICT[noise_type]):
         noise_params+=f"{x}{y}_"
     noise_params=noise_params[:-1]
-    filename=f"{n_honests}{behavior_initials}_{combine_strategy_initials}CS_{payment_system}_{lie_angle}LIA_{behavior_params}{noise_params}"
+    filename=f"{n_honests}{behavior_initials}_{combine_strategy_initials}CS_{payment_system}_{reputation_stake}_{lie_angle}LIA_{behavior_params}{noise_params}"
     return filename
 
 

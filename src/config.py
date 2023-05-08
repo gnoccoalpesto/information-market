@@ -32,7 +32,7 @@ PRUNE_NOT_BEST= True
 # DELETE_PRUNED=False
 
 # experiment variations
-NEWCOMER_PHASE:bool = False
+NEWCOMER_PHASE:bool = True
 NEWCOMER_PHASE_DURATION:int = 5000
 NEWCOMER_AMOUNT:int = 3
 NEWCOMER_TYPE='honest'
