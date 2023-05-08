@@ -66,23 +66,22 @@ class PaymentDB:
 
     #[ ] NEWCOMERS
     def add_newcomers(self, newcomers_ids,payment_system_params):
+        NEW_DB_LEN=len(self.database)+len(newcomers_ids)
+        for robot_id in self.database.keys():
+            self.database[robot_id]["n_attempted_transactions"].extend([0]*len(newcomers_ids))
+            self.database[robot_id]["n_validated_transactions"].extend([0]*len(newcomers_ids))
+            self.database[robot_id]["n_completed_transactions"].extend([0]*len(newcomers_ids))
+            self.database[robot_id]["n_combined_transactions" ].extend([0]*len(newcomers_ids))
         for robot_id in newcomers_ids:
             self.database[robot_id] = {"reward": payment_system_params["initial_reward"],
                                        "payment_system": eval(payment_system_params['class'])(
                                                                 **payment_system_params['parameters']),
                                         "wallet_age": 0,
-                                        "n_attempted_transactions": [0]*(len(self.database)+len(newcomers_ids)),
-                                        "n_validated_transactions": [0]*(len(self.database)+len(newcomers_ids)),
-                                        "n_completed_transactions": [0]*(len(self.database)+len(newcomers_ids)),
-                                        "n_combined_transactions" : [0]*(len(self.database)+len(newcomers_ids)),
+                                        "n_attempted_transactions": [0]*NEW_DB_LEN,
+                                        "n_validated_transactions": [0]*NEW_DB_LEN,
+                                        "n_completed_transactions": [0]*NEW_DB_LEN,
+                                        "n_combined_transactions" : [0]*NEW_DB_LEN,
                                         "history": [None]*self.history_span,
-                                    }
-        for robot_id in self.database.keys():
-            self.database[robot_id] = {
-                                        "n_attempted_transactions": self.database[robot_id]["n_attempted_transactions"]+[0]*len(newcomers_ids),
-                                        "n_validated_transactions": self.database[robot_id]["n_validated_transactions"]+[0]*len(newcomers_ids),
-                                        "n_completed_transactions": self.database[robot_id]["n_completed_transactions"]+[0]*len(newcomers_ids),
-                                        "n_combined_transactions" : self.database[robot_id]["n_combined_transactions"]+[0]*len(newcomers_ids),
                                     }
 
 

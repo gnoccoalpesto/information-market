@@ -44,7 +44,9 @@
 		"population_size": 24,
 		"parameters": {
 			"verification_method": "discrete",
-			"threshold_method": "mean"
+			"threshold_method": "mean",
+			"scaling": 1,
+			"kd": 1
 			}
 		},
 		{
@@ -53,7 +55,9 @@
 		"parameters": {
 			"lie_angle": 90,
 			"verification_method": "discrete",
-			"threshold_method": "mean"
+			"threshold_method": "mean",
+			"scaling": 1,
+			"kd": 1
 			}
 		}
   ],
@@ -63,20 +67,22 @@
   },
   "payment_system": {
     "class": "OutlierPenalisationPaymentSystem",
-    "initial_reward": 1.5,
+    "initial_reward": 1,
     "parameters": {
-      "information_share": 0.25
+      "information_share": 0.5,
+      "reputation_stake": false,
+      "reputation_metric": "h"
     }
   },
   "market": {
     "class": "FixedPriceMarket",
     "parameters": {
-      "reward": 1.5
+      "reward": 1
     }
   },
   "data_collection": {
     "output_directory": "/home/uga/ing/tesi/information-market/src/../data/TEST/history",
-    "filename": "24h_waaCS_P_90LIA_discreteVM_meanTM_0.051NMU_0.1NRANG_avgSAB.csv",
+    "filename": "24h_waaCS_P_NRS_90LIA_agedVM_meanTM_1SC_1KD_0.051NMU_0.1NRANG_perfSAB.csv",
     "metrics": ["items_evolution","rewards_evolution","items_collected","rewards","transactions"],
     "precise_recording_interval": 100,
     "transactions_log": false
