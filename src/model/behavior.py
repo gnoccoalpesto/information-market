@@ -116,6 +116,7 @@ BEST_PARAM_COMBINATIONS_DICT={
                             # "Ns": [['NP',['025']],['P',['025']],],
                             "r": [
                                 ['P', ['03']],
+                                ['P', ['05']],
                                 ],
                             "v": [],
                             "Nv": [
@@ -128,8 +129,9 @@ BEST_PARAM_COMBINATIONS_DICT={
                                 ],
                             "w": [],
                             "h": [
-                                ['P', ['discrete', 'mean']],
-                                ['P', ['aged', 'mean']],
+                                ['P', ['discrete', 'mean','1','1']],
+                                ['P', ['aged', 'mean','08','1']],
+                                ['P', ['aged2', 'mean','08','13']],
                                 ],
                             }
 

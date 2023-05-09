@@ -7,7 +7,7 @@ import config as CONFIG_FILE
 from helpers.utils import InsufficientFundsException
 from model.navigation import Location
 
-#torns off warning when working with on slices of DataFrames
+#turns off warning when working with on slices of DataFrames
 pd.options.mode.chained_assignment = None
 
 
@@ -22,6 +22,7 @@ class Transaction:
 
 class PaymentAPI:
     def __init__(self, payment_db):
+        self.get_reward = payment_db.get_reward
         self.apply_gains = payment_db.apply_gains
         self.apply_cost = payment_db.apply_cost
         self.transfer = payment_db.transfer
@@ -389,11 +390,21 @@ class OutlierPenalisationPaymentSystem(PaymentSystem):
 
     def new_reward(self, reward, payment_api:PaymentAPI, rewarded_id):
         reward_share_to_distribute = self.information_share * reward
+        #[ ] in the case where the robot cannot pay, reward to redistribute is lowered to the available amount
+        #  to give a (smaller) share to ALL creditors
+        reward_share_to_distribute=min(reward_share_to_distribute,payment_api.get_reward(rewarded_id))
         payment_api.apply_gains(rewarded_id, self.pot_amount)
         
-        shares_mapping = self.calculate_shares_mapping(reward_share_to_distribute)
+        shares_mapping = self.calculate_shares_mapping()
         for seller_id, share in shares_mapping.items():
-            payment_api.transfer(rewarded_id, seller_id, share)
+            try:
+                #TODO make single transaction when initial funds are above request
+                #NOTE pot is always present
+                #round one: transfer pot amount
+                payment_api.transfer(rewarded_id, seller_id, share*self.pot_amount)
+                #round two: transfer reward share
+                payment_api.transfer(rewarded_id, seller_id, share*reward_share_to_distribute)
+            except InsufficientFundsException:pass
 
             #TODO use current stake amount, base stake amount, or stake amount at the time of the transaction?
             # seller_stake_amount=self.get_stake_amount(payment_api,seller_id)#stake(t)k
@@ -405,7 +416,7 @@ class OutlierPenalisationPaymentSystem(PaymentSystem):
         self.reset_transactions()
 
 
-    def calculate_shares_mapping(self, reward_share_to_distribute):
+    def calculate_shares_mapping(self,):
         if len(self.transactions) == 0:
             return {}
         df_all = np.array([[t.seller_id, t.relative_angle, t.location, 0] for t in self.transactions])
@@ -430,8 +441,7 @@ class OutlierPenalisationPaymentSystem(PaymentSystem):
 
         total_shares = sum(final_mapping.values())
         for seller in final_mapping:
-            final_mapping[seller] = final_mapping[seller] * (
-                    reward_share_to_distribute + self.pot_amount) / total_shares
+            final_mapping[seller] = final_mapping[seller] / total_shares
         return final_mapping
 
 
