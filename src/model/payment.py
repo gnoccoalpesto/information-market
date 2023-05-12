@@ -7,7 +7,7 @@ import config as CONFIG_FILE
 from helpers.utils import InsufficientFundsException
 from model.navigation import Location
 
-#torns off warning when working with on slices of DataFrames
+#turns off warning when working with on slices of DataFrames
 pd.options.mode.chained_assignment = None
 
 
@@ -22,6 +22,7 @@ class Transaction:
 
 class PaymentAPI:
     def __init__(self, payment_db):
+        self.get_reward = payment_db.get_reward
         self.apply_gains = payment_db.apply_gains
         self.apply_cost = payment_db.apply_cost
         self.transfer = payment_db.transfer
@@ -340,14 +341,18 @@ class DelayedPaymentPaymentSystem(PaymentSystem):
     def new_reward(self, reward: float, payment_api, rewarded_id):
         reward_to_distribute = self.information_share * reward
         shares_mapping = self.calculate_shares_mapping(reward_to_distribute)
-        for seller_id, share in shares_mapping.items():
-            payment_api.transfer(rewarded_id, seller_id, share)
-            last_redistribution= share-(self.stake_amount if hasattr(self,"stake_amount") else 0)
-            payment_api.update_history(seller_id, last_redistribution)
-        self.reset_transactions()
+        try:
+            for seller_id, share in shares_mapping.items():
+                payment_api.transfer(rewarded_id, seller_id, share)
+                last_redistribution= share-(self.stake_amount if hasattr(self,"stake_amount") else 0)
+                payment_api.update_history(seller_id, last_redistribution)
+        except InsufficientFundsException:
+            pass
+        finally:
+            self.reset_transactions()
 
 
-    def calculate_shares_mapping(self, reward_share_to_distribute):
+    def calculate_shares_mapping(self, reward_share_to_distribute=1):
         if len(self.transactions) == 0:
             return {}
         seller_ids = [t.seller_id for t in self.transactions]
@@ -387,25 +392,35 @@ class OutlierPenalisationPaymentSystem(PaymentSystem):
         self.transactions.add(transaction)
 
 
+    #[ ]
     def new_reward(self, reward, payment_api:PaymentAPI, rewarded_id):
         reward_share_to_distribute = self.information_share * reward
+        # reward_share_to_distribute=min(reward_share_to_distribute,payment_api.get_reward(rewarded_id))
         payment_api.apply_gains(rewarded_id, self.pot_amount)
         
-        shares_mapping = self.calculate_shares_mapping(reward_share_to_distribute)
-        for seller_id, share in shares_mapping.items():
-            payment_api.transfer(rewarded_id, seller_id, share)
+        shares_mapping = self.calculate_shares_mapping()
+        try:
+            for seller_id, share in shares_mapping.items():
+                #NOTE pot is always present
+                #round one: transfer pot amount
+                payment_api.transfer(rewarded_id, seller_id, share*self.pot_amount)
 
-            #TODO use current stake amount, base stake amount, or stake amount at the time of the transaction?
-            # seller_stake_amount=self.get_stake_amount(payment_api,seller_id)#stake(t)k
-            # seller_stake_amount=self.stake_amount#stake(0)
-            #stake(k) for some past contribution k ???
-            last_redistribution= share-(self.stake_amount if hasattr(self,"stake_amount") else 0)
-            payment_api.update_history(seller_id, last_redistribution)
+            for seller_id, share in shares_mapping.items():
+                #round two: transfer reward share
+                payment_api.transfer(rewarded_id, seller_id, share*reward_share_to_distribute)
+                #TODO use current stake amount, base stake amount, or stake amount at the time of the transaction?
+                # seller_stake_amount=self.get_stake_amount(payment_api,seller_id)#stake(t)k
+                # seller_stake_amount=self.stake_amount#stake(0)
+                #stake(k) for some past contribution k ???
+                last_redistribution= share*reward_share_to_distribute-(self.stake_amount if hasattr(self,"stake_amount") else 0)
+                payment_api.update_history(seller_id, last_redistribution)
+        except InsufficientFundsException:
+            pass
+        finally:
+            self.reset_transactions()
 
-        self.reset_transactions()
 
-
-    def calculate_shares_mapping(self, reward_share_to_distribute):
+    def calculate_shares_mapping(self,amount_to_distribute=1):
         if len(self.transactions) == 0:
             return {}
         df_all = np.array([[t.seller_id, t.relative_angle, t.location, 0] for t in self.transactions])
@@ -430,8 +445,7 @@ class OutlierPenalisationPaymentSystem(PaymentSystem):
 
         total_shares = sum(final_mapping.values())
         for seller in final_mapping:
-            final_mapping[seller] = final_mapping[seller] * (
-                    reward_share_to_distribute + self.pot_amount) / total_shares
+            final_mapping[seller] = final_mapping[seller] * amount_to_distribute / total_shares
         return final_mapping
 
 
