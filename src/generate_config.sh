@@ -61,6 +61,8 @@ declare -A HONEST_DICTIONARY
 	HONEST_DICTIONARY[t]="WealthThresholdBehavior"
 	HONEST_DICTIONARY[w]="WealthWeightedBehavior"
 	HONEST_DICTIONARY[h]="ReputationHistoryBehavior"
+	HONEST_DICTIONARY[hs]="ReputationHistoryScepticalBehavior"
+
 
 declare -A DISHONEST_DICTIONARY
 	DISHONEST_DICTIONARY[n]="SaboteurBehavior"
@@ -73,6 +75,7 @@ declare -A DISHONEST_DICTIONARY
 	DISHONEST_DICTIONARY[t]="SaboteurWealthThresholdBehavior"
 	DISHONEST_DICTIONARY[w]="SaboteurWealthWeightedBehavior"
 	DISHONEST_DICTIONARY[h]="SaboteurReputationHistoryBehavior"
+	DISHONEST_DICTIONARY[hs]=Saboteur"ReputationHistoryScepticalBehavior"
 
 HONEST_TEMPLATE='{\n\t\t"class": "HONEST_CLASS",\n\t\t"population_size": HONEST_POPULATION,\n\t\t"parameters": {\n\t\t\tHONEST_PARAMS\n\t\t\t}\n\t\t}'
 DISHONEST_TEMPLATE='{\n\t\t"class": "DISHONEST_CLASS",\n\t\t"population_size": DISHONEST_POPULATION,\n\t\t"parameters": {\n\t\t\tDISHONEST_PARAMS\n\t\t\t}\n\t\t}'
@@ -89,6 +92,7 @@ declare -A HONEST_PARAMETERS
 	HONEST_PARAMETERS[w]=""
 	HONEST_PARAMETERS[t]="\"comparison_method\": \"COMPARISON_METHOD\",\n\"scaling\": SCALING"
 	HONEST_PARAMETERS[h]="\"verification_method\": \"VERIFICATION_METHOD\",\n\t\t\t\"threshold_method\": \"THRESHOLD_METHOD\",\n\t\t\t\"scaling\": SCALING,\n\t\t\t\"kd\": KDIFF"
+	HONEST_PARAMETERS[hs]="\"verification_method\": \"VERIFICATION_METHOD\",\n\t\t\t\"threshold_method\": \"THRESHOLD_METHOD\",\n\t\t\t\"scaling\": SCALING,\n\t\t\t\"kd\": KDIFF,\n\t\t\t\"scepticism_threshold\": SCEPTICISM_THRESHOLD"
 
 declare -A DISHONEST_PARAMETERS
 	DISHONEST_PARAMETERS[n]="\"lie_angle\": DISHONEST_LIE_ANGLE"
@@ -101,6 +105,7 @@ declare -A DISHONEST_PARAMETERS
 	DISHONEST_PARAMETERS[w]="\"lie_angle\": DISHONEST_LIE_ANGLE"
 	DISHONEST_PARAMETERS[t]="\"lie_angle\": DISHONEST_LIE_ANGLE,\n\t\t\t\"comparison_method\": \"COMPARISON_METHOD\",\n\"scaling\": SCALING"
 	DISHONEST_PARAMETERS[h]="\"lie_angle\": DISHONEST_LIE_ANGLE,\n\t\t\t\"verification_method\": \"VERIFICATION_METHOD\",\n\t\t\t\"threshold_method\": \"THRESHOLD_METHOD\",\n\t\t\t\"scaling\": SCALING,\n\t\t\t\"kd\": KDIFF"
+	DISHONEST_PARAMETERS[hs]="\"lie_angle\": DISHONEST_LIE_ANGLE,\n\t\t\t\"verification_method\": \"VERIFICATION_METHOD\",\n\t\t\t\"threshold_method\": \"THRESHOLD_METHOD\",\n\t\t\t\"scaling\": SCALING,\n\t\t\t\"kd\": KDIFF,\n\t\t\t\"scepticism_threshold\": SCEPTICISM_THRESHOLD"
 
 declare -A BEHAVIOR_INITIALS
 	BEHAVIOR_INITIALS[n]="n"
@@ -113,6 +118,7 @@ declare -A BEHAVIOR_INITIALS
 	BEHAVIOR_INITIALS[t]="t"
 	BEHAVIOR_INITIALS[w]="w"
 	BEHAVIOR_INITIALS[h]="h"
+	BEHAVIOR_INITIALS[hs]="hs"
 
 declare -A SUB_DIR_BEHAVIOR
 	SUB_DIR_BEHAVIOR[n]="naive"
@@ -125,6 +131,7 @@ declare -A SUB_DIR_BEHAVIOR
 	SUB_DIR_BEHAVIOR[t]="wealth_threshold"
 	SUB_DIR_BEHAVIOR[w]="wealth_weighted"
 	SUB_DIR_BEHAVIOR[h]="history"
+	SUB_DIR_BEHAVIOR[hs]="history_sceptical"
 
 declare -A BEHAVIOUR_FILENAME_ADDITIONAL_INFO
 	BEHAVIOUR_FILENAME_ADDITIONAL_INFO[n]=""
@@ -137,6 +144,7 @@ declare -A BEHAVIOUR_FILENAME_ADDITIONAL_INFO
 	BEHAVIOUR_FILENAME_ADDITIONAL_INFO[t]="_COMPARISON_METHODCM_SCALINGSC"
 	BEHAVIOUR_FILENAME_ADDITIONAL_INFO[w]=""
 	BEHAVIOUR_FILENAME_ADDITIONAL_INFO[h]="_VERIFICATION_METHODVM_THRESHOLD_METHODTM_SCALINGSC_KDIFFKD"
+	BEHAVIOUR_FILENAME_ADDITIONAL_INFO[hs]="_VERIFICATION_METHODVM_THRESHOLD_METHODTM_SCALINGSC_KDIFFKD_SCEPTICISM_THRESHOLDST"
 
 
 # information combine strategy
@@ -174,6 +182,7 @@ declare -A PAYMENT_SYSTEM_BEHAVIOR_REPUTATION_METRIC
 	PAYMENT_SYSTEM_BEHAVIOR_REPUTATION_METRIC[t]="r"
 	PAYMENT_SYSTEM_BEHAVIOR_REPUTATION_METRIC[Nv]="r"
 	PAYMENT_SYSTEM_BEHAVIOR_REPUTATION_METRIC[h]="h"
+	PAYMENT_SYSTEM_BEHAVIOR_REPUTATION_METRIC[hs]="h"
 	
 
 declare -A REPUTATION_STAKING_NAME_PREFIX
@@ -600,6 +609,37 @@ for AGENT_NOISE_ASSIGNATION in ${AGENT_NOISE_ASSIGNATION_LIST[*]} ; do
 														done
 														done
 														done
+														############################
+													else
+														if [[ ${BEHAVIOR} == "hs" ]]; then
+															for SCEPTICISM_THRESHOLD in ${hsSCEPTICISM_THRESHOLD_LIST[*]} ; do
+															for VERIFICATION_METHOD in ${hVERIFICATION_METHOD_LIST[*]} ; do
+															for THRESHOLD_METHOD in ${hTHRESHOLD_METHOD_LIST[*]} ; do
+															for SCALING in ${hSCALING_LIST[*]} ; do
+															for KDIFF in ${hKD_LIST[*]} ; do
+																CURRENT_DATA_FILENAME=$( echo ${DATA_FILENAME} | 
+																			sed -e "s|VERIFICATION_METHOD|${VERIFICATION_METHOD}|" \
+																			-e "s|THRESHOLD_METHOD|${THRESHOLD_METHOD}|" \
+																			-e "s|SCALING|${SCALING}|" \
+																			-e "s|KDIFF|${KDIFF}|" \
+																			-e "s|SCEPTICISM_THRESHOLD|${SCEPTICISM_THRESHOLD}|" \
+																			-e "s|[\.]||g")
+																FINAL_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}/${CURRENT_DATA_FILENAME}.json"
+																sed -e "s|VERIFICATION_METHOD|${VERIFICATION_METHOD}|" \
+																	-e "s|THRESHOLD_METHOD|${THRESHOLD_METHOD}|" \
+																	-e "s|SCALING|${SCALING}|" \
+																	-e "s|KDIFF|${KDIFF}|" \
+																	-e "s|SCEPTICISM_THRESHOLD|${SCEPTICISM_THRESHOLD}|" \
+																	${TEMP_CONFIG_FILENAME} > ${FINAL_CONFIG_FILENAME}
+																GENERATED_FILENAMES+=(${FINAL_CONFIG_FILENAME})
+																COUNT=$((COUNT + 1))
+															done
+															done
+															done
+															done
+															done
+														fi
+														############################
 													fi
 												fi
 											fi

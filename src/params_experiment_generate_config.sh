@@ -60,16 +60,16 @@ DISHONEST_LIE_ANGLE_LIST=(
 					)
 # behaviors ----------------------------------------------------
 BEHAVIOR_LIST=(
-				# "w" 
 				"n"
 				"s"
-				"r" 
-				"t" 
-				"Nv"
-				"h"
+				# "r" 
+				# "t" 
+				# "Nv"
+				# "h"
+				"hs"
 			)
 			
-# naive: n ; new naive: Nn ; wealth weighted: w
+# naive: n ; new naive: Nn 
 ################################################ -params:{}
 
 # sceptical: s ; new sceptical: Ns
@@ -138,4 +138,31 @@ hKD_LIST=(
 			# 1.6
 			# 2.0
 )
+# reputation history scepticism: hs
+######################## -params:{verification_method,threshold_method}
+hsVERIFICATION_METHOD_LIST=(
+							"discrete" 
+							"difference" 
+							# "recency" 
+							"aged" 
+							# "aged2"
+						)
+hsTHRESHOLD_METHOD_LIST=(
+						# # "positive" 
+						"mean"
+						)
+hsSCALING_LIST=(
+				1
+				0.8 
+				# 0.5 
+				# 0.3
+				)
+hsKD_LIST=(
+			# 0.7
+			1
+			1.3
+			# 1.6
+			# 2.0
+)
+hsSCEPTICISM_THRESHOLD_LIST=(0.25)
 

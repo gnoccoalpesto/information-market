@@ -10,7 +10,7 @@ from model.navigation import Location, NavigationTable, Target
 from model.strategy import WeightedAverageAgeStrategy, strategy_factory
 from helpers.utils import get_orientation_from_vector, norm, InsufficientFundsException, \
     NoInformationSoldException, NoLocationSensedException
-import config as CONFIG_FILE
+# import config as CONFIG_FILE
 
 
 BEHAVIORS_DICT = {  "n": "NaiveBeahvior",
@@ -23,6 +23,7 @@ BEHAVIORS_DICT = {  "n": "NaiveBeahvior",
                     "t": "WealthThresholdBehavior",
                     "w": "WealthWeightedBehavior",
                     "h": "ReputationHistoryBehavior",
+                    "hs": "ReputationHistoryScepticalBehavior",
                     }
 BEHAVIORS_NAME_DICT = {  "n": "Naive",
                         "Nn": "Naive",
@@ -39,6 +40,7 @@ BEHAVIORS_NAME_DICT = {  "n": "Naive",
                         # "t": "Reputation Threshold",
                         # "w": "Reputation Weighted",
                         "h": "Rep. History",
+                        "hs": "Rep. Hist. Sceptical",
                     }
 SUB_FOLDERS_DICT={  "n": "naive",
                     "Nn": "new_naive",
@@ -50,6 +52,7 @@ SUB_FOLDERS_DICT={  "n": "naive",
                     "t": "wealth_threshold",
                     "w": "wealth_weighted",
                     "h": "history",
+                    "hs": "history_sceptical",
                     }
 PARAMS_NAME_DICT={
                     "ST": "scepticism threshold",
@@ -83,6 +86,7 @@ BEHAVIOR_PARAMS_DICT = {"n": [],
                         "t": ["CM","SC"],
                         "w": [],
                         "h": ["VM","TM","SC","KD"],
+                        "hs": ["VM","TM","SC","KD", "ST"],
                         }
 COMBINE_STRATEGY_DICT = {
                             "waa" : "WeightedAverageAgeStrategy",
@@ -105,36 +109,41 @@ NOISE_PARAMS_DICT={ "bimodal": ["SMU","SSD","NSD"],
                 }
 BEST_PARAM_COMBINATIONS_DICT={
                             "n": [
-                                ['NP',[]],
-                                # ['P',[]],
+                                ['NP','NRS',[]],
+                                # ['P','NRS',[]],
                                 ],
                             # "Nn": [['NP',[]],['P',[]],],
                             "s": [
-                                # ['NP',['025']],
-                                ['P',['025']],
+                                # ['NP','NRS',['025']],
+                                ['P','NRS',['025']],
                                 ],
                             # "Ns": [['NP',['025']],['P',['025']],],
                             "r": [
-                                ['P', ['03']],
-                                ['P', ['05']],
+                                ['P', 'NRS',['03']],
+                                ['P', 'NRS',['05']],
                                 ],
                             "v": [],
                             "Nv": [
-                                # ['P', ['allavg', '03', '025', 'exponential']],
-                                ['P', ['allavg', '03', '025', 'ratio']],
+                                # ['P', 'NRS',['allavg', '03', '025', 'exponential']],
+                                ['P', 'NRS',['allavg', '03', '025', 'ratio']],
                                 ],
                             "t": [
-                                # ['P', ['allavg', '03']],
-                                ['P', ['allavg', '05']],
+                                # ['P', 'NRS',['allavg', '03']],
+                                ['P','NRS', ['allavg', '05']],
                                 ],
                             "w": [],
                             "h": [
-                                ['P', ['discrete', 'mean','1','1']],
-                                ['P', ['aged', 'mean','08','1']],
-                                ['P', ['aged2', 'mean','08','13']],
+                                ["P",'NRS',["aged","mean",0.8,1]],
+                                ["P",'NRS',["aged2","mean",0.8,1.3]],
+                                ["P",'NRS',["discrete","mean",1,1]],
+                                ],
+                            "hs": [
+                                ["P",'NRS',["aged","mean",0.8,1,0.25]],
+                                ["P",'NRS',["aged2","mean",0.8,1.3,0.25]],
+                                ["P",'NRS',["discrete","mean",1,1,0.25]],
                                 ],
                             }
-
+#TODO include the new param (this is getting long, maybe another file?)
 BAD_PARAM_COMBINATIONS_DICT={
                     #TODO could use dots in filenames
                     "n": [],
@@ -296,8 +305,11 @@ class TemplateBehaviour(Behavior):
                                 self.combine_data(location,target, other_target,payment_database,seller_id)
 
                             else:
-                                self.behavior_specific_combine(location, other_target,session,seller_id)
+                                if self.behavior_specific_combine(location, other_target,session,seller_id):
+                                    session.record_transaction('combined',seller_id)
 
+                                    self.combine_data(location,target, other_target,payment_database,seller_id)
+                                
                             if self.stop_buying(): break
 
                         except (InsufficientFundsException,
@@ -1086,6 +1098,76 @@ class SaboteurReputationHistoryBehavior(ReputationHistoryBehavior):
         t.rotate(self.lie_angle)
         return t
 
+
+#[ ]
+class ReputationHistoryScepticalBehavior(ReputationHistoryBehavior):
+    def __init__(self, combine_strategy="WeightedAverageAgeStrategy", 
+                 verification_method="discrete", 
+                 threshold_method='mean', 
+                 scaling=1, 
+                 kd=1,
+                 scepticism_threshold=.25,):
+        super().__init__(combine_strategy, verification_method, threshold_method, scaling, kd,)
+        self.scepticism_threshold=scepticism_threshold
+
+
+    def behavior_specific_combine(self, location: Location, other_target: Target,# payment_database:PaymentDB,
+                                  session: CommunicationSession, seller_id):
+        pass
+        # payment_database=None#[ ] could also use variable scepticism
+        # if not self.navigation_table.is_information_valid_for_location(location)\
+        #         or self.difference_score(
+        #             self.navigation_table.get_relative_position_for_location(location),
+        #             other_target.get_distance())\
+        #     < self.get_scepticism_threshold(payment_database, seller_id):
+        #     return True
+        # return False
+    
+
+    @staticmethod
+    def difference_score(current_vector, bought_vector):
+        v_norm = norm(current_vector)
+        score = norm(current_vector - bought_vector) / v_norm if v_norm > 0 else 1000
+        return score
+    
+
+    def get_scepticism_threshold(self,payment_database:PaymentDB,seller_id):
+        # if payment_database is not None:#[ ] could also use variable scepticism
+        #     seller_reputation=payment_database.get_reputation(seller_id,"r")
+        #     comparison_reputation=payment_database.get_mean_reputation,("r")
+        #     return self.weight_scepticism(seller_reputation,comparison_reputation)
+        return self.scepticism_threshold
+
+
+    def weight_scepticism(self,reputation_score,metric_score):
+        try:
+            return self.scepticism_threshold*reputation_score/(metric_score*self.scaling)
+        except:
+            return self.scepticism_threshold
+        
+
+class SaboteurReputationHistoryScepticalBehavior(ReputationHistoryScepticalBehavior):
+    def __init__(self,lie_angle=90,combine_strategy="WeightedAverageAgeStrategy",
+                    verification_method="discrete",threshold_method='positive',
+                    scaling=1,kd=1,
+                    scepticism_threshold=.25,
+                    ):
+        super().__init__(combine_strategy=combine_strategy,
+                        verification_method=verification_method,
+                        threshold_method=threshold_method,
+                        scaling=scaling,
+                        kd=kd,
+                        scepticism_threshold=scepticism_threshold,
+                        )
+        self.color = "red"
+        self.lie_angle = lie_angle
+
+
+    def sell_info(self, location):
+        t = copy.deepcopy(self.navigation_table.get_information_entry(location))
+        t.rotate(self.lie_angle)
+        return t
+    
 
 class NewVariableScepticalBehavior(NewScepticalBehavior):
     def __init__(self,scepticism_threshold=.25,comparison_method="allavg",
