@@ -40,7 +40,7 @@ PAYMENT_SYSTEM_CLASS_LIST=(
 							)
 PAYMENT_SYSTEM_REPUTATION_STAKE_LIST=(
 										false
-										# true
+										true
 )
 #data collection
 DATA_PRECISE_RECORDING_INTERVAL=100
@@ -48,8 +48,8 @@ DATA_TRANSACTIONS_LOG=false
 #robots
 NUMBER_OF_ROBOTS=25
 HONEST_POPULATION_LIST=(
-							# 20
-							# 17
+							20
+							17
 							22
 							25
 							24
@@ -60,16 +60,16 @@ DISHONEST_LIE_ANGLE_LIST=(
 					)
 # behaviors ----------------------------------------------------
 BEHAVIOR_LIST=(
-				# "w" 
 				"n"
 				"s"
-				"r" 
-				"t" 
-				"Nv"
-				"h"
+				# "r" 
+				# "t" 
+				# "Nv"
+				# "h"
+				"hs"
 			)
 			
-# naive: n ; new naive: Nn ; wealth weighted: w
+# naive: n ; new naive: Nn 
 ################################################ -params:{}
 
 # sceptical: s ; new sceptical: Ns
@@ -79,7 +79,7 @@ sSCEPTICISM_THRESHOLD_LIST=(0.25)
 # ranking: r
 ############ -params:{ranking_threshold}
 rRANKING_THRESHOLD_LIST=(
-						# 0.3 
+						0.3 
 						0.5
 						)
 
@@ -107,7 +107,7 @@ tCOMPARISON_METHOD_LIST=(
 							# "allmax"
 							)
 tSCALING_LIST=(
-				0.8 	
+				# 0.8 	
 				0.5 
 				# 0.3
 				)
@@ -132,10 +132,37 @@ hSCALING_LIST=(
 				# 0.3
 				)
 hKD_LIST=(
+			# 0.7
 			1
-			0.7
 			1.3
 			# 1.6
 			# 2.0
 )
+# reputation history scepticism: hs
+######################## -params:{verification_method,threshold_method}
+hsVERIFICATION_METHOD_LIST=(
+							"discrete" 
+							"difference" 
+							# "recency" 
+							"aged" 
+							# "aged2"
+						)
+hsTHRESHOLD_METHOD_LIST=(
+						# # "positive" 
+						"mean"
+						)
+hsSCALING_LIST=(
+				1
+				0.8 
+				# 0.5 
+				# 0.3
+				)
+hsKD_LIST=(
+			# 0.7
+			1
+			1.3
+			# 1.6
+			# 2.0
+)
+hsSCEPTICISM_THRESHOLD_LIST=(0.25)
 

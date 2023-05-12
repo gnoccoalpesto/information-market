@@ -164,15 +164,15 @@ def filename_from_params(n_honests:int,
 
 
 def is_bad_param_combination(filename:str):
-    _, h_behav, _, payment, _,_, behav_params, _ = params_from_filename(filename,compact_format=True)
-    if [payment, behav_params] in BAD_PARAM_COMBINATIONS_DICT[h_behav]:
+    _, h_behav, _, payment, reputation_stake,_, behav_params, _ = params_from_filename(filename,compact_format=True)
+    if [payment,reputation_stake, behav_params] in BAD_PARAM_COMBINATIONS_DICT[h_behav]:
         return True
     return False
     
 
 def is_best_param_combination(filename:str):
-    _, h_behav, _, payment, _,_, behav_params, _ = params_from_filename(filename,compact_format=True)
-    if [payment, behav_params] in BEST_PARAM_COMBINATIONS_DICT[h_behav]:
+    _, h_behav, _, payment, reputation_stake,_, behav_params, _ = params_from_filename(filename,compact_format=True)
+    if [payment, reputation_stake, behav_params] in BEST_PARAM_COMBINATIONS_DICT[h_behav]:
         return True
     return False
 
