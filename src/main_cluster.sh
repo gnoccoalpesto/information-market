@@ -18,6 +18,7 @@ declare -A SUB_DIR_BEHAVIOR
 	SUB_DIR_BEHAVIOR[t]="wealth_threshold"
 	SUB_DIR_BEHAVIOR[w]="wealth_weighted"
     SUB_DIR_BEHAVIOR[h]="history"
+    SUB_DIR_BEHAVIOR[hs]="history_sceptical"
 
 
 usage(){
