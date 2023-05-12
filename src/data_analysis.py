@@ -59,6 +59,11 @@ BEHAVIOUR_PALETTE={'n':"#e377c2",#7, pink
                     'Reputation History':"#9467bd",
                     'Saboteur Rep. History':"#d62728",
                     'Saboteur Reputation History':"#d62728",
+                    'hs':"#9467bd",#5, brown
+                    'Rep. Hist. Sceptical':"#8c564b",
+                    'Reputation History Sceptical':"#8c564b",
+                    'Saboteur Rep. Hist. Sceptical':"#d62728",
+                    'Saboteur Reputation History Sceptical':"#d62728",
                     ###############QUALITY INDEXES############
                     #1
                     'Q1n':"#da8bc3",#7, pink deep
@@ -77,6 +82,9 @@ BEHAVIOUR_PALETTE={'n':"#e377c2",#7, pink
                     'Q1h':"#8172b3",#5, purple deep
                     'Q1Rep. History':"#8172b3",
                     'Q1Reputation History':"#8172b3",
+                    'Q1hs':"#937860",#5, deep brown
+                    'Q1Rep. Hist. Sceptical':"#937860",
+                    'Q1Reputation History Sceptical':"#937860",
                     #2
                     'Q2n':"#a23582",#7, pink dark
                     'Q2Naive':"#a23582",
@@ -94,6 +102,9 @@ BEHAVIOUR_PALETTE={'n':"#e377c2",#7, pink
                     'Q2h':"#591e71",#5, purple dark
                     'Q2Rep. History':"#591e71",
                     'Q2Reputation History':"#591e71",
+                    'Q2hs':"#592f0d",#5, dark brown
+                    'Q2Rep. Hist. Sceptical':"#592f0d",
+                    'Q2Reputation History Sceptical':"#592f0d",
                     #3
                     'Q3n':"#f14cc1",#7, pink bright
                     'Q3Naive':"#f14cc1",
@@ -111,6 +122,9 @@ BEHAVIOUR_PALETTE={'n':"#e377c2",#7, pink
                     'Q3h':"#8b2be2",#5, purple bright
                     'Q3Rep. History':"#8b2be2",
                     'Q3Reputation History':"#8b2be2",
+                    'Q3hs':"#9f4800",#5, bright brown
+                    'Q3Rep. Hist. Sceptical':"#9f4800",
+                    'Q3Reputation History Sceptical':"#9f4800",
                     #4
                     'Q4n':"#fab0e4",#7, pink pastel
                     'Q4Naive':"#fab0e4",
@@ -128,6 +142,9 @@ BEHAVIOUR_PALETTE={'n':"#e377c2",#7, pink
                     'Q4h':"#d0bbff",#5, purple pastel
                     'Q4Rep. History':"#d0bbff",
                     'Q4Reputation History':"#d0bbff",
+                    'Q4hs':"#debb9b",#5, pastel brown
+                    'Q4Rep. Hist. Sceptical':"#debb9b",
+                    'Q4Reputation History Sceptical':"#debb9b",
                     #5
                     'Q5n':"#fbafe4",#7, pink colorblind
                     'Q5Naive':"#fbafe4",
@@ -145,6 +162,9 @@ BEHAVIOUR_PALETTE={'n':"#e377c2",#7, pink
                     'Q5h':"#cc78bc",#5, purple colorblind
                     'Q5Rep. History':"#cc78bc",
                     'Q5Reputation History':"#cc78bc",
+                    'Q5hs':"#ca9161",#5, colorblind brown
+                    'Q5Rep. Hist. Sceptical':"#ca9161",
+                    'Q5Reputation History Sceptical':"#ca9161",
                     #dishonests: 
                     'QDn':"#e8000b",# bright red
                     'QDNaive':"#e8000b",
@@ -162,6 +182,10 @@ BEHAVIOUR_PALETTE={'n':"#e377c2",#7, pink
                     'QDh':"#e8000b",
                     'QDRep. History':"#e8000b",
                     'QDReputation History':"#e8000b",
+                    'QDhs':"#e8000b",
+                    'QDRep. Hist. Sceptical':"#e8000b",
+                    'QDReputation History Sceptical':"#e8000b",
+                    #newcomers:
                     'NEWn':"#a3a3a3",# grey
                     'NEWNaive':"#a3a3a3",
                     'NEWs':"#a3a3a3",
@@ -178,6 +202,9 @@ BEHAVIOUR_PALETTE={'n':"#e377c2",#7, pink
                     'NEWh':"#a3a3a3",
                     'NEWRep. History':"#a3a3a3",
                     'NEWReputation History':"#a3a3a3",
+                    'NEWhs':"#a3a3a3",
+                    'NEWRep. Hist. Sceptical':"#a3a3a3",
+                    'NEWReputation History Sceptical':"#a3a3a3",
                     }
 BEHAV_PARAMS_COMBINATIONS={"n":[[]],
                                 "s":[[0.25]],
@@ -409,6 +436,20 @@ BEHAV_PARAMS_COMBINATIONS={"n":[[]],
                                     # ["aged2","positive",0.8,2.0],
                                     # ["aged2","mean",1,2.0],
                                     # ["aged2","positive",1,2.0],
+                                    ],
+                                    "hs":[
+                                    ["aged","mean",1,1,0.25],
+                                    ["aged","mean",1,1.3,0.25],
+                                    ["aged","mean",0.8,1,0.25],
+                                    ["aged","mean",0.8,1.3,0.25],
+                                    ["discrete","mean",1,1,0.25],
+                                    ["discrete","mean",1,1.3,0.25],
+                                    ["discrete","mean",0.8,1,0.25],
+                                    ["discrete","mean",0.8,1.3,0.25],
+                                    ["difference","mean",1,1,0.25],
+                                    ["difference","mean",1,1.3,0.25],
+                                    ["difference","mean",0.8,1,0.25],
+                                    ["difference","mean",0.8,1.3,0.25],
                                     ],
                                 }
 
@@ -1192,8 +1233,8 @@ def compare_behaviors_performance_quality(
                                             if BASIC_BEHAV_LEN==4: x_labels=["Naive\nno penalisation","Naive\npenalisation","Sceptical\nno penalisation","Sceptical\npenalisation"]
                                             elif BASIC_BEHAV_LEN==2: x_labels=["Naive\nno penalisation","Sceptical\npenalisation"]
                                             if short_x_labels:
-                                                if BASIC_BEHAV_LEN==4: x_labels=["n\nNP","n\nP","s\nNP","s\nP"]
-                                                elif BASIC_BEHAV_LEN==2: x_labels=["n\nNP","s\nP"]
+                                                if BASIC_BEHAV_LEN==4: x_labels=["n\nNP, NRS","n\nP, NRS","s\nNP, NRS","s\nP, NRS"]
+                                                elif BASIC_BEHAV_LEN==2: x_labels=["n\nNP, NRS","s\nP, NRS"]
                                         else: x_labels=[]
 
                                         for behavior_params_values in behavior_params_experiments[behavior_initials]:
@@ -1224,9 +1265,10 @@ def compare_behaviors_performance_quality(
                                                         for v in behavior_params_values:
                                                             behavior_params_text+=f"{v},\n"   
                                                         penalisation_text=f"{payment_system}"
+                                                        repustake_text=f"{'' if reputation_stake else 'N'}RS"
                                                     x_label=f"{behav_label}\n"\
                                                     f"{behavior_params_text}"\
-                                                    f"{penalisation_text}"
+                                                    f"{penalisation_text}, {repustake_text}"
                                                     x_labels.append(x_label)
                                                 if compare_best_of and is_best_param_combination(f):
                                                     best_list.append(f)
@@ -1243,8 +1285,9 @@ def compare_behaviors_performance_quality(
                                             f"for {n_honest} honests, {lie_angle}° lie angle,\n"\
                                             f"{noise_mu} mean noise, {noise_range} noise range, {'perfect' if saboteur_performance=='perf' else 'average'} saboteur performance"\
                                             # f"{COMBINE_STRATEGY_NAME_DICT[combine_stategy_initials]} combine strategy\n"\
-                                        if reputation_stake:title+=",   \nwith Staking based on reputation"
-                                        save_name=f"{n_honest}_{behavior_initials}_{payment_system}_{lie_angle}_{noise_mu}_{noise_range}_{saboteur_performance}"
+                                        # if reputation_stake:title+=",   \nwith Staking based on reputation"
+                                        repu_stake=f"{'' if reputation_stake else 'N'}RS"
+                                        save_name=f"{n_honest}_{behavior_initials}_{payment_system}_{repu_stake}_{lie_angle}_{noise_mu}_{noise_range}_{saboteur_performance}"
                                         
                                         if not len(filenames)>BASIC_BEHAV_LEN:continue
 
@@ -1285,7 +1328,7 @@ def compare_behaviors_performance_quality(
                                             f"for {n_honest} honests, {lie_angle}° lie angle,\n"\
                                             f"{noise_mu} mean noise, {noise_range} noise range, {'perfect' if saboteur_performance=='perf' else 'average'} saboteur performance"\
                                             # f"{COMBINE_STRATEGY_NAME_DICT[combine_stategy_initials]} combine strategy\n"\
-                            if reputation_stake:title+=",   \nwith Staking based on reputation"
+                            # if reputation_stake:title+=",   \nwith Staking based on reputation"
                                         
                             performance_with_quality(
                                                     best_list,
@@ -1493,9 +1536,9 @@ if __name__ == '__main__':
 
     compare_behaviors_performance_quality(
                                             data_folder=CONFIG_FILE.DATA_DIR,
-                                            experiment="NO_FORAGING_MARKET",
-                                            experiment_part="whole",
-                                            # experiment_part="last.33",
+                                            experiment="HISTORY_SCEPTICAL",
+                                            # experiment_part="whole",
+                                            experiment_part="last.33",
                                             performance_metric="items",
                                             pair_plot=False,
                                             short_x_labels=True,
@@ -1505,16 +1548,17 @@ if __name__ == '__main__':
                                             auto_xlabels=False,
                                             n_honests=[
                                                 24,
-                                                # 22,
-                                                # 25,
-                                                # 17,
-                                                # 20
+                                                22,
+                                                25,
+                                                17,
+                                                20
                                                 ],
                                             behaviours=[
-                                                'r',
-                                                't' ,
-                                                'Nv',
-                                                'h'
+                                                # 'r',
+                                                # 't' ,
+                                                # 'Nv',
+                                                # 'h'
+                                                'hs',
                                                 ],#to compare w/ n+NP,n+P,s+NP,s+P 
                                             behavior_params_experiments=BEHAV_PARAMS_COMBINATIONS,
                                             payment_systems=[
@@ -1529,9 +1573,9 @@ if __name__ == '__main__':
                                                                     "avg",
                                                                 "perf",
                                                                 ],
-                                        compare_best_of=True,
+                                        compare_best_of=False,
                                         multi_plot=True,
                                         save_folder=join(CONFIG_FILE.PLOT_DIR,"behav_compar_quality"),
-                                        save_plot=0
+                                        save_plot=1
                                     )
                              

@@ -26,6 +26,11 @@ NP_COUNT=0
 P_COUNT=0
 NRS_COUNT=0
 RS_COUNT=0
+COUNT_17=0
+COUNT_20=0
+COUNT_22=0
+COUNT_24=0
+COUNT_25=0
 for sd in subdirs:
     for f in os.scandir(sd+'/rewards'):
         if f.is_file():
@@ -51,6 +56,17 @@ for sd in subdirs:
                             NRS_COUNT+=1
                         elif "_RS_" in f.path.split('/')[-1]:
                             RS_COUNT+=1
+                    bn=f.path.split('/')[-1].split('_')[0]
+                    if "17" in bn:
+                        COUNT_17+=1
+                    elif "20" in bn:
+                        COUNT_20+=1
+                    elif "22" in bn:
+                        COUNT_22+=1
+                    elif "24" in bn:
+                        COUNT_24+=1
+                    elif "25" in bn:
+                        COUNT_25+=1
 
                     if ddiff<5:
                         COUNT_0_5+=1
@@ -73,27 +89,18 @@ print(f"COUNT_5_15: {COUNT_5_15}")
 print(f"COUNT_15_50: {COUNT_15_50}")
 print(f"COUNT_50_100: {COUNT_50_100}")
 print(f"COUNT_100_150: {COUNT_100_150}")
+print()
 print(f"max_ddiff: {max_ddiff}")
 print(f"max_ddiff_name: {max_ddiff_name}")
 print(f"NP_COUNT: {NP_COUNT}")
 print(f"P_COUNT: {P_COUNT}")
 print(f"---NRS_COUNT: {NRS_COUNT}")
 print(f"---RS_COUNT: {RS_COUNT}")
+print()
+print(f"COUNT_17: {COUNT_17}")
+print(f"COUNT_20: {COUNT_20}")
+print(f"COUNT_22: {COUNT_22}")
+print(f"COUNT_24: {COUNT_24}")
+print(f"COUNT_25: {COUNT_25}")
+print()
 print(f"===FILE_COUNT: {FILE_COUNT}===")
-
-              
-#     scanfile=f"{sd}/config_log.txt"
-#     count_submitted=0
-#     count_completed=0
-#     with open(scanfile, 'r') as f:
-#         lines = f.readlines()
-#         for l in lines:
-#             if l.startswith("OUTPUT FILENAME:"):
-#                 count_completed+=1
-#             else:
-#                 count_submitted+=1
-#     if count_submitted!=count_completed:
-#         result=False
-#     print(f"{sd} -- submitted: {count_submitted} -- completed: {count_completed}")
-
-# print(f"result: {'all completed' if result else 'not all completed'}")
