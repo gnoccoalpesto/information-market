@@ -283,8 +283,7 @@ class PaymentDB:
         if cost < 0:
             raise ValueError("Cost must be positive")
         if self.database[robot_id]["reward"] < cost:
-            raise InsufficientFundsException()#robot_id)
-            #NOTE if changing market conditions gives error, bypass: pass
+            raise InsufficientFundsException#(robot_id)
         else:
             self.database[robot_id]["reward"] -= cost
 
