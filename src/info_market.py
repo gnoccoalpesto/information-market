@@ -378,6 +378,26 @@ class InformationMarket():
             else:
                 print(f"[WARNING] Could not record metric: '{metric}'. Metric name is not valid.")
 
+        if hasattr(controllers[0].environment.payment_database.database[0]["payment_system"], "pot_amount"):
+            dataframes = []
+            for i, controller in enumerate(controllers):
+                df = pd.DataFrame(controller.get_stake_pot_evolution_list(), columns=["tick", "pot_list"])
+                df["simulation_id"] = i
+                df = df.set_index("simulation_id")
+                dataframes.append(df)
+            Path(join(output_directory, "pots_evolution")).mkdir(parents=True, exist_ok=True)
+            current_filename=self.check_filename_existence(output_directory,metric,filename)
+            pd.concat(dataframes).to_csv(join(output_directory, "pots_evolution", current_filename))
+            dataframes = []
+            for i, controller in enumerate(controllers):
+                df = pd.DataFrame(controller.get_wealth_evolution_list(), columns=["tick", "wealth_list"])
+                df["simulation_id"] = i
+                df = df.set_index("simulation_id")
+                dataframes.append(df)
+            Path(join(output_directory, "wealth_evolution")).mkdir(parents=True, exist_ok=True)
+            current_filename=self.check_filename_existence(output_directory,metric,filename)
+            pd.concat(dataframes).to_csv(join(output_directory, "wealth_evolution", current_filename))
+        
         if config.value_of("data_collection")["transactions_log"]:
         #NOTE --- ATTENTION: this files can easily reach 200MB each
             transaction_logs=[]
