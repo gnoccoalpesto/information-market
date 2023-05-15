@@ -294,6 +294,7 @@ class InformationMarket():
         start = time.time()
         with Pool() as pool:
             controllers = pool.starmap(self.run, [(config, i) for i in range(nb_runs)])
+            
             if CONFIG_FILE.RECORD_DATA: 
                 items_filename=self.record_data(config, controllers)
                 if CONFIG_FILE.CONFIG_RUN_LOG:
@@ -377,7 +378,19 @@ class InformationMarket():
                         transactions_df.to_csv(join(output_directory, "transactions", current_filename), index=False, header=False)
             else:
                 print(f"[WARNING] Could not record metric: '{metric}'. Metric name is not valid.")
-
+        
+        if config.value_of("data_collection")["transactions_log"]:
+        #NOTE --- ATTENTION: this files can easily reach 200MB each
+            transaction_logs=[]
+            for i, controller in enumerate(controllers):
+                df = pd.DataFrame(controller.get_transaction_log(), columns=["tick", "buyer", "seller"])
+                df["simulation_id"] = i
+                df = df.set_index("simulation_id")
+                transaction_logs.append(df)
+            Path(join(output_directory, "transactions")).mkdir(parents=True, exist_ok=True)
+            current_filename=self.check_filename_existence(output_directory,metric,filename)
+            pd.concat(transaction_logs).to_csv(join(output_directory, "transactions", current_filename))
+            
         if hasattr(controllers[0].environment.payment_database.database[0]["payment_system"], "pot_amount"):
             dataframes = []
             for i, controller in enumerate(controllers):
@@ -397,18 +410,13 @@ class InformationMarket():
             Path(join(output_directory, "wealth_evolution")).mkdir(parents=True, exist_ok=True)
             current_filename=self.check_filename_existence(output_directory,metric,filename)
             pd.concat(dataframes).to_csv(join(output_directory, "wealth_evolution", current_filename))
-        
-        if config.value_of("data_collection")["transactions_log"]:
-        #NOTE --- ATTENTION: this files can easily reach 200MB each
-            transaction_logs=[]
-            for i, controller in enumerate(controllers):
-                df = pd.DataFrame(controller.get_transaction_log(), columns=["tick", "buyer", "seller"])
-                df["simulation_id"] = i
-                df = df.set_index("simulation_id")
-                transaction_logs.append(df)
-            Path(join(output_directory, "transactions")).mkdir(parents=True, exist_ok=True)
-            current_filename=self.check_filename_existence(output_directory,metric,filename)
-            pd.concat(transaction_logs).to_csv(join(output_directory, "transactions", current_filename))
+
+        # if CONFIG_FILE.LOG_EXCEPTIONS:
+        #     Path(join(output_directory, "exceptions")).mkdir(parents=True, exist_ok=True)
+        #     current_filename=self.check_filename_existence(output_directory,metric,filename)
+        #     exceptions_txt=f"IFE {CONFIG_FILE.IFE_COUNT}\nNIS {CONFIG_FILE.NIS_COUNT}"
+        #     with open(join(output_directory, "exceptions", current_filename), "w+") as f:
+        #         f.write(exceptions_txt)
 
         return items_filename if CAN_RETURN else None
 
