@@ -36,3 +36,12 @@ NEWCOMER_PHASE:bool = True
 NEWCOMER_PHASE_DURATION:int = 5000
 NEWCOMER_AMOUNT:int = 5
 NEWCOMER_TYPE='honest'
+
+
+## EXCEPTIONS
+# LOG_EXCEPTIONS:bool = True
+# #NOTE vectors lenght setted in simulation
+# #Insufficient funds 
+# IFE_COUNT:list = []
+# #No information sold
+# NIS_COUNT:list = []

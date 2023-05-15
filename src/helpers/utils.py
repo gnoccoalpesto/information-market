@@ -2,6 +2,7 @@ from enum import Enum
 from math import atan2, pi, radians
 import numpy as np
 
+# import config as CONFIG_FILE
 
 def norm(vector):
     return (sum(x ** 2 for x in vector)) ** 0.5
@@ -30,16 +31,19 @@ def distance_between(robot1, robot2):
 
 class InsufficientFundsException(Exception):
     # def __init__(self, robot_id):
-    #     self.robot_id = robot_id
-        # print(f"Robot {robot_id} has insufficient funds to buy this item.")
+    #     CONFIG_FILE.IFE_COUNT[robot_id] += 1
     pass
 
 
 class NoInformationSoldException(Exception):
+    # def __init__(self, robot_id):
+    #     CONFIG_FILE.NIS_COUNT[robot_id] += 1
     pass
 
 
 class NoLocationSensedException(Exception):
+    # def __init__(self, robot_id):
+    #     CONFIG_FILE.NLS_COUNT[robot_id] += 1
     pass
 
 

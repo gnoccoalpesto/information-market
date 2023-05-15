@@ -283,8 +283,7 @@ class PaymentDB:
         if cost < 0:
             raise ValueError("Cost must be positive")
         if self.database[robot_id]["reward"] < cost:
-            raise InsufficientFundsException()#robot_id)
-            #NOTE if changing market conditions gives error, bypass: pass
+            raise InsufficientFundsException#(robot_id)
         else:
             self.database[robot_id]["reward"] -= cost
 
@@ -311,6 +310,9 @@ class PaymentDB:
         else:
             raise ValueError("Transaction type not recognized")
         return self.database[robot_id][f"n_{type}_transactions"]
+    
+    def get_stake_pot(self,robot_id:int):
+        return self.database[robot_id]["payment_system"].pot_amount
 
 
 ############################################################################################################
@@ -401,8 +403,8 @@ class OutlierPenalisationPaymentSystem(PaymentSystem):
         shares_mapping = self.calculate_shares_mapping()
         try:
             for seller_id, share in shares_mapping.items():
-                #NOTE pot is always present
                 #round one: transfer pot amount
+                #NOTE: pot is always present, and every creditor shall be ensured to have it back
                 payment_api.transfer(rewarded_id, seller_id, share*self.pot_amount)
 
             for seller_id, share in shares_mapping.items():
@@ -417,6 +419,7 @@ class OutlierPenalisationPaymentSystem(PaymentSystem):
         except InsufficientFundsException:
             pass
         finally:
+            #TODO is it fair to just drop all the debts in case of IFE? ir this can be considered fairness?
             self.reset_transactions()
 
 

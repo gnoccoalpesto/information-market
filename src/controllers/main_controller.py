@@ -49,32 +49,44 @@ class MainController:
                                        simulation_seed=config.value_of("simulation_seed"),
                                        )
         self.tick = 0
-        self.rewards_evolution = ""
-        self.rewards_evolution_list = []
-        self.items_evolution = ""
-        self.items_evolution_list = []
 
 
     def step(self):
         if self.tick % self.config.value_of("data_collection")['precise_recording_interval'] == 0:
             if "rewards_evolution" in self.config.value_of("data_collection")["metrics"]:
-                self.rewards_evolution += f"{self.tick},{self.get_reward_stats()}"
                 self.rewards_evolution_list.append([self.tick, self.get_rewards()])
             if "items_evolution" in self.config.value_of("data_collection")["metrics"]:
-                self.items_evolution += f"{self.tick},{self.get_items_collected_stats()}"
                 self.items_evolution_list.append([self.tick, self.get_items_collected()])
+            if hasattr(self.environment.payment_database.database[0]["payment_system"], "pot_amount"):
+                self.stake_pot_evolution_list.append([self.tick, self.get_stake_pots()])
+                self.wealth_evolution_list.append([self.tick,[r+p for r,p in zip(self.rewards_evolution_list[-1][1],self.stake_pot_evolution_list[-1][1])]])
         self.tick += 1
         self.environment.step()
             
 
     def start_simulation(self):
+        self.init_statistics()
         for _ in range(self.config.value_of("simulation_steps")):
             self.step()
         #[ ] NEWCOMERS PHASE
         if CONFIG_FILE.NEWCOMER_PHASE:
+            # self.init_statistics(newcomers_phase=True)
             self.environment.create_newcomers(CONFIG_FILE.NEWCOMER_TYPE, CONFIG_FILE.NEWCOMER_AMOUNT)
             for _ in range(CONFIG_FILE.NEWCOMER_PHASE_DURATION):
                 self.step()
+
+
+    def init_statistics(self):#,newcomers_phase=False):
+        # if newcomers_phase:
+        #     CONFIG_FILE.IFE_COUNT+=[0]*CONFIG_FILE.NEWCOMER_AMOUNT
+        #     CONFIG_FILE.NIS_COUNT+=[0]*CONFIG_FILE.NEWCOMER_AMOUNT
+        #     return
+        self.rewards_evolution_list = []
+        self.items_evolution_list = []
+        self.stake_pot_evolution_list=[]
+        self.wealth_evolution_list=[]
+        # self.IFE_COUNT=[0]*self.environment.ROBOTS_AMOUNT
+        # self.NIS_COUNT=[0]*self.environment.ROBOTS_AMOUNT
 
 
     def get_sorted_reward_stats(self):
@@ -124,6 +136,9 @@ class MainController:
         res = res[:-1]
         res += "\n"
         return res
+    
+    def get_stake_pots(self):
+        return [self.environment.payment_database.get_stake_pot(bot.id) for bot in self.environment.population]
 
 
     def get_robot_at(self, x, y):
@@ -144,7 +159,14 @@ class MainController:
 
     def get_items_evolution_list(self):
         return self.items_evolution_list
+    
 
+    def get_stake_pot_evolution_list(self):
+        return self.stake_pot_evolution_list
+
+
+    def get_wealth_evolution_list(self):
+        return self.wealth_evolution_list
 
     def get_transaction_log(self):
         return self.environment.payment_database.completed_transactions_log
