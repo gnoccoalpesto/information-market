@@ -83,53 +83,6 @@ def myanovatest(
     print(f"F-statistic: {anova_test.statistic},\np-value: {anova_test.pvalue}\n")
 
 
-def find_best_worst_seeds(filenames=[],
-                        metric="",
-                        data_folder="",
-                        base_seed="",
-                        amount_to_find=1):
-    """
-    returns the AMOUNT_TO_FIND best and worst seeds, wrt given metric.
-    result computed assuminig a linear increare with the run number,
-    starting from BASE_SEED
-
-    if metric="" and data_folder="", filename in filenames is expected
-    in this shape /DATA_DIR/METRIC/FILENAME.csv
-    """
-    if amount_to_find<1:amount_to_find=1
-    data_folder=f"{data_folder}{metric}/" if data_folder!="" else ""
-    if not filenames:
-        filenames.extend([join(data_folder, f)
-            for f in os.listdir(data_folder) if isfile(join(data_folder, f))])
-    else:
-        filenames=[f"{data_folder}{f}" for f in filenames]
-
-    for filename in filenames:
-        bests=[]
-        worsts=[]
-        df=pd.read_csv(filename,header=None)
-        df['items_sum']=df.apply(np.sum, axis=1)
-        average_sum=df["items_sum"].mean()
-
-        print(f"\nfile: {filename.split('/')[-1]}")
-        print(f"average sum: {average_sum} over {len(df)} runs")
-
-        for i in range(amount_to_find):
-            i_max=df["items_sum"].max()
-            i_id_max=df["items_sum"].idxmax()
-            i_min=df["items_sum"].min()
-            i_id_min=df["items_sum"].idxmin()
-            bests.append((base_seed+i_id_max, i_max))
-            worsts.append((base_seed+i_id_min, i_min))
-            df.drop(i_id_max, inplace=True)
-            df.drop(i_id_min, inplace=True)
-
-        for i, best in enumerate(bests):
-            print(f"{1+i} best seed: {best[0]} (run {best[0]-base_seed}), value: {best[1]}")
-        for i, worst in enumerate(worsts):
-            print(f"{1+i} worst seed: {worst[0]} (run {worst[0]-base_seed}), value: {worst[1]}")
-
-
 
 
 def main():

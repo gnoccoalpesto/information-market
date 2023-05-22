@@ -209,15 +209,15 @@ BEHAVIOUR_PALETTE={'n':"#e377c2",#7, pink
 BEHAV_PARAMS_COMBINATIONS={"n":[[]],
                                 "s":[[0.25]],
                                 "r":[
-                                    # [0.3],
-                                    [0.5]
+                                    [0.3],
+                                    # [0.5]
                                     ],
                                 "Nv":[
                                     # ["allavg",0.3,0.25,"exponential"],
                                     # ["allavg",0.5,0.25,"exponential"],
                                     # ["allavg",0.8,0.25,"exponential"],
                                     ["allavg",0.3,0.25,"ratio"],
-                                    ["allavg",0.5,0.25,"ratio"],
+                                    # ["allavg",0.5,0.25,"ratio"],
                                     # ["allavg",0.8,0.25,"ratio"],
                                     # ["allmax",0.3,0.25,"exponential"],
                                     # ["allmax",0.5,0.25,"exponential"],
@@ -236,15 +236,15 @@ BEHAV_PARAMS_COMBINATIONS={"n":[[]],
                                     ],
                                 "w":[[]],
                                 "h":[
-                                    ["aged","mean",0.8,1],#------------------------------
+                                    # ["aged","mean",0.8,1],#------------------------------
                                     # ["aged2","mean",0.8,1.3],#----------------------------
                                     ["discrete","mean",1,1],#-------------------------------
                                     # ["discrete","positive",1,1],#################
-                                    ["difference","mean",1,1],########################
+                                    # ["difference","mean",1,1],########################
                                     # ["difference","positive",1,1],#####################
                                     # ["recency","mean",1,1],###############
                                     # ["recency","positive",1,1],###############
-                                    ["aged","mean",1,1],################
+                                    # ["aged","mean",1,1],################
                                     # ["aged","positive",1,1],################
                                     # ["aged2","mean",1,1],######################
                                     # ["aged2","positive",1,1],######################
@@ -438,18 +438,18 @@ BEHAV_PARAMS_COMBINATIONS={"n":[[]],
                                     # ["aged2","positive",1,2.0],
                                     ],
                                     "hs":[
-                                    ["aged","mean",1,1,0.25],
-                                    ["aged","mean",1,1.3,0.25],
-                                    ["aged","mean",0.8,1,0.25],
-                                    ["aged","mean",0.8,1.3,0.25],
+                                    # ["aged","mean",1,1,0.25],
+                                    # ["aged","mean",1,1.3,0.25],
+                                    # ["aged","mean",0.8,1,0.25],
+                                    # ["aged","mean",0.8,1.3,0.25],
                                     ["discrete","mean",1,1,0.25],
-                                    ["discrete","mean",1,1.3,0.25],
-                                    ["discrete","mean",0.8,1,0.25],
-                                    ["discrete","mean",0.8,1.3,0.25],
-                                    ["difference","mean",1,1,0.25],
-                                    ["difference","mean",1,1.3,0.25],
-                                    ["difference","mean",0.8,1,0.25],
-                                    ["difference","mean",0.8,1.3,0.25],
+                                    # ["discrete","mean",1,1.3,0.25],
+                                    # ["discrete","mean",0.8,1,0.25],
+                                    # ["discrete","mean",0.8,1.3,0.25],
+                                    # ["difference","mean",1,1,0.25],
+                                    # ["difference","mean",1,1.3,0.25],
+                                    # ["difference","mean",0.8,1,0.25],
+                                    # ["difference","mean",0.8,1.3,0.25],
                                     ],
                                 }
 
@@ -534,8 +534,9 @@ def dataframe_from_csv(filename,
     '''
     if not filename.endswith(".csv"): filename+=".csv"
 
+    # if data_folder_and_subfolder!="" and metric!="":filename=join(data_folder_and_subfolder,metric,filename)
     #NOTE as for now, only items are allowed to use lastN, for they monotonic
-    #   non decreasing nature
+    #   non decreasing nature (hence difference future-past always positive)
 
     if experiment_part=="whole" or "transaction" in metric \
         or 'reward' in filename:#NOTE BYPASS NEGATIVE REWARD ISSUE
@@ -587,25 +588,29 @@ def dataframe_from_csv(filename,
             df_list.append(delta_run_rows)
         df=pd.DataFrame(df_list)
 
-    elif experiment_part=="steps":
+    elif "steps" in experiment_part or "df" in experiment_part:
         def string_list_to_array(string:str, element_type=int):
             return np.asarray([element_type(_) for _ in string.replace("[","").replace("]","").split(", ")])
-        # if metric=="items": metric_folder="items_evolution"
-        # elif metric=="rewards": metric_folder="rewards_evolution"
+        if "item" in metric: metric_folder="items_evolution"
+        elif "reward" in metric: metric_folder="rewards_evolution"
+
+        if data_folder_and_subfolder!="" and metric!="":filename=join(data_folder_and_subfolder,metric_folder,filename)
 
         df=pd.read_csv(filename)
-        # df=pd.read_csv(join(data_folder_and_subfolder,metric_folder,filename))
-
+                
         col_labels=df.columns.to_list()
         df_list=[]
         for _,row in df.iterrows():
-            row_list=string_list_to_array(row[col_labels[-1]])
+            row_list=string_list_to_array(row[col_labels[-1]],element_type=int if "item" in metric else float)
             new_row=[row[col_labels[0]],row[col_labels[1]],*row_list]
-            df_list.append(new_row)
-        new_col_labels=col_labels[:-1]+[f"{metric}_{robot_id}" for robot_id in range(len(row_list))]
+            df_list.append(new_row if "df" in experiment_part else new_row[2:])
+        existing_labels=col_labels[:-1] if "df" in experiment_part else []
+        new_col_labels=existing_labels+[f"{metric}_{robot_id}" for robot_id in range(len(row_list))]
+        # if "df" in experiment_part:df=pd.DataFrame(df_list,columns=new_col_labels)
+        # else: df=df_list
         df=pd.DataFrame(df_list,columns=new_col_labels)
 
-    if not noise_group=="all" or noise_group=="":
+    if not noise_group=="all" and noise_group!="" and noise_group is not None:
         n_r=len(df.columns)
         n_h, _, _, _, _, _, _, noise_params=params_from_filename(filename,compact_format=True)
         n_h=int(n_h)
@@ -624,19 +629,71 @@ def dataframe_from_csv(filename,
         if "dish" in noise_group or 'sab' in noise_group:
             df=df.iloc[:,n_h:]
 
-    if post_processing is not None:
+    if post_processing is not None and post_processing!="":
         #NOTE RETURN TYPE: pandas.Series
         FUN_DICT={"sum":np.sum,"mean":np.mean,"std":np.std,"median":np.median,"min":np.min,"max":np.max}
         items,function=post_processing.split("-")
+        if 'df' in experiment_part:
+            df_not_to_consider,df=df.iloc[:,:2],df.iloc[:,2:]
         if items=="row" or "exp" in items: axis=1
         elif items=="col" or "rob" in items: axis=0
         elif items=="all" or items=="both":
             df=df.apply(FUN_DICT[function],axis=0)
             df=FUN_DICT[function](df)
             df=pd.Series(df)
+            if 'df' in experiment_part:
+                df=pd.concat([df_not_to_consider,df],axis=1)
             return df
         df=df.apply(FUN_DICT[function],axis=axis)
     return df
+
+
+#TODO rework for finding best, worst run seeds
+# def find_best_worst_seeds(filenames=[],
+#                         metric="",
+#                         data_folder="",
+#                         base_seed="",
+#                         amount_to_find=1):
+#     """
+#     returns the AMOUNT_TO_FIND best and worst seeds, wrt given metric.
+#     result computed assuminig a linear increare with the run number,
+#     starting from BASE_SEED
+
+#     if metric="" and data_folder="", filename in filenames is expected
+#     in this shape /DATA_DIR/METRIC/FILENAME.csv
+#     """
+#     if amount_to_find<1:amount_to_find=1
+#     data_folder=f"{data_folder}{metric}/" if data_folder!="" else ""
+#     if not filenames:
+#         filenames.extend([join(data_folder, f)
+#             for f in os.listdir(data_folder) if isfile(join(data_folder, f))])
+#     else:
+#         filenames=[f"{data_folder}{f}" for f in filenames]
+
+#     for filename in filenames:
+#         bests=[]
+#         worsts=[]
+#         df=pd.read_csv(filename,header=None)
+#         df['items_sum']=df.apply(np.sum, axis=1)
+#         average_sum=df["items_sum"].mean()
+
+#         print(f"\nfile: {filename.split('/')[-1]}")
+#         print(f"average sum: {average_sum} over {len(df)} runs")
+
+#         for i in range(amount_to_find):
+#             i_max=df["items_sum"].max()
+#             i_id_max=df["items_sum"].idxmax()
+#             i_min=df["items_sum"].min()
+#             i_id_min=df["items_sum"].idxmin()
+#             bests.append((base_seed+i_id_max, i_max))
+#             worsts.append((base_seed+i_id_min, i_min))
+#             df.drop(i_id_max, inplace=True)
+#             df.drop(i_id_min, inplace=True)
+
+#         for i, best in enumerate(bests):
+#             print(f"{1+i} best seed: {best[0]} (run {best[0]-base_seed}), value: {best[1]}")
+#         for i, worst in enumerate(worsts):
+#             print(f"{1+i} worst seed: {worst[0]} (run {worst[0]-base_seed}), value: {worst[1]}")
 
 
 #TODO TEMPLATE
@@ -787,7 +844,7 @@ def performance_with_quality(
                         filenames,
                         experiment_part="whole",
                         performance_index="items",
-                        pair_plot=True,
+                        pair_plot=False,
                         quality_index="transactionsS",#"reward"
                         multi_quality=True,
                         title="",
@@ -860,7 +917,6 @@ def performance_with_quality(
         #     x_labels=[]
         #     auto_x_labels=True
         # else:auto_x_labels=False
-
         for i,f in enumerate(current_filenames):
             if not f.endswith(".csv"):f+=".csv"
             splitted_filename=f.split('.csv')[0].split("/")
@@ -1033,25 +1089,23 @@ def performance_with_quality(
                 if 'trans' in quality_index:
                     ax2.yaxis.set_major_formatter(mtick.PercentFormatter())
 
-                if not pair_plot or j>0:
-                    if multi_quality:
-                        #matplotlib markers https://matplotlib.org/3.1.0/api/markers_api.html
-                        sns.pointplot(data=pd.melt(data_quality_good,id_vars=['behavior','plot_order']),palette=BEHAVIOUR_PALETTE,
-                                        x='plot_order',y='value', hue='behavior',ax=ax2,markers="s",join=False,errorbar=None)
-                                            
+                if not pair_plot or j>0:                              
                     sns.pointplot(data=pd.melt(data_quality,id_vars=['behavior','plot_order']),palette=BEHAVIOUR_PALETTE,
                                     x='plot_order',y='value', hue='behavior',
                                     markers="o",
                                     # markers=["*","+","o","."]*5,
                                     ax=ax2,join=False,errorbar=None)
-
-                    if multi_quality:#NOTE improves visibility of small dot
+                    if multi_quality:
+                        #matplotlib markers https://matplotlib.org/3.1.0/api/markers_api.html
+                        sns.pointplot(data=pd.melt(data_quality_good,id_vars=['behavior','plot_order']),palette=BEHAVIOUR_PALETTE,
+                                        x='plot_order',y='value', hue='behavior',ax=ax2,markers="^",scale=0.85,join=False,errorbar=None)
+              
                         sns.pointplot(data=pd.melt(data_quality_bad,id_vars=['behavior','plot_order']),palette=BEHAVIOUR_PALETTE,
-                                        x='plot_order',y='value', hue='behavior',ax=ax2,markers="^",join=False,errorbar=None)
+                                        x='plot_order',y='value', hue='behavior',ax=ax2,markers="s",scale=0.85,join=False,errorbar=None)
                         if n_dishonest>0:
                             warnings.filterwarnings( "ignore", module = "seaborn\..*" )#ignore color of "x" warning
                             sns.pointplot(data=pd.melt(data_quality_dishonest,id_vars=['behavior','plot_order']),palette=BEHAVIOUR_PALETTE,
-                                            x='plot_order',y='value', hue='behavior',ax=ax2,markers="x",join=False,errorbar=None)
+                                            x='plot_order',y='value', hue='behavior',ax=ax2,markers="x",scale=0.85,join=False,errorbar=None)
                             warnings.filterwarnings( "default", module = "seaborn\..*" )
 
                     ax2.legend().set_visible(False)
@@ -1076,7 +1130,7 @@ def performance_with_quality(
                         35 if 'item' in performance_label and experiment_part=='whole' else \
                         14 if 'item' in performance_label and 'last' in experiment_part \
                             else None)#int(1.25*performance_max))
-        if not pair_plot:
+        if not pair_plot and quality_index!="":
             ax2.set_ylabel(quality_label)
         elif j>0:ax2.set_ylabel(quality_label)
 
@@ -1089,6 +1143,22 @@ def performance_with_quality(
     if save_plot:
         plt.savefig(f"{join(save_folder,save_name)}.png", bbox_inches='tight')
         plt.close()
+
+
+def reward_evolution(filename:str,data_folder_and_subfolder:str="",metric:str="",):
+    df=dataframe_from_csv(filename,data_folder_and_subfolder,metric,experiment_part="df",post_processing="row-sum")
+    selected_runs=df[df.columns.to_list()[0]].unique()
+    sns.lineplot(data=pd.melt(df, id_vars=['tick','rewards_evolution_sum']),x=df.columns.to_list()[1],y=df.columns.to_list()[2],errorbar=("sd"))
+    
+    # sns.lineplot(df)
+    plt.show()
+    # for run in selected_runs:
+    #     df_run=df.loc[lambda df: df[df.columns.to_list()[0]] == run].iloc[:,-1]
+    #     # print("----------",run,"----------")
+    #     # print(df_run.columns.to_list())
+    #     plt.plot(df_run)
+    #     plt.suptitle(f"run number {run+1}")
+    #     plt.show()
 
 
 #####################################################################################
@@ -1115,7 +1185,9 @@ def compare_behaviors_performance_quality(
                                         noise_mu_list=[0.051],
                                         noise_range_list=[0.1],
                                         saboteur_performance_list=["avg","perf"],
+                                        compare_with_reference=False,
                                         compare_best_of=False,
+                                        compare_best_of_only=False,
                                         multi_plot=True,
                                         save_plot=False,
                                         save_folder=""
@@ -1167,6 +1239,7 @@ def compare_behaviors_performance_quality(
 
     :param save_folder: folder where the plot is saved.
     '''
+    if compare_best_of_only:compare_best_of=True
     if multi_plot:fig_count=0
 
     if save_plot and not os.path.exists(join(save_folder,experiment)):
@@ -1206,36 +1279,40 @@ def compare_behaviors_performance_quality(
                                         if save_plot:
                                             behav_save_folder=join(save_folder,experiment,performance_metric,SUB_FOLDERS_DICT[behavior_initials])
                                             if not os.path.exists(behav_save_folder):os.makedirs(behav_save_folder,exist_ok=True)
-                                        filenames=[
-                                            filename_from_params(n_honest,"n", "waa",
-                                                                "NP","NRS",lie_angle,
-                                                                [],
-                                                                noise_type,noise_params_values),
-                                            # filename_from_params(n_honest,"n", "waa",
-                                            #                     "P","NRS",lie_angle,
-                                            #                     [],
-                                            #                     noise_type,noise_params_values),
-                                            # filename_from_params(n_honest,"s", "waa",
-                                            #                     "NP","NRS",lie_angle,
-                                            #                     [0.25],
-                                            #                     noise_type,noise_params_values),
-                                            filename_from_params(n_honest,"s", "waa",
-                                                                "P","NRS",lie_angle,
-                                                                [0.25],
-                                                                noise_type,noise_params_values),
-                                            ]
-                                        BASIC_BEHAV_LEN=len(filenames)
-                                        filenames=[join(data_folder,experiment,SUB_FOLDERS_DICT[b_i],\
-                                            performance_folder,f)+(".csv" if not f.endswith(".csv") else "")\
-                                                for f,b_i in zip(filenames,(['n','s'] if BASIC_BEHAV_LEN==2 else ['n','n','s','s']))]
+                                        if compare_with_reference:
+                                            filenames=[
+                                                filename_from_params(n_honest,"n", "waa",
+                                                                    "NP","NRS",lie_angle,
+                                                                    [],
+                                                                    noise_type,noise_params_values),
+                                                # filename_from_params(n_honest,"n", "waa",
+                                                #                     "P","NRS",lie_angle,
+                                                #                     [],
+                                                #                     noise_type,noise_params_values),
+                                                # filename_from_params(n_honest,"s", "waa",
+                                                #                     "NP","NRS",lie_angle,
+                                                #                     [0.25],
+                                                #                     noise_type,noise_params_values),
+                                                filename_from_params(n_honest,"s", "waa",
+                                                                    "P","NRS",lie_angle,
+                                                                    [0.25],
+                                                                    noise_type,noise_params_values),
+                                                ]
+                                            filenames=[join(data_folder,experiment,SUB_FOLDERS_DICT[b_i],\
+                                                performance_folder,f)+(".csv" if not f.endswith(".csv") else "")\
+                                                    for f,b_i in zip(filenames,(['n','s'] if BASIC_BEHAV_LEN==2 else ['n','n','s','s']))]
 
-                                        if not auto_xlabels:
-                                            if BASIC_BEHAV_LEN==4: x_labels=["Naive\nno penalisation","Naive\npenalisation","Sceptical\nno penalisation","Sceptical\npenalisation"]
-                                            elif BASIC_BEHAV_LEN==2: x_labels=["Naive\nno penalisation","Sceptical\npenalisation"]
-                                            if short_x_labels:
-                                                if BASIC_BEHAV_LEN==4: x_labels=["n\nNP, NRS","n\nP, NRS","s\nNP, NRS","s\nP, NRS"]
-                                                elif BASIC_BEHAV_LEN==2: x_labels=["n\nNP, NRS","s\nP, NRS"]
-                                        else: x_labels=[]
+                                            if not auto_xlabels:
+                                                if BASIC_BEHAV_LEN==4: x_labels=["Naive\nno penalisation","Naive\npenalisation","Sceptical\nno penalisation","Sceptical\npenalisation"]
+                                                elif BASIC_BEHAV_LEN==2: x_labels=["Naive\nno penalisation","Sceptical\npenalisation"]
+                                                if short_x_labels:
+                                                    if BASIC_BEHAV_LEN==4: x_labels=["n\nNP, NRS","n\nP, NRS","s\nNP, NRS","s\nP, NRS"]
+                                                    elif BASIC_BEHAV_LEN==2: x_labels=["n\nNP, NRS","s\nP, NRS"]
+                                            else: x_labels=[]
+                                        else:
+                                            filenames=[]
+                                            x_labels=[]
+                                        BASIC_BEHAV_LEN=len(filenames)
 
                                         for behavior_params_values in behavior_params_experiments[behavior_initials]:
                                             f=filename_from_params(n_honest,behavior_initials, 
@@ -1294,22 +1371,23 @@ def compare_behaviors_performance_quality(
                                         if pair_plot:
                                             secondary_filenames=[f.replace(performance_folder,secondary_performance_folder) for f in filenames]
                                             filenames=[filenames,secondary_filenames]
-                                        performance_with_quality(
-                                                                filenames,
-                                                                experiment_part=experiment_part,
-                                                                performance_index=performance_metric,
-                                                                pair_plot=pair_plot,
-                                                                quality_index=quality_index,
-                                                                multi_quality=multi_quality,
-                                                                title=title,
-                                                                x_labels=x_labels,
-                                                                show_dishonests=show_dishonests if n_honest<n_robots else False,
-                                                                multi_plot=multi_plot,
-                                                                save_plot=save_plot,
-                                                                save_folder=behav_save_folder if save_plot else "",
-                                                                save_name=save_name,
-                                                                )
-                                        if multi_plot:fig_count+=1
+                                        if not compare_best_of_only:
+                                            performance_with_quality(
+                                                                    filenames,
+                                                                    experiment_part=experiment_part,
+                                                                    performance_index=performance_metric,
+                                                                    pair_plot=pair_plot,
+                                                                    quality_index=quality_index,
+                                                                    multi_quality=multi_quality,
+                                                                    title=title,
+                                                                    x_labels=x_labels,
+                                                                    show_dishonests=show_dishonests if n_honest<n_robots else False,
+                                                                    multi_plot=multi_plot,
+                                                                    save_plot=save_plot,
+                                                                    save_folder=behav_save_folder if save_plot else "",
+                                                                    save_name=save_name,
+                                                                    )
+                                            if multi_plot:fig_count+=1
 
                         if compare_best_of and len(best_list)>0:
                             best_save_name=f"best_{n_honest}_{lie_angle}_{noise_mu}_{noise_range}_{saboteur_performance}"
@@ -1533,49 +1611,54 @@ if __name__ == '__main__':
         #                 noise_group="s",
         #                 post_processing="row-mean"
         #                 ))
-
+    # reward_evolution(filename="24r_waaCS_P_RS_90LIA_0.5RT_0.051NMU_0.1NRANG_avgSAB.csv",
+    #                 data_folder_and_subfolder=join(CONFIG_FILE.DATA_DIR,"NO_FORAGING_EXCEPTION_HANDLE/ranking"),
+    #                 metric="reward",)
+    
     compare_behaviors_performance_quality(
                                             data_folder=CONFIG_FILE.DATA_DIR,
-                                            experiment="HISTORY_SCEPTICAL",
-                                            # experiment_part="whole",
-                                            experiment_part="last.33",
+                                            experiment="ONE_TRANS",
+                                            experiment_part="whole",
+                                            # experiment_part="last.33",
                                             performance_metric="items",
-                                            pair_plot=False,
+                                            pair_plot=True,
                                             short_x_labels=True,
                                             quality_index="transactionsS",
                                             multi_quality=True,
                                             show_dishonests=True,
                                             auto_xlabels=False,
                                             n_honests=[
-                                                24,
+                                                # 24,
                                                 22,
-                                                25,
+                                                # 25,
                                                 17,
-                                                20
+                                                # 20
                                                 ],
                                             behaviours=[
-                                                # 'r',
-                                                # 't' ,
-                                                # 'Nv',
-                                                # 'h'
+                                                'n',
+                                                's',
+                                                'r',
+                                                't' ,
+                                                'Nv',
+                                                'h',
                                                 'hs',
                                                 ],#to compare w/ n+NP,n+P,s+NP,s+P 
                                             behavior_params_experiments=BEHAV_PARAMS_COMBINATIONS,
                                             payment_systems=[
-                                                "NP",
+                                                # "NP",
                                                 "P"
                                                 ],
                                             reputation_stake_list=[
                                                                     False,
-                                                                    True,
+                                                                    # True,
                                                                 ],
                                             saboteur_performance_list=[
                                                                     "avg",
-                                                                "perf",
+                                                                # "perf",
                                                                 ],
-                                        compare_best_of=False,
+                                        compare_best_of=True,
+                                        compare_best_of_only=False,
                                         multi_plot=True,
                                         save_folder=join(CONFIG_FILE.PLOT_DIR,"behav_compar_quality"),
                                         save_plot=1
                                     )
-                             
