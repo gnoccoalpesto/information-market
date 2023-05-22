@@ -394,35 +394,41 @@ class OutlierPenalisationPaymentSystem(PaymentSystem):
         self.transactions.add(transaction)
 
 
-    #[ ]
     def new_reward(self, reward, payment_api:PaymentAPI, rewarded_id):
         reward_share_to_distribute = self.information_share * reward
         # reward_share_to_distribute=min(reward_share_to_distribute,payment_api.get_reward(rewarded_id))
+        #[ ]TEST IFE PREVENTION, possible performance increase
         payment_api.apply_gains(rewarded_id, self.pot_amount)
         
         shares_mapping = self.calculate_shares_mapping()
-        try:
+        try:#[ ]
             for seller_id, share in shares_mapping.items():
-                #round one: transfer pot amount
-                #NOTE: pot is always present, and every creditor shall be ensured to have it back
                 payment_api.transfer(rewarded_id, seller_id, share*self.pot_amount)
 
+
             for seller_id, share in shares_mapping.items():
-                #round two: transfer reward share
                 payment_api.transfer(rewarded_id, seller_id, share*reward_share_to_distribute)
                 #TODO use current stake amount, base stake amount, or stake amount at the time of the transaction?
                 # seller_stake_amount=self.get_stake_amount(payment_api,seller_id)#stake(t)k
                 # seller_stake_amount=self.stake_amount#stake(0)
                 #stake(k) for some past contribution k ???
+
+                #[ ] this makes great performance, using share*reward (w/out summing pot) is way worst
+                # '''
+                last_redistribution= share*(self.pot_amount+reward_share_to_distribute)-(self.stake_amount if hasattr(self,"stake_amount") else 0)
+                '''
                 last_redistribution= share*reward_share_to_distribute-(self.stake_amount if hasattr(self,"stake_amount") else 0)
+                #'''
                 payment_api.update_history(seller_id, last_redistribution)
         except InsufficientFundsException:
+            # CONFIG_FILE.IFE_COUNT+=1
+            # print('IFE:PAY ', CONFIG_FILE.IFE_COUNT)
             pass
         finally:
             #TODO is it fair to just drop all the debts in case of IFE? ir this can be considered fairness?
             self.reset_transactions()
 
-
+    
     def calculate_shares_mapping(self,amount_to_distribute=1):
         if len(self.transactions) == 0:
             return {}

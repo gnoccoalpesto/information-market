@@ -218,7 +218,6 @@ class Environment:
         speed = robot.speed()
         sensors = {Location.FOOD: self.senses(robot, Location.FOOD),
                    Location.NEST: self.senses(robot, Location.NEST),
-                   #TODO any() in check_border_collision, is this causing WARNING?
                    "FRONT": any(self.check_border_collision(robot, robot.pos[0] + speed * cos(radians(orientation)),
                                                             robot.pos[1] + speed * sin(radians(orientation)))),
                    "RIGHT": any(
@@ -248,7 +247,7 @@ class Environment:
             collide_x = True
         if new_y + robot._radius >= self.height or new_y - robot._radius < 0:
             collide_y = True
-        # return any([collide_x, collide_y])
+        # BUG any moved in the calling parent: return any([collide_x, collide_y])
         return collide_x, collide_y
 
 
@@ -381,9 +380,15 @@ class Environment:
         self.foraging_spawns[Location.NEST].pop(robot.id)
 
         reward = self.market.sell_strawberry(robot.id)
-
+        
         #NOTE full reward is paid to depositing robot, then he will pair creditors their share
+        # '''
+        #INFORMATION-FORAFING MARKET (IFM) ######################
         self.payment_database.pay_reward(robot.id, reward=reward)
+        '''
+        #INFORMATION MARKET (IM) ###########################
+        self.payment_database.pay_reward(robot.id, reward=0)
+        #'''
         self.payment_database.pay_creditors(robot.id, total_reward=reward)
 
 

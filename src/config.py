@@ -39,9 +39,5 @@ NEWCOMER_TYPE='honest'
 
 
 ## EXCEPTIONS
-# LOG_EXCEPTIONS:bool = True
-# #NOTE vectors lenght setted in simulation
-# #Insufficient funds 
-# IFE_COUNT:list = []
-# #No information sold
-# NIS_COUNT:list = []
+LOG_EXCEPTIONS:bool = True
+IFE_COUNT=0
