@@ -60,6 +60,8 @@ class MainController:
             if hasattr(self.environment.payment_database.database[0]["payment_system"], "pot_amount"):
                 self.stake_pot_evolution_list.append([self.tick, self.get_stake_pots()])
                 self.wealth_evolution_list.append([self.tick,[r+p for r,p in zip(self.rewards_evolution_list[-1][1],self.stake_pot_evolution_list[-1][1])]])
+            # if CONFIG_FILE.LOG_EXCEPTIONS:
+            #     self.IFE_evolution_list.append([self.tick,self.get_IFE()])
         self.tick += 1
         self.environment.step()
             
@@ -77,6 +79,7 @@ class MainController:
 
 
     def init_statistics(self):#,newcomers_phase=False):
+        #TODO newcomers phase re-init
         # if newcomers_phase:
         #     CONFIG_FILE.IFE_COUNT+=[0]*CONFIG_FILE.NEWCOMER_AMOUNT
         #     CONFIG_FILE.NIS_COUNT+=[0]*CONFIG_FILE.NEWCOMER_AMOUNT
@@ -85,8 +88,9 @@ class MainController:
         self.items_evolution_list = []
         self.stake_pot_evolution_list=[]
         self.wealth_evolution_list=[]
-        # self.IFE_COUNT=[0]*self.environment.ROBOTS_AMOUNT
-        # self.NIS_COUNT=[0]*self.environment.ROBOTS_AMOUNT
+        # if CONFIG_FILE.LOG_EXCEPTIONS:
+        #     self.IFE_evolution_list=[]
+        #   self.NIS_COUNT=[0]*self.environment.ROBOTS_AMOUNT
 
 
     def get_sorted_reward_stats(self):
@@ -137,8 +141,13 @@ class MainController:
         res += "\n"
         return res
     
+
     def get_stake_pots(self):
         return [self.environment.payment_database.get_stake_pot(bot.id) for bot in self.environment.population]
+
+
+    # def get_IFE(self):
+    #     return [bot.IFE for bot in self.environment.population]
 
 
     def get_robot_at(self, x, y):
@@ -171,22 +180,6 @@ class MainController:
     def get_transaction_log(self):
         return self.environment.payment_database.completed_transactions_log
 
-
-    def get_attempted_transactions_list(self):
-        return [self.environment.payment_database.get_attempted_transactions(bot.id) \
-            for bot in self.environment.population]
-
-    def get_validated_transactions_list(self):
-        return [self.environment.payment_database.get_validated_transactions(bot.id) \
-            for bot in self.environment.population]
-
-    def get_completed_transactions_list(self):
-        return [self.environment.payment_database.get_completed_transactions(bot.id) \
-            for bot in self.environment.population]
-
-    def get_combined_transactions_list(self):
-        return [self.environment.payment_database.get_combined_transactions(bot.id) \
-            for bot in self.environment.population]
 
     def get_transactions_list(self,type:str,role="buyer"):
         '''

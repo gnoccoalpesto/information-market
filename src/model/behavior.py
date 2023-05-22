@@ -109,8 +109,8 @@ NOISE_PARAMS_DICT={ "bimodal": ["SMU","SSD","NSD"],
                 }
 BEST_PARAM_COMBINATIONS_DICT={
                             "n": [
-                                ['NP','NRS',[]],
-                                # ['P','NRS',[]],
+                                # ['NP','NRS',[]],
+                                ['P','NRS',[]],
                                 ],
                             # "Nn": [['NP',[]],['P',[]],],
                             "s": [
@@ -121,26 +121,38 @@ BEST_PARAM_COMBINATIONS_DICT={
                             "r": [
                                 ['P', 'NRS',['03']],
                                 ['P', 'NRS',['05']],
+                                ['P', 'RS',['03']],
+                                ['P', 'RS',['05']],
                                 ],
                             "v": [],
                             "Nv": [
-                                # ['P', 'NRS',['allavg', '03', '025', 'exponential']],
+                                ['P', 'NRS',['allavg', '03', '025', 'exponential']],
                                 ['P', 'NRS',['allavg', '03', '025', 'ratio']],
+                                ['P', 'RS',['allavg', '03', '025', 'exponential']],
+                                ['P', 'RS',['allavg', '03', '025', 'ratio']],
                                 ],
                             "t": [
-                                # ['P', 'NRS',['allavg', '03']],
-                                ['P','NRS', ['allavg', '05']],
+                                ['P', 'NRS',['allavg', '03']],
+                                ['P', 'NRS', ['allavg', '05']],
+                                ['P', 'RS',['allavg', '03']],
+                                ['P', 'RS', ['allavg', '05']],
                                 ],
                             "w": [],
                             "h": [
-                                ["P",'NRS',["aged","mean",0.8,1]],
-                                ["P",'NRS',["aged2","mean",0.8,1.3]],
-                                ["P",'NRS',["discrete","mean",1,1]],
+                                ["P",'NRS',["aged","mean",'08','1']],
+                                ["P",'NRS',["aged2","mean",'08','13']],
+                                ["P",'NRS',["discrete","mean",'1','1']],
+                                ["P",'RS',["aged","mean",'08','1']],
+                                ["P",'RS',["aged2","mean",'08','13']],
+                                ["P",'RS',["discrete","mean",'1','1']],
                                 ],
                             "hs": [
-                                ["P",'NRS',["aged","mean",0.8,1,0.25]],
-                                ["P",'NRS',["aged2","mean",0.8,1.3,0.25]],
-                                ["P",'NRS',["discrete","mean",1,1,0.25]],
+                                ["P",'NRS',["aged","mean",'08','1','025']],
+                                ["P",'NRS',["aged2","mean",'08','13','025']],
+                                ["P",'NRS',["discrete","mean",'1','1','025']],
+                                ["P",'RS',["aged","mean",'08','1','025']],
+                                ["P",'RS',["aged2","mean",'08','13','025']],
+                                ["P",'RS',["discrete","mean",'1','1','025']],
                                 ],
                             }
 #TODO include the new param (this is getting long, maybe another file?)
@@ -312,9 +324,12 @@ class TemplateBehaviour(Behavior):
                                 
                             if self.stop_buying(): break
 
-                        except (InsufficientFundsException,
-                                NoInformationSoldException,
-                                NoLocationSensedException): continue
+                        except InsufficientFundsException:
+                            # CONFIG_FILE.IFE_COUNT+=1
+                            # print("IFE: BEHAV ",CONFIG_FILE.IFE_COUNT, session._client.id)
+                            pass
+                        except (NoInformationSoldException,
+                                NoLocationSensedException): pass
 
 
     def get_ordered_metadata(self,location: Location, payment_database: PaymentDB,session: CommunicationSession):
@@ -562,6 +577,8 @@ class NaiveBehavior(Behavior):
                         self.navigation_table.replace_information_entry(location, new_target)
                         break
                     except InsufficientFundsException:
+                        # CONFIG_FILE.IFE_COUNT += 1
+                        # print('IFE:BEHAV ', CONFIG_FILE.IFE_COUNT)
                         pass
                     except NoInformationSoldException:
                         pass
@@ -722,6 +739,8 @@ class ScepticalBehavior(NaiveBehavior):
                             else:
                                 self.pending_information[location][bot_id] = other_target
                     except InsufficientFundsException:
+                        # CONFIG_FILE.IFE_COUNT += 1
+                        # print('IFE: BEHAV ', CONFIG_FILE.IFE_COUNT, session._client.id)
                         pass
                     except NoInformationSoldException:
                         pass
