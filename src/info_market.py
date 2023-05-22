@@ -31,6 +31,7 @@ from model.behavior import BAD_PARAM_COMBINATIONS_DICT, BEHAVIORS_NAME_DICT, BEH
 #     return select_all
 
 
+#TODO return NRS or RS instead of True or False; change everything accordingly
 def params_from_filename(filename:str, compact_format:bool=False):
     """
     :param compact_format: if True, returns the initials, and only the values of the parameters instead of the label text
@@ -172,6 +173,7 @@ def is_bad_param_combination(filename:str):
 
 def is_best_param_combination(filename:str):
     _, h_behav, _, payment, reputation_stake,_, behav_params, _ = params_from_filename(filename,compact_format=True)
+    reputation_stake="RS" if reputation_stake else "NRS"
     if [payment, reputation_stake, behav_params] in BEST_PARAM_COMBINATIONS_DICT[h_behav]:
         return True
     return False
@@ -414,9 +416,6 @@ class InformationMarket():
         # if CONFIG_FILE.LOG_EXCEPTIONS:
         #     Path(join(output_directory, "exceptions")).mkdir(parents=True, exist_ok=True)
         #     current_filename=self.check_filename_existence(output_directory,metric,filename)
-        #     exceptions_txt=f"IFE {CONFIG_FILE.IFE_COUNT}\nNIS {CONFIG_FILE.NIS_COUNT}"
-        #     with open(join(output_directory, "exceptions", current_filename), "w+") as f:
-        #         f.write(exceptions_txt)
 
         return items_filename if CAN_RETURN else None
 

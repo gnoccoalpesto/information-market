@@ -62,10 +62,10 @@ DISHONEST_LIE_ANGLE_LIST=(
 BEHAVIOR_LIST=(
 				"n"
 				"s"
-				# "r" 
-				# "t" 
-				# "Nv"
-				# "h"
+				"r" 
+				"t" 
+				"Nv"
+				"h"
 				"hs"
 			)
 			
@@ -80,7 +80,7 @@ sSCEPTICISM_THRESHOLD_LIST=(0.25)
 ############ -params:{ranking_threshold}
 rRANKING_THRESHOLD_LIST=(
 						0.3 
-						0.5
+						# 0.5
 						)
 
 # variable scepticism: v ; new variable scepticism: Nv
@@ -91,7 +91,7 @@ vCOMPARISON_METHOD_LIST=(
 							)
 vSCALING_LIST=(
 				# 0.8 
-				0.5 
+				# 0.5 
 				0.3
 				)
 vSCEPTICISM_THRESHOLD_LIST=(0.25)
@@ -116,9 +116,9 @@ tSCALING_LIST=(
 ######################## -params:{verification_method,threshold_method}
 hVERIFICATION_METHOD_LIST=(
 							"discrete" 
-							"difference" 
+							# "difference" 
 							# "recency" 
-							"aged" 
+							# "aged" 
 							# "aged2"
 						)
 hTHRESHOLD_METHOD_LIST=(
@@ -127,14 +127,14 @@ hTHRESHOLD_METHOD_LIST=(
 						)
 hSCALING_LIST=(
 				1
-				0.8 
+				# 0.8 
 				# 0.5 
 				# 0.3
 				)
 hKD_LIST=(
 			# 0.7
 			1
-			1.3
+			# 1.3
 			# 1.6
 			# 2.0
 )
@@ -142,9 +142,9 @@ hKD_LIST=(
 ######################## -params:{verification_method,threshold_method}
 hsVERIFICATION_METHOD_LIST=(
 							"discrete" 
-							"difference" 
+							# "difference" 
 							# "recency" 
-							"aged" 
+							# "aged" 
 							# "aged2"
 						)
 hsTHRESHOLD_METHOD_LIST=(
@@ -153,14 +153,14 @@ hsTHRESHOLD_METHOD_LIST=(
 						)
 hsSCALING_LIST=(
 				1
-				0.8 
+				# 0.8 
 				# 0.5 
 				# 0.3
 				)
 hsKD_LIST=(
 			# 0.7
 			1
-			1.3
+			# 1.3
 			# 1.6
 			# 2.0
 )
