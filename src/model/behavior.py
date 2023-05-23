@@ -155,7 +155,7 @@ BEST_PARAM_COMBINATIONS_DICT={
                                 ["P",'RS',["discrete","mean",'1','1','025']],
                                 ],
                             }
-#TODO include the new param (this is getting long, maybe another file?)
+#TODO include the new param (this is getting long, maybe move to another file?)
 BAD_PARAM_COMBINATIONS_DICT={
                     #TODO could use dots in filenames
                     "n": [],
@@ -725,6 +725,7 @@ class ScepticalBehavior(NaiveBehavior):
                             self.navigation_table.replace_information_entry(location, new_target)
                             self.pending_information[location].clear()
                         else:
+                            # '''#[ ] SCEPTICISM W/ CONFIRMATION OF PENDING INFORMATION
                             for target in self.pending_information[location].values():
                                 if self.difference_score(target.get_distance(),
                                                          other_target.get_distance()) \
@@ -738,6 +739,9 @@ class ScepticalBehavior(NaiveBehavior):
                                     break
                             else:
                                 self.pending_information[location][bot_id] = other_target
+                            ''' S. W/OUT CONFIRMATION
+                            pass
+                            #'''
                     except InsufficientFundsException:
                         # CONFIG_FILE.IFE_COUNT += 1
                         # print('IFE: BEHAV ', CONFIG_FILE.IFE_COUNT, session._client.id)
@@ -1001,7 +1005,7 @@ class WealthThresholdBehavior(TemplateBehaviour):
         allmax: selects only above a certain percentage of maximum wealth (wealthiest bots), of all robots
         allavg:selects only above certain percentage of average wealth, considering all robots
         allmin: selects only above a certain percentage of minimum wealth (poorest bots), of all robots
-        TODO: all_rise:  selects above a certaint value, increasing with time, starting from a certain level, of all robots
+        TODO: all_rise:  (wallet/robot) age could be a factor: the older, the less errors permitted
 
         NOTE DEPRECATED:
         neighmax: selects only above a certain percentage of maximum wealth (wealthiest bots), of neighbors
@@ -1118,7 +1122,7 @@ class SaboteurReputationHistoryBehavior(ReputationHistoryBehavior):
         return t
 
 
-#[ ]
+#[ ] ReputationHistoryScepticalBehavior
 class ReputationHistoryScepticalBehavior(ReputationHistoryBehavior):
     def __init__(self, combine_strategy="WeightedAverageAgeStrategy", 
                  verification_method="discrete", 
@@ -1151,7 +1155,7 @@ class ReputationHistoryScepticalBehavior(ReputationHistoryBehavior):
     
 
     def get_scepticism_threshold(self,payment_database:PaymentDB,seller_id):
-        # if payment_database is not None:#[ ] could also use variable scepticism
+        # if payment_database is not None:#[ ] could also use variable scepticism [2]
         #     seller_reputation=payment_database.get_reputation(seller_id,"r")
         #     comparison_reputation=payment_database.get_mean_reputation,("r")
         #     return self.weight_scepticism(seller_reputation,comparison_reputation)

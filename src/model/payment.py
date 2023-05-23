@@ -282,10 +282,15 @@ class PaymentDB:
         '''cost of motion, stopping,recharge, etc.'''
         if cost < 0:
             raise ValueError("Cost must be positive")
+        # '''#[ ]DEFAULT MARKET
+        #NOTE: DEFAULT as in market where default is possible
         if self.database[robot_id]["reward"] < cost:
             raise InsufficientFundsException#(robot_id)
         else:
             self.database[robot_id]["reward"] -= cost
+        '''# NO DEFAULT MARKET
+        self.database[robot_id]["reward"] -= cost
+        #'''
 
 
     def apply_gains(self, robot_id, gains):
@@ -395,31 +400,40 @@ class OutlierPenalisationPaymentSystem(PaymentSystem):
 
 
     def new_reward(self, reward, payment_api:PaymentAPI, rewarded_id):
+        #'''#[ ] NORMAL DEFAULT: robot could cause IFE 
         reward_share_to_distribute = self.information_share * reward
+        '''#DEFAULT PROTECTION: robot cannot cause IFE
+        #TODO should improve performance
         # reward_share_to_distribute=min(reward_share_to_distribute,payment_api.get_reward(rewarded_id))
-        #[ ]TEST IFE PREVENTION, possible performance increase
+        # '''
         payment_api.apply_gains(rewarded_id, self.pot_amount)
         
         shares_mapping = self.calculate_shares_mapping()
-        try:#[ ]
+        try:
             for seller_id, share in shares_mapping.items():
+                # ''' #[ ] DOUBLE TRANSFER
+                #TODO test when IFE occurs if performance drops
                 payment_api.transfer(rewarded_id, seller_id, share*self.pot_amount)
-
 
             for seller_id, share in shares_mapping.items():
                 payment_api.transfer(rewarded_id, seller_id, share*reward_share_to_distribute)
+                '''#SINGLE TRANSFER
+                payment_api.transfer(rewarded_id, seller_id, share*reward_share_to_distribute)
+                #'''
+                #[ ] POT-BIASED & REWARD BIASED REPUTATION: great performance improvement
+                # last_redistribution= share*(self.pot_amount+reward_share_to_distribute)-(self.stake_amount if hasattr(self,"stake_amount") else 0)
+                #UNBIASED REPUTATION #NOTE if reward<1, *reward will have a penalizing effect
+                #NOTE_ could be reward scaled: w_x [*reward_share_to_distribute]
+                #[ ] REWARD-SCALED BIASED
+                # last_redistribution= share*reward_share_to_distribute-(self.stake_amount if hasattr(self,"stake_amount") else 0)
+                #[ ] POT-BIASED ONLY
+                last_redistribution= share*self.pot_amount-(self.stake_amount if hasattr(self,"stake_amount") else 0)
                 #TODO use current stake amount, base stake amount, or stake amount at the time of the transaction?
                 # seller_stake_amount=self.get_stake_amount(payment_api,seller_id)#stake(t)k
                 # seller_stake_amount=self.stake_amount#stake(0)
                 #stake(k) for some past contribution k ???
-
-                #[ ] this makes great performance, using share*reward (w/out summing pot) is way worst
-                # '''
-                last_redistribution= share*(self.pot_amount+reward_share_to_distribute)-(self.stake_amount if hasattr(self,"stake_amount") else 0)
-                '''
-                last_redistribution= share*reward_share_to_distribute-(self.stake_amount if hasattr(self,"stake_amount") else 0)
-                #'''
                 payment_api.update_history(seller_id, last_redistribution)
+
         except InsufficientFundsException:
             # CONFIG_FILE.IFE_COUNT+=1
             # print('IFE:PAY ', CONFIG_FILE.IFE_COUNT)
