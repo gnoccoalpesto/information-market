@@ -282,7 +282,7 @@ class PaymentDB:
         '''cost of motion, stopping,recharge, etc.'''
         if cost < 0:
             raise ValueError("Cost must be positive")
-        # '''#[ ]DEFAULT MARKET
+        '''#[ ]DEFAULT MARKET
         #NOTE: DEFAULT as in market where default is possible
         if self.database[robot_id]["reward"] < cost:
             raise InsufficientFundsException#(robot_id)

@@ -382,7 +382,7 @@ class Environment:
 
         reward = self.market.sell_strawberry(robot.id)
         
-        # '''#[ ]INFORMATION-FORAFING MARKET (IFM) #############
+        '''#[ ]INFORMATION-FORAFING MARKET (IFM) #############
         self.payment_database.pay_reward(robot.id, reward=reward)
         '''#INFORMATION MARKET (IM) ###########################
         self.payment_database.pay_reward(robot.id, reward=0)
