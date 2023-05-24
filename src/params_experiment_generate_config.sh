@@ -66,7 +66,7 @@ BEHAVIOR_LIST=(
 				"t" 
 				"Nv"
 				"h"
-				"hs"
+				# "hs"
 			)
 			
 # naive: n ; new naive: Nn 

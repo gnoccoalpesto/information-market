@@ -282,7 +282,7 @@ class PaymentDB:
         '''cost of motion, stopping,recharge, etc.'''
         if cost < 0:
             raise ValueError("Cost must be positive")
-        '''#[ ]DEFAULT MARKET
+        # '''#[ ]DEFAULT MARKET
         #NOTE: DEFAULT as in market where default is possible
         if self.database[robot_id]["reward"] < cost:
             raise InsufficientFundsException#(robot_id)
@@ -400,11 +400,13 @@ class OutlierPenalisationPaymentSystem(PaymentSystem):
 
 
     def new_reward(self, reward, payment_api:PaymentAPI, rewarded_id):
-        #'''#[ ] NORMAL DEFAULT: robot could cause IFE 
+        #NORMAL/NO DEFAULT: robot could cause IFE
+        #NOTE: DEFAULT toggled in payment>apply_cost
         reward_share_to_distribute = self.information_share * reward
-        '''#DEFAULT PROTECTION: robot cannot cause IFE
+        # '''#[ ]  DEFAULT PROTECTION: robot cannot cause IFE
         #TODO should improve performance
-        # reward_share_to_distribute=min(reward_share_to_distribute,payment_api.get_reward(rewarded_id))
+        reward_share_to_distribute=min(reward_share_to_distribute,payment_api.get_reward(rewarded_id))
+        if reward_share_to_distribute<=0:reward_share_to_distribute=0
         # '''
         payment_api.apply_gains(rewarded_id, self.pot_amount)
         
