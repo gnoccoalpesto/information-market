@@ -127,7 +127,7 @@ hTHRESHOLD_METHOD_LIST=(
 						)
 hSCALING_LIST=(
 				1
-				0.8 
+				# 0.8 
 				# 0.5 
 				# 0.3
 				)
@@ -153,7 +153,7 @@ hsTHRESHOLD_METHOD_LIST=(
 						)
 hsSCALING_LIST=(
 				1
-				0.8 
+				# 0.8 
 				# 0.5 
 				# 0.3
 				)
