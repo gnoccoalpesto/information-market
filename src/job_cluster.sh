@@ -4,8 +4,8 @@
 #SBATCH --job-name=info_market                      # for squeue
 #SBATCH --output=/home/fcerri/log/out/im_%j.stdout  # output file, %j will be replaced by the Job ID
 #SBATCH --error=/home/fcerri/log/err/im_%j.stderr   # error file
-#SBATCH --partition=Epyc7452                        # the hardware that you want to run on
-# also: Xeon6138
+#SBATCH --partition=Xeon6138                        # the hardware that you want to run on
+# also: 
 #SBATCH --qos=long                                  # queue (short, long)
 # also: short
 #SBATCH --ntasks=1                                  # launched by the job; set higher for MPI programs

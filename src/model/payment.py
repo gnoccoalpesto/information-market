@@ -411,7 +411,7 @@ class OutlierPenalisationPaymentSystem(PaymentSystem):
         shares_mapping = self.calculate_shares_mapping()
         try:
             for seller_id, share in shares_mapping.items():
-                # ''' #[ ] DOUBLE TRANSFER
+                ''' #[ ] DOUBLE TRANSFER
                 #TODO test when IFE occurs if performance drops
                 payment_api.transfer(rewarded_id, seller_id, share*self.pot_amount)
 
