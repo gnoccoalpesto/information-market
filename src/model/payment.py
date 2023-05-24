@@ -424,9 +424,9 @@ class OutlierPenalisationPaymentSystem(PaymentSystem):
                 # last_redistribution= share*(self.pot_amount+reward_share_to_distribute)-(self.stake_amount if hasattr(self,"stake_amount") else 0)
                 #UNBIASED REPUTATION #NOTE if reward<1, *reward will have a penalizing effect
                 #NOTE_ could be reward scaled: w_x [*reward_share_to_distribute]
-                #[ ] REWARD-SCALED BIASED
+                # REWARD-SCALED BIASED
                 # last_redistribution= share*reward_share_to_distribute-(self.stake_amount if hasattr(self,"stake_amount") else 0)
-                #[ ] POT-BIASED ONLY
+                # POT-BIASED ONLY
                 last_redistribution= share*self.pot_amount-(self.stake_amount if hasattr(self,"stake_amount") else 0)
                 #TODO use current stake amount, base stake amount, or stake amount at the time of the transaction?
                 # seller_stake_amount=self.get_stake_amount(payment_api,seller_id)#stake(t)k

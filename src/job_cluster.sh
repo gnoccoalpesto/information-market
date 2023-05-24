@@ -23,7 +23,7 @@ source  ${ENV_DIR}/bin/activate
 
 ## Job
 # possible output redirection
-python3 ${EXEC_FILE} $1 #> /tmp/fcerri/my_program.stdout
+python3 /home/fcerri/IMF_POTBIAS/information-market/src/info_market.py $1 #> /tmp/fcerri/my_program.stdout
 
 
 ## Deactivate env

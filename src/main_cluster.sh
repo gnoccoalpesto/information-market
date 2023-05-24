@@ -68,7 +68,7 @@ done
 
 ## RUN
 for file in $CONFIGS; do
-    sbatch $PROJECT_DIR/src/job_cluster.sh $file
+    sbatch /home/fcerri/IMF_POTBIAS/information-market/src/job_cluster.sh $file
 done
 
 
