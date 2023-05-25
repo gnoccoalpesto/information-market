@@ -11,11 +11,11 @@
 # usage: ./generate_config.sh [experiment_subdirectory_name]
 
 #NOTE -- ATTENTION: IF YOU MOVE THE FILE generate_config.sh, YOU MUST UPDATE THE FOLLOWING LINES
-PROJECT_HOME=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )/..
-CONFIG_DIR="${PROJECT_HOME}/config"
-ASSETS_DIR="${PROJECT_HOME}/assets"
-EXEC_FILE="${PROJECT_HOME}/src/info_market.py"
-DATA_DIR="${PROJECT_HOME}/data"
+PROJECT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )/..
+CONFIG_DIR="${PROJECT_DIR}/config"
+ASSETS_DIR="${PROJECT_DIR}/assets"
+EXEC_FILE="${PROJECT_DIR}/src/info_market.py"
+DATA_DIR="${PROJECT_DIR}/data"
 if [ $# -ne 0 ]; then
   DATA_DIR="${DATA_DIR}/$1"
 fi
