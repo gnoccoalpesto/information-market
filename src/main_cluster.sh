@@ -6,6 +6,9 @@
 # 2: - CONFIG FILES, could be any combination of files and folders
 ####################################
 
+PROJECT_HOME=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )/..
+JOB_FILE="${PROJECT_HOME}/src/job_cluster.sh"
+
 
 declare -A SUB_DIR_BEHAVIOR
 	SUB_DIR_BEHAVIOR[n]="naive"
@@ -68,7 +71,7 @@ done
 
 ## RUN
 for file in $CONFIGS; do
-    sbatch $PROJECT_DIR/src/job_cluster.sh $file
+    sbatch ${JOB_FILE} $file
 done
 
 
