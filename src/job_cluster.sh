@@ -13,6 +13,8 @@
 #SBATCH --time=2:00:00                              # the time that you want to allocate to your job
 #SBATCH --cpus-per-task=5                           # cores per task on the same machine; set higher for OpenMP programs
 
+PROJECT_HOME=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )/..
+EXEC_FILE="${PROJECT_HOME}/src/info_market.py"
 
 ## Output folder
 
