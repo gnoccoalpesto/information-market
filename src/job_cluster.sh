@@ -5,7 +5,7 @@
 #SBATCH --output=/home/fcerri/log/out/im_%j.stdout  # output file, %j will be replaced by the Job ID
 #SBATCH --error=/home/fcerri/log/err/im_%j.stderr   # error file
 #SBATCH --partition=Xeon6138                        # the hardware that you want to run on
-# also: 
+# also: Xeon6138, Epyc7452  
 #SBATCH --qos=long                                  # queue (short, long)
 # also: short
 #SBATCH --ntasks=1                                  # launched by the job; set higher for MPI programs
@@ -13,8 +13,9 @@
 #SBATCH --time=2:00:00                              # the time that you want to allocate to your job
 #SBATCH --cpus-per-task=5                           # cores per task on the same machine; set higher for OpenMP programs
 
-PROJECT_HOME=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )/..
-EXEC_FILE="${PROJECT_HOME}/src/info_market.py"
+PROJECT_DIR=$1
+shift
+EXEC_FILE="${PROJECT_DIR}/src/info_market.py"
 
 ## Output folder
 
