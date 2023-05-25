@@ -7,6 +7,7 @@
 ####################################
 
 PROJECT_HOME=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )/..
+CONFIG_DIR="${PROJECT_HOME}/config"
 JOB_FILE="${PROJECT_HOME}/src/job_cluster.sh"
 
 
