@@ -382,9 +382,11 @@ class Environment:
 
         reward = self.market.sell_strawberry(robot.id)
         
-        # '''#[ ]INFORMATION-FORAFING MARKET (IFM) #############
+        '''#[ ]INFORMATION-FORAGING MARKET (IFM) #############
+        #       reward comes from selling strawberries and information
         self.payment_database.pay_reward(robot.id, reward=reward)
         '''#INFORMATION MARKET (IM) ###########################
+        #       reward comes from selling information only
         self.payment_database.pay_reward(robot.id, reward=0)
         #'''
 
