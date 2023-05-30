@@ -60,10 +60,10 @@ DISHONEST_LIE_ANGLE_LIST=(
 					)
 # behaviors ----------------------------------------------------
 BEHAVIOR_LIST=(
-				"n"
-				"s"
-				"r" 
-				"t" 
+				# "n"
+				# "s"
+				# "r" 
+				# "t" 
 				# "b"
 				"c"
 				# "Nv"

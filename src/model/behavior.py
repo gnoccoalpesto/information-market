@@ -977,7 +977,7 @@ class NewScaboteurBehavior(NewScepticalBehavior):
 # BEHAVIOURS WITH REPUTATION (SYSTEMIC PROTECTION)
 class CapitalistBehavior(TemplateBehaviour):
     def __init__(self,combine_strategy="WeightedAverageAgeStrategy",
-                 reputation_method="t"):
+                 reputation_method="r"):
         super().__init__(combine_strategy=combine_strategy)
         self.required_information=RequiredInformation.GLOBAL
         self.information_ordering_metric="age"
@@ -1034,7 +1034,7 @@ class CapitalistBehavior(TemplateBehaviour):
 
 class SaboteurCapitalistBehavior(CapitalistBehavior):
     def __init__(self,lie_angle=90,combine_strategy="WeightedAverageAgeStrategy",
-                 reputation_method="t"):
+                 reputation_method="r"):
         super().__init__(combine_strategy=combine_strategy,
                          reputation_method=reputation_method)
         self.color = "red"
