@@ -977,7 +977,7 @@ class NewScaboteurBehavior(NewScepticalBehavior):
 # BEHAVIOURS WITH REPUTATION (SYSTEMIC PROTECTION)
 class CapitalistBehavior(TemplateBehaviour):
     def __init__(self,combine_strategy="WeightedAverageAgeStrategy",
-                 reputation_method="t"):
+                 reputation_method="r"):
         super().__init__(combine_strategy=combine_strategy)
         self.required_information=RequiredInformation.GLOBAL
         self.information_ordering_metric="age"
@@ -1034,7 +1034,7 @@ class CapitalistBehavior(TemplateBehaviour):
 
 class SaboteurCapitalistBehavior(CapitalistBehavior):
     def __init__(self,lie_angle=90,combine_strategy="WeightedAverageAgeStrategy",
-                 reputation_method="t"):
+                 reputation_method="r"):
         super().__init__(combine_strategy=combine_strategy,
                          reputation_method=reputation_method)
         self.color = "red"
@@ -1049,7 +1049,7 @@ class SaboteurCapitalistBehavior(CapitalistBehavior):
 
 class ReputationRankingBehavior(TemplateBehaviour):
     def __init__(self,ranking_threshold=.5,
-                 reputation_method="t",
+                 reputation_method="r",
                  combine_strategy="WeightedAverageAgeStrategy"):
         super().__init__(combine_strategy=combine_strategy)
         self.required_information=RequiredInformation.GLOBAL
@@ -1083,7 +1083,7 @@ class ReputationRankingBehavior(TemplateBehaviour):
 
 class SaboteurReputationRankingBehavior(ReputationRankingBehavior):
     def __init__(self,lie_angle=90,ranking_threshold=.5,
-                 reputation_method="t",
+                 reputation_method="r",
                  combine_strategy="WeightedAverageAgeStrategy"):
         super().__init__(ranking_threshold=ranking_threshold,
                         reputation_method=reputation_method,
@@ -1100,7 +1100,7 @@ class SaboteurReputationRankingBehavior(ReputationRankingBehavior):
 class WealthThresholdBehavior(TemplateBehaviour):
     def __init__(self,comparison_method="allavg",
                  scaling=.3,
-                 reputation_method="t",
+                 reputation_method="r",
                  combine_strategy="WeightedAverageAgeStrategy"):
         super().__init__(combine_strategy=combine_strategy)
         self.required_information=RequiredInformation.GLOBAL
@@ -1160,7 +1160,7 @@ class WealthThresholdBehavior(TemplateBehaviour):
 class SaboteurWealthThresholdBehavior(WealthThresholdBehavior):
     def __init__(self,lie_angle=90,comparison_method="allavg",
                     scaling=.3,
-                    reputation_method="t",
+                    reputation_method="r",
                     combine_strategy="WeightedAverageAgeStrategy"):
         super().__init__(comparison_method=comparison_method,
                         scaling=scaling,

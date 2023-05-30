@@ -10,7 +10,7 @@
 # also: short
 #SBATCH --ntasks=1                                  # launched by the job; set higher for MPI programs
 #SBATCH --mem=1gb
-#SBATCH --time=2:00:00                              # the time that you want to allocate to your job
+#SBATCH --time=0:45:00                              # the time that you want to allocate to your job
 #SBATCH --cpus-per-task=5                           # cores per task on the same machine; set higher for OpenMP programs
 
 PROJECT_DIR=$1

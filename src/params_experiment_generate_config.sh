@@ -60,11 +60,11 @@ DISHONEST_LIE_ANGLE_LIST=(
 					)
 # behaviors ----------------------------------------------------
 BEHAVIOR_LIST=(
+				# "b"
 				"n"
 				"s"
 				"r" 
 				"t" 
-				# "b"
 				"c"
 				# "Nv"
 				# "h"
@@ -82,7 +82,7 @@ sSCEPTICISM_THRESHOLD_LIST=(0.25)
 ############ -params:{ranking_threshold}
 rRANKING_THRESHOLD_LIST=(
 						0.3 
-						# 0.5
+						0.5
 						)
 
 # variable scepticism: v ; new variable scepticism: Nv
@@ -109,7 +109,7 @@ tCOMPARISON_METHOD_LIST=(
 							# "allmax"
 							)
 tSCALING_LIST=(
-				# 0.8 	
+				0.8 	
 				0.5 
 				# 0.3
 				)
