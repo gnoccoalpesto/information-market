@@ -51,6 +51,7 @@ CONFIG_FILE_TEMPLATE="${ASSETS_DIR}/config_template"
 
 # behavior
 declare -A HONEST_DICTIONARY
+	HONEST_DICTIONARY[b]="BenchmarkBehavior"
 	HONEST_DICTIONARY[n]="NaiveBehavior"
 	HONEST_DICTIONARY[Nn]="NewNaiveBehavior"
 	HONEST_DICTIONARY[s]="ScepticalBehavior"
@@ -62,9 +63,11 @@ declare -A HONEST_DICTIONARY
 	HONEST_DICTIONARY[w]="WealthWeightedBehavior"
 	HONEST_DICTIONARY[h]="ReputationHistoryBehavior"
 	HONEST_DICTIONARY[hs]="ReputationHistoryScepticalBehavior"
+	HONEST_DICTIONARY[c]="CapitalistBehavior"
 
 
 declare -A DISHONEST_DICTIONARY
+	DISHONEST_DICTIONARY[b]="SaboteurBenchmarkBehavior"
 	DISHONEST_DICTIONARY[n]="SaboteurBehavior"
 	DISHONEST_DICTIONARY[Nn]="NewSaboteurBehavior"
 	DISHONEST_DICTIONARY[s]="ScaboteurBehavior"
@@ -76,12 +79,14 @@ declare -A DISHONEST_DICTIONARY
 	DISHONEST_DICTIONARY[w]="SaboteurWealthWeightedBehavior"
 	DISHONEST_DICTIONARY[h]="SaboteurReputationHistoryBehavior"
 	DISHONEST_DICTIONARY[hs]=Saboteur"ReputationHistoryScepticalBehavior"
+	DISHONEST_DICTIONARY[c]="SaboteurCapitalistBehavior"
 
 HONEST_TEMPLATE='{\n\t\t"class": "HONEST_CLASS",\n\t\t"population_size": HONEST_POPULATION,\n\t\t"parameters": {\n\t\t\tHONEST_PARAMS\n\t\t\t}\n\t\t}'
 DISHONEST_TEMPLATE='{\n\t\t"class": "DISHONEST_CLASS",\n\t\t"population_size": DISHONEST_POPULATION,\n\t\t"parameters": {\n\t\t\tDISHONEST_PARAMS\n\t\t\t}\n\t\t}'
 BEHAVIOUR_TEMPLATE="${HONEST_TEMPLATE},\n\t\t${DISHONEST_TEMPLATE}"
 
 declare -A HONEST_PARAMETERS
+	HONEST_PARAMETERS[b]=""
 	HONEST_PARAMETERS[n]=""
 	HONEST_PARAMETERS[Nn]=""
 	HONEST_PARAMETERS[s]="\"threshold\": SCEPTICISM_THRESHOLD"
@@ -93,8 +98,10 @@ declare -A HONEST_PARAMETERS
 	HONEST_PARAMETERS[t]="\"comparison_method\": \"COMPARISON_METHOD\",\n\"scaling\": SCALING"
 	HONEST_PARAMETERS[h]="\"verification_method\": \"VERIFICATION_METHOD\",\n\t\t\t\"threshold_method\": \"THRESHOLD_METHOD\",\n\t\t\t\"scaling\": SCALING,\n\t\t\t\"kd\": KDIFF"
 	HONEST_PARAMETERS[hs]="\"verification_method\": \"VERIFICATION_METHOD\",\n\t\t\t\"threshold_method\": \"THRESHOLD_METHOD\",\n\t\t\t\"scaling\": SCALING,\n\t\t\t\"kd\": KDIFF,\n\t\t\t\"scepticism_threshold\": SCEPTICISM_THRESHOLD"
-
+	HONEST_PARAMETERS[c]=""
+	
 declare -A DISHONEST_PARAMETERS
+	DISHONEST_PARAMETERS[b]="\"lie_angle\": DISHONEST_LIE_ANGLE"
 	DISHONEST_PARAMETERS[n]="\"lie_angle\": DISHONEST_LIE_ANGLE"
 	DISHONEST_PARAMETERS[Nn]="\"lie_angle\": DISHONEST_LIE_ANGLE"
 	DISHONEST_PARAMETERS[s]="\"lie_angle\": DISHONEST_LIE_ANGLE,\n\t\t\t\"threshold\": SCEPTICISM_THRESHOLD"
@@ -106,8 +113,10 @@ declare -A DISHONEST_PARAMETERS
 	DISHONEST_PARAMETERS[t]="\"lie_angle\": DISHONEST_LIE_ANGLE,\n\t\t\t\"comparison_method\": \"COMPARISON_METHOD\",\n\"scaling\": SCALING"
 	DISHONEST_PARAMETERS[h]="\"lie_angle\": DISHONEST_LIE_ANGLE,\n\t\t\t\"verification_method\": \"VERIFICATION_METHOD\",\n\t\t\t\"threshold_method\": \"THRESHOLD_METHOD\",\n\t\t\t\"scaling\": SCALING,\n\t\t\t\"kd\": KDIFF"
 	DISHONEST_PARAMETERS[hs]="\"lie_angle\": DISHONEST_LIE_ANGLE,\n\t\t\t\"verification_method\": \"VERIFICATION_METHOD\",\n\t\t\t\"threshold_method\": \"THRESHOLD_METHOD\",\n\t\t\t\"scaling\": SCALING,\n\t\t\t\"kd\": KDIFF,\n\t\t\t\"scepticism_threshold\": SCEPTICISM_THRESHOLD"
+	DISHONEST_PARAMETERS[c]="\"lie_angle\": DISHONEST_LIE_ANGLE"
 
 declare -A BEHAVIOR_INITIALS
+	BEHAVIOR_INITIALS[b]="b"
 	BEHAVIOR_INITIALS[n]="n"
 	BEHAVIOR_INITIALS[Nn]="Nn"
 	BEHAVIOR_INITIALS[s]="s"
@@ -119,8 +128,10 @@ declare -A BEHAVIOR_INITIALS
 	BEHAVIOR_INITIALS[w]="w"
 	BEHAVIOR_INITIALS[h]="h"
 	BEHAVIOR_INITIALS[hs]="hs"
+	BEHAVIOR_INITIALS[c]="c"
 
 declare -A SUB_DIR_BEHAVIOR
+	SUB_DIR_BEHAVIOR[b]="benchmark"
 	SUB_DIR_BEHAVIOR[n]="naive"
 	SUB_DIR_BEHAVIOR[Nn]="new_naive"
 	SUB_DIR_BEHAVIOR[s]="sceptical"
@@ -132,8 +143,10 @@ declare -A SUB_DIR_BEHAVIOR
 	SUB_DIR_BEHAVIOR[w]="wealth_weighted"
 	SUB_DIR_BEHAVIOR[h]="history"
 	SUB_DIR_BEHAVIOR[hs]="history_sceptical"
+	SUB_DIR_BEHAVIOR[c]="capitalist"
 
 declare -A BEHAVIOUR_FILENAME_ADDITIONAL_INFO
+	BEHAVIOUR_FILENAME_ADDITIONAL_INFO[b]=""
 	BEHAVIOUR_FILENAME_ADDITIONAL_INFO[n]=""
 	BEHAVIOUR_FILENAME_ADDITIONAL_INFO[Nn]=""
 	BEHAVIOUR_FILENAME_ADDITIONAL_INFO[s]="_SCEPTICISM_THRESHOLDST"
@@ -145,7 +158,7 @@ declare -A BEHAVIOUR_FILENAME_ADDITIONAL_INFO
 	BEHAVIOUR_FILENAME_ADDITIONAL_INFO[w]=""
 	BEHAVIOUR_FILENAME_ADDITIONAL_INFO[h]="_VERIFICATION_METHODVM_THRESHOLD_METHODTM_SCALINGSC_KDIFFKD"
 	BEHAVIOUR_FILENAME_ADDITIONAL_INFO[hs]="_VERIFICATION_METHODVM_THRESHOLD_METHODTM_SCALINGSC_KDIFFKD_SCEPTICISM_THRESHOLDST"
-
+	BEHAVIOUR_FILENAME_ADDITIONAL_INFO[c]=""
 
 # information combine strategy
 declare -A COMBINE_STRATEGIES
@@ -638,8 +651,31 @@ for AGENT_NOISE_ASSIGNATION in ${AGENT_NOISE_ASSIGNATION_LIST[*]} ; do
 															done
 															done
 															done
-														fi
 														############################
+														else
+															if [[ ${BEHAVIOR} == "c" ]]; then
+																	CURRENT_DATA_FILENAME=$( echo ${DATA_FILENAME} | 
+																				sed -e "s|[\.]||g" )
+																	FINAL_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}/${CURRENT_DATA_FILENAME}.json"
+																	# sed -
+																	# 	${TEMP_CONFIG_FILENAME} > ${FINAL_CONFIG_FILENAME}
+																	cp ${TEMP_CONFIG_FILENAME} ${FINAL_CONFIG_FILENAME}
+																	GENERATED_FILENAMES+=(${FINAL_CONFIG_FILENAME})
+																	COUNT=$((COUNT + 1))
+															
+															else ##############################################
+																if [[ ${BEHAVIOR} == "b" ]]; then
+																		CURRENT_DATA_FILENAME=$( echo ${DATA_FILENAME} | 
+																					sed -e "s|[\.]||g" )
+																		FINAL_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}/${CURRENT_DATA_FILENAME}.json"
+																		# sed -
+																		# 	${TEMP_CONFIG_FILENAME} > ${FINAL_CONFIG_FILENAME}
+																		cp ${TEMP_CONFIG_FILENAME} ${FINAL_CONFIG_FILENAME}
+																		GENERATED_FILENAMES+=(${FINAL_CONFIG_FILENAME})
+																		COUNT=$((COUNT + 1))
+																fi
+															fi
+														fi
 													fi
 												fi
 											fi

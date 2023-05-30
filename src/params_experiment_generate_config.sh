@@ -64,9 +64,11 @@ BEHAVIOR_LIST=(
 				"s"
 				"r" 
 				"t" 
-				"Nv"
-				"h"
-				"hs"
+				# "b"
+				"c"
+				# "Nv"
+				# "h"
+				# "hs"
 			)
 			
 # naive: n ; new naive: Nn 
@@ -166,3 +168,27 @@ hsKD_LIST=(
 )
 hsSCEPTICISM_THRESHOLD_LIST=(0.25)
 
+# benchmark: b
+############## -params:{good_acceptance_rate,bad_acceptance_rate,saboteur_acceptance_rate}
+bGOOD_ACCEPTANCE_RATE_LIST=(
+							0.7
+							0.8
+							0.9
+							)
+bBAD_ACCEPTANCE_RATE_LIST=(
+							0.55
+							0.4
+							0.25
+							)
+bSABOTEUR_ACCEPTANCE_RATE_LIST=(
+								0.15
+								0.075
+								0
+								)
+
+# capitalist: c
+################# -params:{reputation_method}
+cREPUTATION_METHOD_LIST=(
+						"r"
+						"t"
+						)
