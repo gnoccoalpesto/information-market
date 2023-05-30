@@ -135,6 +135,7 @@ class Environment:
         pass
         #NOTE OVERLOADED IN gui.py: self.img = ImageTk.PhotoImage(file="../assets/strawberry.png")
 
+
     #[ ] NEWCOMERS
     def create_newcomers(self, newcomers_type, newcomers_amount):
         if newcomers_type=='honest':selected=0
@@ -381,14 +382,15 @@ class Environment:
 
         reward = self.market.sell_strawberry(robot.id)
         
-        #NOTE full reward is paid to depositing robot, then he will pair creditors their share
-        # '''
-        #INFORMATION-FORAFING MARKET (IFM) ######################
+        '''#[ ]INFORMATION-FORAGING MARKET (IFM) #############
+        #       reward comes from selling strawberries and information
         self.payment_database.pay_reward(robot.id, reward=reward)
-        '''
-        #INFORMATION MARKET (IM) ###########################
+        '''#INFORMATION MARKET (IM) ###########################
+        #       reward comes from selling information only
         self.payment_database.pay_reward(robot.id, reward=0)
         #'''
+
+        #NOTE full reward is paid to depositing robot, then he will pair creditors their share
         self.payment_database.pay_creditors(robot.id, total_reward=reward)
 
 

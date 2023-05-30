@@ -28,6 +28,8 @@ class PaymentAPI:
         self.transfer = payment_db.transfer
         self.update_history = payment_db.update_history
         self.reputation_stake_coeff = payment_db.reputation_stake_coeff
+        self.increment_stake = payment_db.increment_stake
+        self.reset_stake = payment_db.reset_stake
 
 
 class PaymentDB:
@@ -46,6 +48,8 @@ class PaymentDB:
         self.database = {}
         for robot_id in population_ids:
             self.database[robot_id] = {"reward": payment_system_params["initial_reward"],
+                                       #TODO introduce stake key only for correct payment system w/ staking
+                                       "stake": {_: 0 for _ in population_ids},
                                        "payment_system": eval(payment_system_params['class'])(
                                                                 **payment_system_params['parameters']),
                                         "wallet_age": 0,
@@ -69,12 +73,14 @@ class PaymentDB:
     def add_newcomers(self, newcomers_ids,payment_system_params):
         NEW_DB_LEN=len(self.database)+len(newcomers_ids)
         for robot_id in self.database.keys():
+            #TODO stake dictionary entries for new robots
             self.database[robot_id]["n_attempted_transactions"].extend([0]*len(newcomers_ids))
             self.database[robot_id]["n_validated_transactions"].extend([0]*len(newcomers_ids))
             self.database[robot_id]["n_completed_transactions"].extend([0]*len(newcomers_ids))
             self.database[robot_id]["n_combined_transactions" ].extend([0]*len(newcomers_ids))
         for robot_id in newcomers_ids:
             self.database[robot_id] = {"reward": payment_system_params["initial_reward"],
+                                       "stake": {_: 0 for _ in range(NEW_DB_LEN) },
                                        "payment_system": eval(payment_system_params['class'])(
                                                                 **payment_system_params['parameters']),
                                         "wallet_age": 0,
@@ -93,19 +99,42 @@ class PaymentDB:
 
     def reputation_stake_coeff(self,robot_id,reputation_method='h'):
         if reputation_method=='h':
-            robot_reputation=self.get_reputation(robot_id,method=reputation_method)
+            reputation=self.get_reputation(robot_id,method=reputation_method)
         else:
-            robot_reputation=self.get_reputation(robot_id,method=reputation_method,verification_method='mean')
+            reputation=self.get_reputation(robot_id,method=reputation_method,verification_method='mean')
         # stake_ratio_0=1
         stake_ratio_min=0.5
         # stake_ratio_max=3
-        if robot_reputation is not None:
+        if reputation is not None:
             #TODO requires tuning coeff for "r" reputation
-            stake_ratio=stake_ratio_min**(2*robot_reputation/self.history_span)
+            # POLYNOMIAL: higly penalizing/rewarding
+            stake_ratio=stake_ratio_min**(2*reputation/self.history_span)
+            # EXPONENTIAL: less penalizing/rewarding
             # stake_ratio=(stake_ratio_min+(stake_ratio_0-stake_ratio_min)*np.exp(-robot_reputation/history_len) \
             #                             -(stake_ratio_0-stake_ratio_max)*np.exp(-robot_reputation/history_len))/3
+            # BY PARTS: non rewarding
+            if reputation<0:
+                stake_ratio=stake_ratio_min**(2*reputation/self.history_span)
+                #NOTE: history_span is used in all cases to normalize reputation span
+            else:
+                '''#[ ] WEALTH TAXATION
+                RICH_THRESHOLD=7
+                if reputation>RICH_THRESHOLD:
+                    stake_ratio=0.5*stake_ratio_min**(-reputation/self.history_span)
+                # NO HIGHT REWARD PENALTY
+                '''
+                stake_ratio=1
+                #'''
             return stake_ratio
         return 1
+    
+
+    def increment_stake(self,staker_id,buyer_id,amount):
+        self.database[staker_id]["stake"][buyer_id]+=amount
+
+
+    def reset_stake(self,staker_id,buyer_id):
+        self.database[staker_id]["stake"][buyer_id]=0
         
 
     def get_history(self,robot_id):
@@ -165,7 +194,7 @@ class PaymentDB:
             if isinstance(robot_id,int):
                 reward=self.get_reward(robot_id)
                 if verification_method=="mean":
-                    return reward-self.get_lowest_reward()*2
+                    return reward-self.get_lowest_reward()*3
                 return reward
             elif robot_id=="all":
                 return self.get_total_reward()
@@ -177,7 +206,9 @@ class PaymentDB:
                 return self.get_lowest_reward()
             else:
                 raise ValueError("Robot id not recognized")
-
+        elif method=="total" or method=="t" or method=="T":#[ ]
+            return self.database[robot_id]["reward"]+\
+                            sum(self.database[robot_id]["stake"].values())
         elif method=="history" or method=="h" or method=="H":
             method="history"
             if isinstance(robot_id,int):
@@ -214,6 +245,11 @@ class PaymentDB:
     def get_mean_reputation(self,method="reward",verification_method="discrete"):
         if method=="reward" or method=="r" or method=="R" or method=="w":
             return self.get_mean_reward()
+        elif method=="total" or method=="t" or method=="T":#[ ]
+            total_wealths=[self.database[robot_id]["reward"]+ 
+                            sum(self.database[robot_id]["stake"].values()) \
+                           for robot_id in self.database]
+            return np.mean(total_wealths)
         elif method=="history" or method=="h" or method=="H":
             method="history"
             reputations=[self.get_reputation(robot_id,method,verification_method) for robot_id in self.database ]
@@ -250,24 +286,30 @@ class PaymentDB:
 
     def get_sorted_database(self,method="reward"):
         """
-        returns blockchain (dict), sorted by highest reward first
+        returns blockchain (dict), sorted by highest reward first 
+            or highest total wealth
         """
         if method=="reward" or method=="r" or method=="R" or method=="w":
             sorted_database = dict(sorted(self.database.items(), 
                                 key=lambda x: x[1]["reward"], reverse=True))
+        elif method=="total" or method=="t" or method=="T":
+            new_db={}
+            for robot_id in self.database:
+                new_db[robot_id]=self.database[robot_id]["reward"]+\
+                                sum(self.database[robot_id]["stake"].values())
+            sorted_database = dict(sorted(new_db.items(),key=lambda x: x[1], reverse=True))
         return sorted_database
         
     
-    def get_reward_ranking(self,robot_id):
-        #TODO remove
-        sorted_database = self.get_sorted_database()
+    def get_reward_ranking(self,robot_id,reputation_method):
+        sorted_database = self.get_sorted_database(reputation_method)
         return list(sorted_database.keys()).index(robot_id)
 
     
     def get_reputation_ranking(self,robot_id,method="reward"):
-        #TODO remove
-        if method=="reward" or method=="r" or method=="R" or method=="w":
-            return self.get_reward_ranking(robot_id)
+        if method=="reward" or method=="r" or method=="R" or method=="w" or \
+            method=="total" or method=="t" or method=="T":
+            return self.get_reward_ranking(robot_id,method)
         elif method=="history" or method=="h" or method=="H":
                 reputations=[self.get_reputation(robot_id,method="history") for robot_id in self.database]
                 valid_reputations=[r for r in reputations if r is not None]
@@ -282,10 +324,15 @@ class PaymentDB:
         '''cost of motion, stopping,recharge, etc.'''
         if cost < 0:
             raise ValueError("Cost must be positive")
+        # '''#[ ]DEFAULT MARKET
+        #NOTE: DEFAULT as in market where default is possible
         if self.database[robot_id]["reward"] < cost:
             raise InsufficientFundsException#(robot_id)
         else:
             self.database[robot_id]["reward"] -= cost
+        '''# NO DEFAULT MARKET
+        self.database[robot_id]["reward"] -= cost
+        #'''
 
 
     def apply_gains(self, robot_id, gains):
@@ -392,33 +439,43 @@ class OutlierPenalisationPaymentSystem(PaymentSystem):
         payment_api.apply_cost(transaction.seller_id, stake_amount)
         self.pot_amount += stake_amount
         self.transactions.add(transaction)
+        payment_api.increment_stake(transaction.seller_id,transaction.buyer_id,stake_amount)
 
 
     def new_reward(self, reward, payment_api:PaymentAPI, rewarded_id):
+        #'''#[ ] NORMAL DEFAULT: robot could cause IFE 
         reward_share_to_distribute = self.information_share * reward
+        '''#DEFAULT PROTECTION: robot cannot cause IFE
         # reward_share_to_distribute=min(reward_share_to_distribute,payment_api.get_reward(rewarded_id))
-        #[ ]TEST IFE PREVENTION, possible performance increase
+        if reward_share_to_distribute<0: reward_share_to_distribute=0
+        # '''
         payment_api.apply_gains(rewarded_id, self.pot_amount)
         
         shares_mapping = self.calculate_shares_mapping()
-        try:#[ ]
+        try:
             for seller_id, share in shares_mapping.items():
+                # ''' #[ ] DOUBLE TRANSFER
                 payment_api.transfer(rewarded_id, seller_id, share*self.pot_amount)
-
 
             for seller_id, share in shares_mapping.items():
                 payment_api.transfer(rewarded_id, seller_id, share*reward_share_to_distribute)
+                '''#SINGLE TRANSFER
+                payment_api.transfer(rewarded_id, seller_id, share*reward_share_to_distribute)
+                #'''
+                #[ ] POT-BIASED & REWARD BIASED REPUTATION: great performance improvement
+                # last_redistribution= share*(self.pot_amount+reward_share_to_distribute)-(self.stake_amount if hasattr(self,"stake_amount") else 0)
+                #UNBIASED REPUTATION #NOTE if reward<1, *reward will have a penalizing effect
+                #NOTE_ could be reward scaled: w_x [*reward_share_to_distribute]
+                # REWARD-SCALED BIASED
+                # last_redistribution= share*reward_share_to_distribute-(self.stake_amount if hasattr(self,"stake_amount") else 0)
+                # POT-BIASED ONLY
+                # last_redistribution= share*self.pot_amount-(self.stake_amount if hasattr(self,"stake_amount") else 0)
+                # UNBIASED
+                last_redistribution= share- 1/len(shares_mapping)
                 #TODO use current stake amount, base stake amount, or stake amount at the time of the transaction?
                 # seller_stake_amount=self.get_stake_amount(payment_api,seller_id)#stake(t)k
                 # seller_stake_amount=self.stake_amount#stake(0)
                 #stake(k) for some past contribution k ???
-
-                #[ ] this makes great performance, using share*reward (w/out summing pot) is way worst
-                # '''
-                last_redistribution= share*(self.pot_amount+reward_share_to_distribute)-(self.stake_amount if hasattr(self,"stake_amount") else 0)
-                '''
-                last_redistribution= share*reward_share_to_distribute-(self.stake_amount if hasattr(self,"stake_amount") else 0)
-                #'''
                 payment_api.update_history(seller_id, last_redistribution)
         except InsufficientFundsException:
             # CONFIG_FILE.IFE_COUNT+=1
@@ -427,6 +484,8 @@ class OutlierPenalisationPaymentSystem(PaymentSystem):
         finally:
             #TODO is it fair to just drop all the debts in case of IFE? ir this can be considered fairness?
             self.reset_transactions()
+            for seller_id, _ in shares_mapping.items():
+                payment_api.reset_stake(seller_id,rewarded_id)
 
     
     def calculate_shares_mapping(self,amount_to_distribute=1):

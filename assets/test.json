@@ -82,7 +82,7 @@
   },
   "data_collection": {
     "output_directory": "/home/uga/ing/tesi/information-market/src/../data/TEST/history",
-    "filename": "24h_waaCS_P_NRS_90LIA_agedVM_meanTM_1SC_1KD_0.051NMU_0.1NRANG_perfSAB.csv",
+    "filename": "24h_waaCS_P_NRS_90LIA_agedVM_meanTM_1SC_1KD_0.051NMU_0.1NRANG_avgSAB.csv",
     "metrics": ["items_evolution","rewards_evolution","items_collected","rewards","transactions"],
     "precise_recording_interval": 100,
     "transactions_log": false
