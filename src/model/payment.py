@@ -194,7 +194,7 @@ class PaymentDB:
             if isinstance(robot_id,int):
                 reward=self.get_reward(robot_id)
                 if verification_method=="mean":
-                    '''#[ ] HEURISTIC REPUTATION, works great
+                    # '''#[ ] HEURISTIC REPUTATION, works great
                     return reward-self.get_lowest_reward()*3
                     '''# NORMALIZED REPUTATION
                     # if reward>0:
@@ -337,7 +337,7 @@ class PaymentDB:
         '''cost of motion, stopping,recharge, etc.'''
         if cost < 0:
             raise ValueError("Cost must be positive")
-        # '''#[ ]DEFAULT MARKET
+        '''#[ ]DEFAULT MARKET
         #NOTE: DEFAULT as in market where default is possible
         if self.database[robot_id]["reward"] < cost:
             raise InsufficientFundsException#(robot_id)
