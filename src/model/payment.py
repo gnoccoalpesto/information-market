@@ -100,7 +100,7 @@ class PaymentDB:
     def reputation_stake_coeff(self,robot_id,reputation_method='h'):
         if reputation_method=='h':
             reputation=self.get_reputation(robot_id,method=reputation_method)
-        else:
+        elif reputation_method=='r' or reputation_method=='t':
             reputation=self.get_reputation(robot_id,method=reputation_method,verification_method='mean')
         # stake_ratio_0=1
         stake_ratio_min=0.5
@@ -194,7 +194,17 @@ class PaymentDB:
             if isinstance(robot_id,int):
                 reward=self.get_reward(robot_id)
                 if verification_method=="mean":
+                    '''#[ ] HEURISTIC REPUTATION, works great
                     return reward-self.get_lowest_reward()*3
+                    '''# NORMALIZED REPUTATION
+                    # if reward>0:
+                    #     bias_sign=1
+                    # else:
+                    #     bias_sign=-1
+                    bias_sign=-1
+                    reputation=reward+bias_sign*0.25*7500/self.database[robot_id]["wallet_age"]
+                    return 1+10*np.tanh(reputation)
+                    #'''
                 return reward
             elif robot_id=="all":
                 return self.get_total_reward()
@@ -206,9 +216,12 @@ class PaymentDB:
                 return self.get_lowest_reward()
             else:
                 raise ValueError("Robot id not recognized")
+            
         elif method=="total" or method=="t" or method=="T":#[ ]
-            return self.database[robot_id]["reward"]+\
+            wealth=self.database[robot_id]["reward"]+\
                             sum(self.database[robot_id]["stake"].values())
+            return wealth - self.get_lowest_reward()*3
+        
         elif method=="history" or method=="h" or method=="H":
             method="history"
             if isinstance(robot_id,int):
