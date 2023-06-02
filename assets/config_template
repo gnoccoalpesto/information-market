@@ -47,7 +47,7 @@
     "parameters": {
       "information_share": PAYMENT_SYSTEM_INFORMATION_SHARE,
       "reputation_stake": PAYMENT_SYSTEM_REPUTATION_STAKE,
-      "reputation_metric": "PAYMENT_SYSTEM_REPUTATION_METRIC"
+      "reputation_metric": "REPUTATION_METHOD"
     }
   },
   "market": {
