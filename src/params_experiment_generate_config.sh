@@ -36,7 +36,7 @@ COMBINE_STRATEGY_LIST=(
 #payment system
 PAYMENT_SYSTEM_CLASS_LIST=(
 							"OutlierPenalisationPaymentSystem" 
-							"DelayedPaymentPaymentSystem"
+							# "DelayedPaymentPaymentSystem"
 							)
 PAYMENT_SYSTEM_REPUTATION_STAKE_LIST=(
 										false
@@ -60,16 +60,34 @@ DISHONEST_LIE_ANGLE_LIST=(
 					)
 # behaviors ----------------------------------------------------
 BEHAVIOR_LIST=(
+				"b"
 				"n"
 				"s"
 				"r" 
 				"t" 
-				# "b"
 				"c"
 				# "Nv"
 				# "h"
 				# "hs"
 			)
+
+# benchmark: b
+############## -params:{good_acceptance_rate,bad_acceptance_rate,saboteur_acceptance_rate}
+bGOOD_ACCEPTANCE_RATE_LIST=(
+							0.75
+							0.85
+							0.95
+							)
+bBAD_ACCEPTANCE_RATE_LIST=(
+							0.55
+							0.4
+							0.25
+							)
+bSABOTEUR_ACCEPTANCE_RATE_LIST=(
+								0.15
+								0.075
+								0
+								)
 			
 # naive: n ; new naive: Nn 
 ################################################ -params:{}
@@ -78,28 +96,22 @@ BEHAVIOR_LIST=(
 ################################## -params:{threshold} ; {scepticism_threshold}
 sSCEPTICISM_THRESHOLD_LIST=(0.25)
 
+# capitalist: c
+################# -params:{reputation_method}
+cREPUTATION_METHOD_LIST=(
+						"r"
+						"t"
+						)
+
 # ranking: r
 ############ -params:{ranking_threshold}
 rRANKING_THRESHOLD_LIST=(
 						0.3 
-						# 0.5
+						0.5
 						)
-
-# variable scepticism: v ; new variable scepticism: Nv
-###################################################### -params:{comparison_method,scaling,scepticism_threshold,weight_method}
-vCOMPARISON_METHOD_LIST=(
-							"allavg" 
-							# "allmax"
-							)
-vSCALING_LIST=(
-				# 0.8 
-				# 0.5 
-				0.3
-				)
-vSCEPTICISM_THRESHOLD_LIST=(0.25)
-vWEIGHT_METHOD_LIST=(
-						"ratio" 
-						# "exponential"
+rREPUTATION_METHOD_LIST=(
+						"r"
+						"t"
 						)
 
 # wealth threshold: t
@@ -109,10 +121,14 @@ tCOMPARISON_METHOD_LIST=(
 							# "allmax"
 							)
 tSCALING_LIST=(
-				# 0.8 	
+				0.8 	
 				0.5 
 				# 0.3
 				)
+tREPUTATION_METHOD_LIST=(
+						"r"
+						"t"
+						)
 
 # reputation history: h
 ######################## -params:{verification_method,threshold_method}
@@ -140,6 +156,10 @@ hKD_LIST=(
 			# 1.6
 			# 2.0
 )
+hREPUTATION_METHOD_LIST=(
+						"h"
+						)
+						
 # reputation history scepticism: hs
 ######################## -params:{verification_method,threshold_method}
 hsVERIFICATION_METHOD_LIST=(
@@ -168,27 +188,19 @@ hsKD_LIST=(
 )
 hsSCEPTICISM_THRESHOLD_LIST=(0.25)
 
-# benchmark: b
-############## -params:{good_acceptance_rate,bad_acceptance_rate,saboteur_acceptance_rate}
-bGOOD_ACCEPTANCE_RATE_LIST=(
-							0.7
-							0.8
-							0.9
+# variable scepticism: v ; new variable scepticism: Nv
+###################################################### -params:{comparison_method,scaling,scepticism_threshold,weight_method}
+vCOMPARISON_METHOD_LIST=(
+							"allavg" 
+							# "allmax"
 							)
-bBAD_ACCEPTANCE_RATE_LIST=(
-							0.55
-							0.4
-							0.25
-							)
-bSABOTEUR_ACCEPTANCE_RATE_LIST=(
-								0.15
-								0.075
-								0
-								)
-
-# capitalist: c
-################# -params:{reputation_method}
-cREPUTATION_METHOD_LIST=(
-						"r"
-						"t"
+vSCALING_LIST=(
+				# 0.8 
+				# 0.5 
+				0.3
+				)
+vSCEPTICISM_THRESHOLD_LIST=(0.25)
+vWEIGHT_METHOD_LIST=(
+						"ratio" 
+						# "exponential"
 						)

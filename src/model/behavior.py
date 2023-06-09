@@ -13,7 +13,9 @@ from helpers.utils import get_orientation_from_vector, norm, InsufficientFundsEx
 # import config as CONFIG_FILE
 
 
-BEHAVIORS_DICT = {  "n": "NaiveBeahvior",
+BEHAVIORS_DICT = {  
+                    "b": "BenchmarkBehavior",
+                    "n": "NaiveBeahvior",
                     "Nn": "NewNaiveBehavior",
                     "s": "ScepticalBehavior",
                     "Ns": "NewScepticalBehavior",
@@ -24,8 +26,11 @@ BEHAVIORS_DICT = {  "n": "NaiveBeahvior",
                     "w": "WealthWeightedBehavior",
                     "h": "ReputationHistoryBehavior",
                     "hs": "ReputationHistoryScepticalBehavior",
+                    "c": "CapitalistBehavior",
                     }
-BEHAVIORS_NAME_DICT = {  "n": "Naive",
+BEHAVIORS_NAME_DICT = {  
+                        "b": "Benchmark",
+                        "n": "Naive",
                         "Nn": "Naive",
                         "s": "Sceptical",
                         "Ns": "Sceptical",
@@ -41,8 +46,11 @@ BEHAVIORS_NAME_DICT = {  "n": "Naive",
                         # "w": "Reputation Weighted",
                         "h": "Rep. History",
                         "hs": "Rep. Hist. Sceptical",
+                        "c": "Capitalist",
                     }
-SUB_FOLDERS_DICT={  "n": "naive",
+SUB_FOLDERS_DICT={  
+                    "b": "benchmark",
+                    "n": "naive",
                     "Nn": "new_naive",
                     "s": "sceptical",
                     "Ns": "new_sceptical",
@@ -53,6 +61,7 @@ SUB_FOLDERS_DICT={  "n": "naive",
                     "w": "wealth_weighted",
                     "h": "history",
                     "hs": "history_sceptical",
+                    "c": "capitalist",
                     }
 PARAMS_NAME_DICT={
                     "ST": "scepticism threshold",
@@ -74,19 +83,26 @@ PARAMS_NAME_DICT={
                     "SAB": "saboteur performance",
                     "VM": "verification method",
                     "TM": "threshold method",
-                    "KD": "derivative controller coeff"
+                    "KD": "derivative controller coeff",
+                    "GAR": "good acceptance rate",
+                    "BAR": "bad acceptance rate",
+                    "SAR": "saboteur acceptance rate",
+                    "RM": "reputation method",
                     }
-BEHAVIOR_PARAMS_DICT = {"n": [],
+BEHAVIOR_PARAMS_DICT = {
+                        "b": ["GAR","BAR","SAR"],
+                        "n": [],
                         "Nn": [],
                         "s": ["ST"],
                         "Ns": ["ST"],
-                        "r": ["RT"],
+                        "r": ["RT","RM"],
                         "v": ["CM","SC","ST","WM"],
                         "Nv": ["CM","SC","ST","WM"],
-                        "t": ["CM","SC"],
+                        "t": ["CM","SC","RM"],
                         "w": [],
                         "h": ["VM","TM","SC","KD"],
                         "hs": ["VM","TM","SC","KD", "ST"],
+                        "c":["RM"],
                         }
 COMBINE_STRATEGY_DICT = {
                             "waa" : "WeightedAverageAgeStrategy",
@@ -108,6 +124,12 @@ NOISE_PARAMS_DICT={ "bimodal": ["SMU","SSD","NSD"],
                     "uniform": ["NMU","NRANG","SAB"],
                 }
 BEST_PARAM_COMBINATIONS_DICT={
+                            "b": [
+                                # ['P','NRS',[]],
+                                # ['P','RS',[]],
+                                # ['P','NRS',[]],
+                                # ['P','RS',[]],
+                                ],
                             "n": [
                                 # ['NP','NRS',[]],
                                 ['P','NRS',[]],
@@ -119,10 +141,14 @@ BEST_PARAM_COMBINATIONS_DICT={
                                 ],
                             # "Ns": [['NP',['025']],['P',['025']],],
                             "r": [
-                                ['P', 'NRS',['03']],
-                                ['P', 'NRS',['05']],
-                                ['P', 'RS',['03']],
-                                ['P', 'RS',['05']],
+                                ['P', 'NRS',['03','r']],
+                                ['P', 'NRS',['05','r']],
+                                ['P', 'RS',['03','r']],
+                                ['P', 'RS',['05','r']],
+                                ['P', 'NRS',['03','t']],
+                                ['P', 'NRS',['05','t']],
+                                ['P', 'RS',['03','t']],
+                                ['P', 'RS',['05','t']],
                                 ],
                             "v": [],
                             "Nv": [
@@ -132,32 +158,43 @@ BEST_PARAM_COMBINATIONS_DICT={
                                 ['P', 'RS',['allavg', '03', '025', 'ratio']],
                                 ],
                             "t": [
-                                ['P', 'NRS',['allavg', '03']],
-                                ['P', 'NRS', ['allavg', '05']],
-                                ['P', 'RS',['allavg', '03']],
-                                ['P', 'RS', ['allavg', '05']],
+                                ['P', 'NRS',['allavg','03','r']],
+                                ['P', 'NRS', ['allavg','05','r']],
+                                ['P', 'RS',['allavg','03','r']],
+                                ['P', 'RS', ['allavg','05','r']],
+                                ['P', 'NRS',['allavg','03','t']],
+                                ['P', 'NRS', ['allavg','05','t']],
+                                ['P', 'RS',['allavg','03','t']],
+                                ['P', 'RS', ['allavg','05','t']],
                                 ],
                             "w": [],
                             "h": [
-                                ["P",'NRS',["aged","mean",'08','1']],
-                                ["P",'NRS',["aged2","mean",'08','13']],
-                                ["P",'NRS',["discrete","mean",'1','1']],
-                                ["P",'RS',["aged","mean",'08','1']],
-                                ["P",'RS',["aged2","mean",'08','13']],
-                                ["P",'RS',["discrete","mean",'1','1']],
+                                ["P",'NRS',["aged","mean",'08','1','h']],
+                                ["P",'NRS',["aged2","mean",'08','13','h']],
+                                ["P",'NRS',["discrete","mean",'1','1','h']],
+                                ["P",'RS',["aged","mean",'08','1','h']],
+                                ["P",'RS',["aged2","mean",'08','13','h']],
+                                ["P",'RS',["discrete","mean",'1','1','h']],
                                 ],
                             "hs": [
-                                ["P",'NRS',["aged","mean",'08','1','025']],
-                                ["P",'NRS',["aged2","mean",'08','13','025']],
-                                ["P",'NRS',["discrete","mean",'1','1','025']],
-                                ["P",'RS',["aged","mean",'08','1','025']],
-                                ["P",'RS',["aged2","mean",'08','13','025']],
-                                ["P",'RS',["discrete","mean",'1','1','025']],
+                                ["P",'NRS',["aged","mean",'08','1','025','h']],
+                                ["P",'NRS',["aged2","mean",'08','13','025','h']],
+                                ["P",'NRS',["discrete","mean",'1','1','025','h']],
+                                ["P",'RS',["aged","mean",'08','1','025','h']],
+                                ["P",'RS',["aged2","mean",'08','13','025','h']],
+                                ["P",'RS',["discrete","mean",'1','1','025','h']],
+                                ],
+                            "c": [
+                                ['P','NRS',["r"]],
+                                ['P','RS',["r"]],
+                                ['P','NRS',["t"]],
+                                ['P','RS',["t"]],
                                 ],
                             }
 #TODO include the new param (this is getting long, maybe move to another file?)
 BAD_PARAM_COMBINATIONS_DICT={
                     #TODO could use dots in filenames
+                    "b": [],
                     "n": [],
                     "Nn": [],
                     "s": [],
@@ -218,6 +255,7 @@ BAD_PARAM_COMBINATIONS_DICT={
                         ['NP', ['aged', 'mean']],
                         ['NP', ['aged2', 'mean']],
                     ],
+                    "c": [],
                 }
 
 
@@ -557,22 +595,27 @@ class BenchmarkBehavior(TemplateBehaviour):
                  bad_acceptance_rate=0.5,
                  saboteur_acceptance_rate=0.2,):
         super().__init__(combine_strategy=combine_strategy)
-        self.required_information=RequiredInformation.LOCAL
+        self.required_information=RequiredInformation.GLOBAL
+        self.information_ordering_metric="age"
 
         self.good_acceptance_rate=good_acceptance_rate
         self.bad_acceptance_rate=bad_acceptance_rate
         self.saboteur_acceptance_rate=saboteur_acceptance_rate
 
         number_of_honest=number_of_robots-number_of_byzantines
-        if byzantine_performance=="avg":
+        if byzantine_performance=="avg" or byzantine_performance=="average":
             good_slice=number_of_honest//2+(1 if number_of_byzantines==0 else 0)
-        elif byzantine_performance=="perf":
+        elif byzantine_performance=="perf" or byzantine_performance=="perfect":
             good_slice=number_of_robots//2-number_of_byzantines+1
         bad_slice=-number_of_byzantines if number_of_byzantines>0 else None
 
         self.good_ids=list(range(good_slice))
-        self.bad_ids=list(range(good_slice,bad_slice))
-        self.byzantine_ids=list(range(bad_slice,number_of_robots))
+        if bad_slice is not None:
+            self.bad_ids=list(range(good_slice,bad_slice))
+            self.byzantine_ids=list(range(bad_slice,number_of_robots))
+        else:
+            self.bad_ids=list(range(good_slice,number_of_robots))
+            self.byzantine_ids=list(range(good_slice,number_of_robots))
 
 
     def test_data_validity(self, location: Location, data,_,__):
@@ -594,7 +637,7 @@ class BenchmarkBehavior(TemplateBehaviour):
             - byzantine robots are accepted with lowest probability
         '''
         if seller_id in self.good_ids:
-            return np.random.random()<=self.good_acceptance_rate
+            return np.random.random() <= self.good_acceptance_rate
         elif seller_id in self.bad_ids:
             return np.random.random() <= self.bad_acceptance_rate
         elif seller_id in self.byzantine_ids:
@@ -977,7 +1020,7 @@ class NewScaboteurBehavior(NewScepticalBehavior):
 # BEHAVIOURS WITH REPUTATION (SYSTEMIC PROTECTION)
 class CapitalistBehavior(TemplateBehaviour):
     def __init__(self,combine_strategy="WeightedAverageAgeStrategy",
-                 reputation_method="t"):
+                 reputation_method="r"):
         super().__init__(combine_strategy=combine_strategy)
         self.required_information=RequiredInformation.GLOBAL
         self.information_ordering_metric="age"
@@ -1029,12 +1072,13 @@ class CapitalistBehavior(TemplateBehaviour):
     
 
     def verify_reputation(self,payment_database:PaymentDB,buyer_id,seller_id):
-        return payment_database.get_reputation(seller_id,self.reputation_method) >= payment_database.get_reputation(buyer_id,self.reputation_method)
+        return payment_database.get_reputation(seller_id,self.reputation_method) >= \
+            payment_database.get_reputation(buyer_id,self.reputation_method)
 
 
 class SaboteurCapitalistBehavior(CapitalistBehavior):
     def __init__(self,lie_angle=90,combine_strategy="WeightedAverageAgeStrategy",
-                 reputation_method="t"):
+                 reputation_method="r"):
         super().__init__(combine_strategy=combine_strategy,
                          reputation_method=reputation_method)
         self.color = "red"
@@ -1049,7 +1093,7 @@ class SaboteurCapitalistBehavior(CapitalistBehavior):
 
 class ReputationRankingBehavior(TemplateBehaviour):
     def __init__(self,ranking_threshold=.5,
-                 reputation_method="t",
+                 reputation_method="r",
                  combine_strategy="WeightedAverageAgeStrategy"):
         super().__init__(combine_strategy=combine_strategy)
         self.required_information=RequiredInformation.GLOBAL
@@ -1083,7 +1127,7 @@ class ReputationRankingBehavior(TemplateBehaviour):
 
 class SaboteurReputationRankingBehavior(ReputationRankingBehavior):
     def __init__(self,lie_angle=90,ranking_threshold=.5,
-                 reputation_method="t",
+                 reputation_method="r",
                  combine_strategy="WeightedAverageAgeStrategy"):
         super().__init__(ranking_threshold=ranking_threshold,
                         reputation_method=reputation_method,
@@ -1100,7 +1144,7 @@ class SaboteurReputationRankingBehavior(ReputationRankingBehavior):
 class WealthThresholdBehavior(TemplateBehaviour):
     def __init__(self,comparison_method="allavg",
                  scaling=.3,
-                 reputation_method="t",
+                 reputation_method="r",
                  combine_strategy="WeightedAverageAgeStrategy"):
         super().__init__(combine_strategy=combine_strategy)
         self.required_information=RequiredInformation.GLOBAL
@@ -1160,7 +1204,7 @@ class WealthThresholdBehavior(TemplateBehaviour):
 class SaboteurWealthThresholdBehavior(WealthThresholdBehavior):
     def __init__(self,lie_angle=90,comparison_method="allavg",
                     scaling=.3,
-                    reputation_method="t",
+                    reputation_method="r",
                     combine_strategy="WeightedAverageAgeStrategy"):
         super().__init__(comparison_method=comparison_method,
                         scaling=scaling,
