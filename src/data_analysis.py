@@ -1453,8 +1453,10 @@ def buyers_sellers_groups(  filename:str,#[x]
 
     df_buys_num=dataframe_from_csv(filename=f_buys_num,data_folder_and_subfolder=data_folder_and_subfolder,metric="transaction")
     df_buys_den=dataframe_from_csv(filename=f_buys_den,data_folder_and_subfolder=data_folder_and_subfolder,metric="transaction")
-    # df_buys=df_buys_num/df_buys_den
     df_buys=100*df_buys_num/df_buys_den
+    df_buys_good_ratio=100*(df_buys[0:good_slice].sum(axis=0)/df_buys.sum(axis=0)).mean().round(3)
+    df_buys_bad_ratio=100*(df_buys[good_slice:bad_slice].sum(axis=0)/df_buys.sum(axis=0)).mean().round(3)
+    if bad_slice is not None:df_buys_sab_ratio=100*(df_buys[bad_slice:].sum(axis=0)/df_buys.sum(axis=0)).mean().round(3)
     df_buys_mean=df_buys.mean(axis=0)
     df_buys_median=df_buys.median(axis=0)
     df_buys_var=df_buys.var(axis=0)
@@ -1462,12 +1464,13 @@ def buyers_sellers_groups(  filename:str,#[x]
     df_buys_min=df_buys.min(axis=0)
     df_sells_num=dataframe_from_csv(filename=f_sells_num,data_folder_and_subfolder=data_folder_and_subfolder,metric="transaction")
     df_sells_den=dataframe_from_csv(filename=f_sells_den,data_folder_and_subfolder=data_folder_and_subfolder,metric="transaction")
-    # df_sells=df_sells_num/df_sells_den
     df_sells=100*df_sells_num/df_sells_den
+    df_sells_good_ratio=100*(df_sells[0:good_slice].sum(axis=0)/df_sells.sum(axis=0)).mean().round(3)
+    df_sells_bad_ratio=100*(df_sells[good_slice:bad_slice].sum(axis=0)/df_sells.sum(axis=0)).mean().round(3)
+    if bad_slice is not None:df_sells_sab_ratio=100*(df_sells[bad_slice:].sum(axis=0)/df_sells.sum(axis=0)).mean().round(3)
     df_sells_mean=df_sells.mean(axis=0)
     df_sells_median=df_sells.median(axis=0)
     df_sells_var=df_sells.var(axis=0)
-    # df_sells_var=100*df_sells.var(axis=0)
     df_sells_max=df_sells.max(axis=0)
     df_sells_min=df_sells.min(axis=0)
     df_buys_mean_good=df_buys_mean[0:good_slice]
@@ -1578,6 +1581,14 @@ def buyers_sellers_groups(  filename:str,#[x]
     df_sells_min_bad_mean['plot_order']=0
     df_sells_min_bad_min['plot_order']=1
     df_sells_min_bad=pd.concat([df_sells_min_bad_mean,df_sells_min_bad_min])
+    df_sells_good_ratio=pd.DataFrame(pd.Series(df_sells_good_ratio))
+    df_sells_good_ratio['plot_order']=0
+    df_sells_bad_ratio=pd.DataFrame(pd.Series(df_sells_bad_ratio))
+    df_sells_bad_ratio['plot_order']=1
+    df_buys_good_ratio=pd.DataFrame(pd.Series(df_buys_good_ratio))
+    df_buys_good_ratio['plot_order']=0
+    df_buys_bad_ratio=pd.DataFrame(pd.Series(df_buys_bad_ratio))
+    df_buys_bad_ratio['plot_order']=1
     if bad_slice is not None:
         df_buys_mean_sab=df_buys_mean[bad_slice:]
         df_buys_median_sab=df_buys_median[bad_slice:]
@@ -1633,38 +1644,45 @@ def buyers_sellers_groups(  filename:str,#[x]
         df_sells_min_sab_mean['plot_order']=0
         df_sells_min_sab_min['plot_order']=1
         df_sells_min_sab=pd.concat([df_sells_min_sab_mean,df_sells_min_sab_min])
+        df_sells_sab_ratio=pd.DataFrame(pd.Series(df_sells_sab_ratio.mean()))
+        df_sells_sab_ratio['plot_order']=2
+        df_buys_sab_ratio=pd.DataFrame(pd.Series(df_buys_sab_ratio.mean()))
+        df_buys_sab_ratio['plot_order']=2
 
-    fig,axs=plt.subplots(2,4 if show_variance else 3, figsize=(15,10))
+    fig,axs=plt.subplots(2,5 if show_variance else 4, figsize=(15,10))#with relative percentages 
+    # fig,axs=plt.subplots(2,4 if show_variance else 3, figsize=(15,10))
     plt.subplots_adjust(bottom=0.05,top=0.88,left=0.05,right=0.98,wspace=None,hspace=0.1)
     plt.suptitle(title,fontweight='bold')
 
-    sns.pointplot(data=pd.melt(df_sells_mean_good,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[0,0],color=NOISE_GROUPS_PALETTE['good'],join=False,scale=1.4)
-    sns.pointplot(data=pd.melt(df_sells_mean_bad,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[0,0],color=NOISE_GROUPS_PALETTE['bad'],join=False,scale=1.2)
-    sns.pointplot(data=pd.melt(df_buys_mean_good,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[1,0],color=NOISE_GROUPS_PALETTE['good'],join=False,scale=1.4)
-    sns.pointplot(data=pd.melt(df_buys_mean_bad,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[1,0],color=NOISE_GROUPS_PALETTE['bad'],join=False,scale=1.2)
-    sns.pointplot(data=pd.melt(df_sells_max_good,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[0,1],color=NOISE_GROUPS_PALETTE['good'],join=False,scale=1.4)
-    sns.pointplot(data=pd.melt(df_sells_max_bad,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[0,1],color=NOISE_GROUPS_PALETTE['bad'],join=False,scale=1.2)
-    sns.pointplot(data=pd.melt(df_buys_max_good,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[1,1],color=NOISE_GROUPS_PALETTE['good'],join=False,scale=1.4)
-    sns.pointplot(data=pd.melt(df_buys_max_bad,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[1,1],color=NOISE_GROUPS_PALETTE['bad'],join=False,scale=1.2)
-    sns.pointplot(data=pd.melt(df_sells_min_good,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[0,2],color=NOISE_GROUPS_PALETTE['good'],join=False,scale=1.4)
-    sns.pointplot(data=pd.melt(df_sells_min_bad,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[0,2],color=NOISE_GROUPS_PALETTE['bad'],join=False,scale=1.2)
-    sns.pointplot(data=pd.melt(df_buys_min_good,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[1,2],color=NOISE_GROUPS_PALETTE['good'],join=False,scale=1.4)
-    sns.pointplot(data=pd.melt(df_buys_min_bad,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[1,2],color=NOISE_GROUPS_PALETTE['bad'],join=False,scale=1.2)
+    sns.pointplot(data=pd.melt(df_sells_mean_good,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[0,0],color=NOISE_GROUPS_PALETTE['good'],join=False,scale=2.2,markers='^',)
+    sns.pointplot(data=pd.melt(df_sells_mean_bad,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[0,0],color=NOISE_GROUPS_PALETTE['bad'],join=False,scale=1.6,markers='s',)
+    sns.pointplot(data=pd.melt(df_buys_mean_good,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[1,0],color=NOISE_GROUPS_PALETTE['good'],join=False,scale=2.2,markers='^',)
+    sns.pointplot(data=pd.melt(df_buys_mean_bad,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[1,0],color=NOISE_GROUPS_PALETTE['bad'],join=False,scale=1.6,markers='s',)
+    sns.pointplot(data=pd.melt(df_sells_max_good,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[0,1],color=NOISE_GROUPS_PALETTE['good'],join=False,scale=2.2,markers='^',)
+    sns.pointplot(data=pd.melt(df_sells_max_bad,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[0,1],color=NOISE_GROUPS_PALETTE['bad'],join=False,scale=1.6,markers='s',)
+    sns.pointplot(data=pd.melt(df_buys_max_good,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[1,1],color=NOISE_GROUPS_PALETTE['good'],join=False,scale=2.2,markers='^',)
+    sns.pointplot(data=pd.melt(df_buys_max_bad,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[1,1],color=NOISE_GROUPS_PALETTE['bad'],join=False,scale=1.6,markers='s',)
+    sns.pointplot(data=pd.melt(df_sells_min_good,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[0,2],color=NOISE_GROUPS_PALETTE['good'],join=False,scale=2.2,markers='^',)
+    sns.pointplot(data=pd.melt(df_sells_min_bad,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[0,2],color=NOISE_GROUPS_PALETTE['bad'],join=False,scale=1.6,markers='s',)
+    sns.pointplot(data=pd.melt(df_buys_min_good,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[1,2],color=NOISE_GROUPS_PALETTE['good'],join=False,scale=2.2,markers='^',)
+    sns.pointplot(data=pd.melt(df_buys_min_bad,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[1,2],color=NOISE_GROUPS_PALETTE['bad'],join=False,scale=1.6,markers='s',)
     if show_variance:
-        sns.pointplot(data=pd.melt(df_sells_var_good,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[0,3],color=NOISE_GROUPS_PALETTE['good'],join=False,scale=1.4)
-        sns.pointplot(data=pd.melt(df_sells_var_bad,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[0,3],color=NOISE_GROUPS_PALETTE['bad'],join=False,scale=1.2)
-        sns.pointplot(data=pd.melt(df_buys_var_good,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[1,3],color=NOISE_GROUPS_PALETTE['good'],join=False,scale=1.4)
-        sns.pointplot(data=pd.melt(df_buys_var_bad,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[1,3],color=NOISE_GROUPS_PALETTE['bad'],join=False,scale=1.2)
+        sns.pointplot(data=pd.melt(df_sells_var_good,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[0,4],color=NOISE_GROUPS_PALETTE['good'],join=False,scale=2.2,markers='^')
+        sns.pointplot(data=pd.melt(df_sells_var_bad,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[0,4],color=NOISE_GROUPS_PALETTE['bad'],join=False,scale=1.6,markers='s')
+        sns.pointplot(data=pd.melt(df_buys_var_good,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[1,4],color=NOISE_GROUPS_PALETTE['good'],join=False,scale=2.2,markers='^')
+        sns.pointplot(data=pd.melt(df_buys_var_bad,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[1,4],color=NOISE_GROUPS_PALETTE['bad'],join=False,scale=1.6,markers='s')
     if bad_slice is not None:
-        sns.pointplot(data=pd.melt(df_sells_mean_sab,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[0,0],color=NOISE_GROUPS_PALETTE['saboteur'],join=False)
-        sns.pointplot(data=pd.melt(df_buys_mean_sab,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[1,0],color=NOISE_GROUPS_PALETTE['saboteur'],join=False)
-        sns.pointplot(data=pd.melt(df_sells_max_sab,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[0,1],color=NOISE_GROUPS_PALETTE['saboteur'],join=False)
-        sns.pointplot(data=pd.melt(df_buys_max_sab,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[1,1],color=NOISE_GROUPS_PALETTE['saboteur'],join=False)
-        sns.pointplot(data=pd.melt(df_sells_min_sab,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[0,2],color=NOISE_GROUPS_PALETTE['saboteur'],join=False)
-        sns.pointplot(data=pd.melt(df_buys_min_sab,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[1,2],color=NOISE_GROUPS_PALETTE['saboteur'],join=False)
+        warnings.filterwarnings( "ignore", module = "seaborn\..*" )#ignore color of "x" warning
+        sns.pointplot(data=pd.melt(df_sells_mean_sab,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[0,0],color=NOISE_GROUPS_PALETTE['saboteur'],join=False,markers='x')
+        sns.pointplot(data=pd.melt(df_buys_mean_sab,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[1,0],color=NOISE_GROUPS_PALETTE['saboteur'],join=False,markers='x')
+        sns.pointplot(data=pd.melt(df_sells_max_sab,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[0,1],color=NOISE_GROUPS_PALETTE['saboteur'],join=False,markers='x')
+        sns.pointplot(data=pd.melt(df_buys_max_sab,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[1,1],color=NOISE_GROUPS_PALETTE['saboteur'],join=False,markers='x')
+        sns.pointplot(data=pd.melt(df_sells_min_sab,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[0,2],color=NOISE_GROUPS_PALETTE['saboteur'],join=False,markers='x')
+        sns.pointplot(data=pd.melt(df_buys_min_sab,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[1,2],color=NOISE_GROUPS_PALETTE['saboteur'],join=False,markers='x')
         if show_variance:
-            sns.pointplot(data=pd.melt(df_sells_var_sab,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[0,3],color=NOISE_GROUPS_PALETTE['saboteur'],join=False)
-            sns.pointplot(data=pd.melt(df_buys_var_sab,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[1,3],color=NOISE_GROUPS_PALETTE['saboteur'],join=False)
+            sns.pointplot(data=pd.melt(df_sells_var_sab,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[0,3],color=NOISE_GROUPS_PALETTE['saboteur'],join=False,markers='x')
+            sns.pointplot(data=pd.melt(df_buys_var_sab,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[1,3],color=NOISE_GROUPS_PALETTE['saboteur'],join=False,markers='x')
+        warnings.filterwarnings( "default", module = "seaborn\..*" )#ignore color of "x" warning
         # axs[0,0].set_xticklabels(['mean'])
         # axs[0,0].set_xlabel(None)
         # axs[0,0].set_ylabel('acceptance rate')
@@ -1705,20 +1723,51 @@ def buyers_sellers_groups(  filename:str,#[x]
     # axs[1,2].set_ylabel('acceptance rate')
     axs[1,2].set_ylabel(None)
     axs[1,2].set_title('buys min')
+
+    sns.pointplot(data=pd.melt(df_sells_good_ratio,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[0,3],color=NOISE_GROUPS_PALETTE['good'],join=False,scale=2.2,markers='^',)
+    sns.pointplot(data=pd.melt(df_buys_good_ratio,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[1,3],color=NOISE_GROUPS_PALETTE['good'],join=False,scale=2.2,markers='^')
+    sns.pointplot(data=pd.melt(df_sells_bad_ratio,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[0,3],color=NOISE_GROUPS_PALETTE['bad'],join=False,scale=1.6,markers='s')
+    sns.pointplot(data=pd.melt(df_buys_bad_ratio,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[1,3],color=NOISE_GROUPS_PALETTE['bad'],join=False,scale=1.6,markers='s')
+    if bad_slice is not None:
+        warnings.filterwarnings( "ignore", module = "seaborn\..*" )#ignore color of "x" warning
+        sns.pointplot(data=pd.melt(df_sells_sab_ratio,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[0,3],color=NOISE_GROUPS_PALETTE['saboteur'],join=False,markers='x')
+        sns.pointplot(data=pd.melt(df_buys_sab_ratio,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[1,3],color=NOISE_GROUPS_PALETTE['saboteur'],join=False,markers='x')
+        warnings.filterwarnings( "default", module = "seaborn\..*" )#ignore color of "x" warning
+    axs[0,3].set_xticklabels([None])
+    axs[0,3].set_xlabel(None)
+    axs[0,3].set_ylabel(None)
+    axs[0,3].set_title('sells ratio over total')
+    axs[1,3].set_xlabel(None)
+    axs[1,3].set_ylabel(None)
+    axs[1,3].set_xticklabels([None])
+    axs[1,3].set_title('buys ratio over total')
+
     if show_variance:
+        # axs[0,4].set_xticklabels(['max','mean','min'])
+        axs[0,4].set_xticklabels([None]*3)
+        axs[0,4].set_xlabel(None)
+        # axs[0,4].set_ylabel('acceptance rate')
+        axs[0,4].set_ylabel(None)
+        axs[0,4].set_title('sells variance')
+        axs[1,4].set_xticklabels(['max','mean','min'])
+        axs[1,4].set_xlabel(None)
+        # axs[0,4].set_ylabel('acceptance rate')
+        axs[1,4].set_ylabel(None)
+        axs[1,4].set_title('buys variance')
         # axs[0,3].set_xticklabels(['max','mean','min'])
-        axs[0,3].set_xticklabels([None]*3)
-        axs[0,3].set_xlabel(None)
-        # axs[0,3].set_ylabel('acceptance rate')
-        axs[0,3].set_ylabel(None)
-        axs[0,3].set_title('sells viariance')
-        axs[1,3].set_xticklabels(['max','mean','min'])
-        axs[1,3].set_xlabel(None)
-        # axs[1,3].set_ylabel('acceptance rate')
-        axs[1,3].set_ylabel(None)
-        axs[1,3].set_title('buys variance')
-    [axs[i,j].yaxis.set_major_formatter(mtick.PercentFormatter(decimals=0 if j!=3 else 2)) for i in range(2) for j in range(4 if show_variance else 3)]
-    
+        # axs[0,3].set_xticklabels([None]*3)
+        # axs[0,3].set_xlabel(None)
+        # # axs[0,3].set_ylabel('acceptance rate')
+        # axs[0,3].set_ylabel(None)
+        # axs[0,3].set_title('sells variance')
+        # axs[1,3].set_xticklabels(['max','mean','min'])
+        # axs[1,3].set_xlabel(None)
+        # # axs[1,3].set_ylabel('acceptance rate')
+        # axs[1,3].set_ylabel(None)
+        # axs[1,3].set_title('buys variance')
+    [axs[i,j].yaxis.set_major_formatter(mtick.PercentFormatter(decimals=0 if j!=4 else 3)) for i in range(2) for j in range(5 if show_variance else 4)]
+    # [axs[i,j].yaxis.set_major_formatter(mtick.PercentFormatter(decimals=0 if j!=3 else 2)) for i in range(2) for j in range(4 if show_variance else 3)]
+    [ax.set_ylim(bottom=-3,top=103) for ax in axs.flatten()]
     if not multi_plot and not save_plot:plt.show()
     elif save_plot:
         plt.savefig(f"{save_folder}/{save_name}_buys_sells.png",dpi=300)
@@ -1777,6 +1826,7 @@ def behaviours_buyers_sellers_groups(
                                 # compare_best_of=False,
                                 # compare_best_of_only=False,
                                 separate_groups:bool=False,
+                                show_variance:bool=False,
                                 multi_plot=True,
                                 save_plot=False,
                                 save_folder="",
@@ -1870,7 +1920,8 @@ def behaviours_buyers_sellers_groups(
                                                                 separate_groups=False,
                                                                 save_plot=save_plot,
                                                                 save_folder=behav_save_folder,
-                                                                save_name=save_name
+                                                                save_name=save_name,
+                                                                show_variance=show_variance,
                                                                 )
 
                                             if multi_plot or save_plot:fig_count+=1
@@ -2474,9 +2525,9 @@ if __name__ == '__main__':
                                         17
                                         ],
                             behaviours=[
-                                    'n',
-                                    's',
-                                    "b",
+                                    # 'n',
+                                    # 's',
+                                    # "b",
                                     'r',
                                     't',
                                     'c',
@@ -2498,12 +2549,13 @@ if __name__ == '__main__':
                                                         "perf"
                                                         ],
                             separate_groups=False,
+                            # show_variance=True,
                             # compare_with_reference=False,
                             # compare_best_of=False,
                             # compare_best_of_only=False,
                             multi_plot=False,
                             save_folder=join(CONFIG_FILE.PLOT_DIR,"buys_sells_groups"),
-                            save_plot=1
+                            save_plot=0
                             )
 
     exit()
