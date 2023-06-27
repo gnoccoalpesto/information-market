@@ -12,6 +12,7 @@ JOB_FILE="${PROJECT_DIR}/src/job_cluster.sh"
 
 
 declare -A SUB_DIR_BEHAVIOR
+    SUB_DIR_BEHAVIOR[b]="benchmark"
 	SUB_DIR_BEHAVIOR[n]="naive"
 	SUB_DIR_BEHAVIOR[Nn]="new_naive"
 	SUB_DIR_BEHAVIOR[s]="sceptical"
@@ -23,6 +24,7 @@ declare -A SUB_DIR_BEHAVIOR
 	SUB_DIR_BEHAVIOR[w]="wealth_weighted"
     SUB_DIR_BEHAVIOR[h]="history"
     SUB_DIR_BEHAVIOR[hs]="history_sceptical"
+    SUB_DIR_BEHAVIOR[c]="capitalist"
 
 
 usage(){
@@ -48,11 +50,9 @@ fi
 ## INPUT 
 CONFIGS=""
 for arg in $@; do
-    #read all files from a dir
     if [ -d $arg ]; then
         c=$(find $arg -name "*.json")
     else # if-else construct is superior to elif
-        #checks if it is file
         if [ -f $arg ]; then
             c=$arg
         else
