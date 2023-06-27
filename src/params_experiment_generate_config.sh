@@ -8,7 +8,7 @@
 # ----------------- NOTE BOOLs = {true, false} ------------------------------------------- #
 
 #simulation
-SIMULATION_STEPS=15000
+SIMULATION_STEPS=25000
 SIMULATION_SEED=5684436
 NUMBER_RUNS=20
 #visualisation
