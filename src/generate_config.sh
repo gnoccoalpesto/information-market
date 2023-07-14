@@ -240,6 +240,7 @@ declare -a GENERATED_FILENAMES=()
 for AGENT_NOISE_ASSIGNATION in ${AGENT_NOISE_ASSIGNATION_LIST[*]} ; do
 	#---------------- RANDOM NOISE EXPERIMENTS ----------------#
 	if [[ $AGENT_NOISE_ASSIGNATION == "bimodal" ]]; then
+	#TODO add all stuff missing, from uniform noise
 		AGENT_NOISE_CLASS="BimodalNoise"
 		AGENT_NOISE_PARAMETERS=$AGENT_BIMODAL_NOISE_PARAMETERS_TEMPLATE
 		for AGENT_NOISE_SAMPLING_MU in ${AGENT_NOISE_SAMPLING_MU_LIST[*]} ; do
@@ -455,6 +456,14 @@ for AGENT_NOISE_ASSIGNATION in ${AGENT_NOISE_ASSIGNATION_LIST[*]} ; do
 					if ! [[ $PAYMENT_SYSTEM_REPUTATION_STAKE == "true" ]] || ! [[ $BEHAVIOR == "n" ]]; then
 					if ! [[ $PAYMENT_SYSTEM_REPUTATION_STAKE == "true" ]] || ! [[ $BEHAVIOR == "s" ]]; then
 					if ! [[ $PAYMENT_SYSTEM_REPUTATION_STAKE == "true" ]] || ! [[ $BEHAVIOR == "b" ]]; then
+					if ! [[ $PAYMENT_SYSTEM_CLASS == "OutlierPenalisationPaymentSystem" ]] || ! [[ $BEHAVIOR == "s" ]]; then
+					if ! [[ $PAYMENT_SYSTEM_CLASS == "OutlierPenalisationPaymentSystem" ]] || ! [[ $BEHAVIOR == "n" ]]; then
+					if ! [[ $PAYMENT_SYSTEM_CLASS == "OutlierPenalisationPaymentSystem" ]] || ! [[ $BEHAVIOR == "b" ]]; then
+					if ! [[ $PAYMENT_SYSTEM_CLASS == "DelayedPaymentPaymentSystem" ]] || ! [[ $BEHAVIOR == "r" ]]; then
+					if ! [[ $PAYMENT_SYSTEM_CLASS == "DelayedPaymentPaymentSystem" ]] || ! [[ $BEHAVIOR == "t" ]]; then
+					if ! [[ $PAYMENT_SYSTEM_CLASS == "DelayedPaymentPaymentSystem" ]] || ! [[ $BEHAVIOR == "c" ]]; then
+					if ! [[ $PAYMENT_SYSTEM_CLASS == "DelayedPaymentPaymentSystem" ]] || ! [[ $BEHAVIOR == "h" ]]; then
+
 						for DISHONEST_LIE_ANGLE in ${DISHONEST_LIE_ANGLE_LIST[*]} ; do
 						if ! [[ $DISHONEST_LIE_ANGLE == 0 ]] || ! [[ $DISHONEST_POPULATION != 0 ]]; then
 						if ! [[ $DISHONEST_LIE_ANGLE != 0 ]] || ! [[ $DISHONEST_POPULATION == 0 ]]; then
@@ -720,6 +729,13 @@ for AGENT_NOISE_ASSIGNATION in ${AGENT_NOISE_ASSIGNATION_LIST[*]} ; do
 						fi
 						fi
 						done
+					fi
+					fi
+					fi
+					fi
+					fi
+					fi
+					fi
 					fi
 					fi
 					fi

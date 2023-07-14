@@ -8,7 +8,7 @@
 # ----------------- NOTE BOOLs = {true, false} ------------------------------------------- #
 
 #simulation
-SIMULATION_STEPS=25000
+SIMULATION_STEPS=150000
 SIMULATION_SEED=5684436
 NUMBER_RUNS=20
 #visualisation
@@ -36,7 +36,7 @@ COMBINE_STRATEGY_LIST=(
 #payment system
 PAYMENT_SYSTEM_CLASS_LIST=(
 							"OutlierPenalisationPaymentSystem" 
-							# "DelayedPaymentPaymentSystem"
+							"DelayedPaymentPaymentSystem"
 							)
 PAYMENT_SYSTEM_REPUTATION_STAKE_LIST=(
 										false
@@ -55,12 +55,14 @@ HONEST_POPULATION_LIST=(
 							24
 						)
 DISHONEST_LIE_ANGLE_LIST=(
-						0 
+						0
+						20
+						30
 						90
 					)
 # behaviors ----------------------------------------------------
 BEHAVIOR_LIST=(
-				"b"
+				# "b"
 				"n"
 				"s"
 				"r" 
