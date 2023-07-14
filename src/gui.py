@@ -18,6 +18,7 @@ NOTE: the redefinition is just a way to avoid annoying warnings, without deactiv
 class InformationMarket(InformationMarket):
     @staticmethod
     def launch_view_controller(main_controller:MainController,c:Configuration):
+        main_controller.init_statistics()
         return ViewController(main_controller,
                                         c.value_of("width"),
                                         c.value_of("height"),

@@ -1,6 +1,6 @@
 import re
 import os
-from os.path import join
+from os.path import join, isfile
 import argparse
 import warnings
 import pandas as pd
@@ -11,6 +11,8 @@ from  matplotlib.ticker import FuncFormatter #to force axis to have integer tick
 from matplotlib.cbook import boxplot_stats
 import seaborn as sns
 import time
+import scipy.stats as stats
+
 
 import config as CONFIG_FILE
 from model.environment import generate_uniform_noise_list
@@ -239,7 +241,11 @@ BEHAVIOUR_PALETTE={'n':"#e377c2",#7, pink
                     # 'NEWReputation History Sceptical':"#a3a3a3",
                     }
 NOISE_GROUPS_PALETTE = {
-                    'GOOD':"#029e73",#1, green colorblind
+                    'ALL':"#0173b2",#, blue colorblind
+                    'all':"#0173b2",
+                    'A':"#0173b2",
+                    'a':"#0173b2",
+                    'GOOD':"#029e73",#, green colorblind
                     'good':"#029e73",
                     'G':"#029e73",
                     'g':"#029e73",
@@ -251,7 +257,6 @@ NOISE_GROUPS_PALETTE = {
                     'saboteur':"#e8000b",
                     'S':"#e8000b",
                     's':"#e8000b",
-
 }
 MARKET_CAP_COLOR="#000000"#black
 BEHAV_PARAMS_COMBINATIONS={"n":[[]],
@@ -448,7 +453,7 @@ def dataframe_from_csv(filename,
         #     elif "B" in metric: filename=filename.split(".csv")[0]+"_buyer.csv"
 
         # elif metric=="": metric_folder=""
-        if data_folder_and_subfolder=="": 
+        if data_folder_and_subfolder=="":
             df=pd.read_csv(filename, header=None)
         else:
             df=pd.read_csv(join(data_folder_and_subfolder,filename), header=None)
@@ -548,51 +553,89 @@ def dataframe_from_csv(filename,
 
 
 #TODO rework for finding best, worst run seeds
-# def find_best_worst_seeds(filenames=[],
-#                         metric="",
-#                         data_folder="",
-#                         base_seed="",
-#                         amount_to_find=1):
-#     """
-#     returns the AMOUNT_TO_FIND best and worst seeds, wrt given metric.
-#     result computed assuminig a linear increare with the run number,
-#     starting from BASE_SEED
+def find_best_worst_seeds(filenames=[],
+                        metric="",
+                        data_folder="",
+                        base_seed="",
+                        amount_to_find=1):
+    """
+    returns the AMOUNT_TO_FIND best and worst seeds, wrt given metric.
+    result computed assuminig a linear increare with the run number,
+    starting from BASE_SEED
 
-#     if metric="" and data_folder="", filename in filenames is expected
-#     in this shape /DATA_DIR/METRIC/FILENAME.csv
-#     """
-#     if amount_to_find<1:amount_to_find=1
-#     data_folder=f"{data_folder}{metric}/" if data_folder!="" else ""
-#     if not filenames:
-#         filenames.extend([join(data_folder, f)
-#             for f in os.listdir(data_folder) if isfile(join(data_folder, f))])
-#     else:
-#         filenames=[f"{data_folder}{f}" for f in filenames]
+    if metric="" and data_folder="", filename in filenames is expected
+    in this shape /DATA_DIR/METRIC/FILENAME.csv
+    """
+    if amount_to_find<1:amount_to_find=1
+    data_folder=f"{data_folder}{metric}/" if data_folder!="" else ""
+    if not filenames:
+        filenames.extend([join(data_folder, f)
+            for f in os.listdir(data_folder) if isfile(join(data_folder, f))])
+    else:
+        filenames=[f"{data_folder}{f}" for f in filenames]
 
-#     for filename in filenames:
-#         bests=[]
-#         worsts=[]
-#         df=pd.read_csv(filename,header=None)
-#         df['items_sum']=df.apply(np.sum, axis=1)
-#         average_sum=df["items_sum"].mean()
+    for filename in filenames:
+        bests=[]
+        worsts=[]
+        df=pd.read_csv(filename,header=None)
+        df['items_sum']=df.apply(np.sum, axis=1)
+        average_sum=df["items_sum"].mean()
 
-#         print(f"\nfile: {filename.split('/')[-1]}")
-#         print(f"average sum: {average_sum} over {len(df)} runs")
+        print(f"\nfile: {filename.split('/')[-1]}")
+        print(f"average sum: {average_sum} over {len(df)} runs")
 
-#         for i in range(amount_to_find):
-#             i_max=df["items_sum"].max()
-#             i_id_max=df["items_sum"].idxmax()
-#             i_min=df["items_sum"].min()
-#             i_id_min=df["items_sum"].idxmin()
-#             bests.append((base_seed+i_id_max, i_max))
-#             worsts.append((base_seed+i_id_min, i_min))
-#             df.drop(i_id_max, inplace=True)
-#             df.drop(i_id_min, inplace=True)
+        for i in range(amount_to_find):
+            i_max=df["items_sum"].max()
+            i_id_max=df["items_sum"].idxmax()
+            i_min=df["items_sum"].min()
+            i_id_min=df["items_sum"].idxmin()
+            bests.append((base_seed+i_id_max, i_max))
+            worsts.append((base_seed+i_id_min, i_min))
+            df.drop(i_id_max, inplace=True)
+            df.drop(i_id_min, inplace=True)
 
-#         for i, best in enumerate(bests):
-#             print(f"{1+i} best seed: {best[0]} (run {best[0]-base_seed}), value: {best[1]}")
-#         for i, worst in enumerate(worsts):
-#             print(f"{1+i} worst seed: {worst[0]} (run {worst[0]-base_seed}), value: {worst[1]}")
+        for i, best in enumerate(bests):
+            print(f"{1+i} best seed: {best[0]} (run {best[0]-base_seed}), value: {best[1]}")
+        for i, worst in enumerate(worsts):
+            print(f"{1+i} worst seed: {worst[0]} (run {worst[0]-base_seed}), value: {worst[1]}")
+
+
+#TODO t test informative for multiple experiments
+def myttest(
+            filenames=[],
+            data_folder="../data/",\
+            compare="scaboteur_rotation",\
+            # metric="rewards",
+            metric="items_collected",
+            ):
+    '''
+    :param filenames: list of filenames to compare,
+                    NOTE: ONLY FIRST TWO FILES ARE COMPARED
+    '''
+    filenames = [
+            "24sceptical_025th_1scaboteur_0rotation_nopenalisation.txt",
+            "24sceptical_025th_1scaboteur_0rotation_nopenalisation.txt"
+            ]
+    data1=pd.read_csv(f"{data_folder}{compare+'/' if compare!='' else ''}{metric}/{filenames[0]}").apply(np.sum, axis=1)
+    data2=pd.read_csv(f"{data_folder}{compare+'/' if compare!='' else ''}{metric}/{filenames[1]}").apply(np.sum, axis=1)
+    print(type(pd.read_csv(f"{data_folder}{compare+'/' if compare!='' else ''}{metric}/{filenames[1]}")))
+    t_test=stats.ttest_ind(data1, data2, equal_var=False)
+    print(f"t-test: {t_test.statistic},\n p-value: {t_test.pvalue}")
+
+
+#TODO anova test informative for multiple experiments
+def myanovatest(
+                filenames=[],
+                data_folder="../data/",\
+                compare="scaboteur_rotation",\
+                metric="items_collected",
+                ):
+    filenames = [
+            ]
+    data1=pd.read_csv(f"{data_folder}{compare}/{metric}/{filenames[0]}").apply(np.sum, axis=1)
+    data2=pd.read_csv(f"{data_folder}{compare}/{metric}/{filenames[1]}").apply(np.sum, axis=1)
+    anova_test=stats.f_oneway(data1, data2)
+    print(f"F-statistic: {anova_test.statistic},\np-value: {anova_test.pvalue}\n")
 
 
 #TODO TEMPLATE
@@ -1099,7 +1142,7 @@ def market_metric_evolution(filename:str,
     selected_ticks=df[df.columns.to_list()[1]].unique()
 
     df_reference_initial=pd.Series(7,index=selected_ticks)
-    
+
     # for agent in range(len(agent_col)):#ALL
     #     sns.lineplot(data=pd.melt(df, id_vars=['tick']+agent_col),x=df.columns.to_list()[1],y=df.columns.to_list()[2+agent],errorbar=("sd"))
     # for agent in [0,1,2]:# BYZ
@@ -1110,9 +1153,10 @@ def market_metric_evolution(filename:str,
     #     for agent in range(len(agent_col)):
     #         df_run_agent=df_run.iloc[:,2+agent]
 
-    legend=["good","bad"]
+    legend=["all","good","bad"]
     #MEAN VALUES
     df_allagents_tick_mean=df.groupby(['tick']).mean().drop(columns=sim_col)
+    df_meanagents_tick_mean=df_allagents_tick_mean.mean(axis=1)
     df_allgood_tick_mean=df_allagents_tick_mean[agent_col[:good_slice]]
     df_allbad_tick_mean=df_allagents_tick_mean[agent_col[good_slice:bad_slice]]
     df_meangood_tick_mean=df_allgood_tick_mean.mean(axis=1)
@@ -1128,7 +1172,8 @@ def market_metric_evolution(filename:str,
         axs[3].sharey(axs[2])
     else:
         axs[1].set_ylim(bottom=0,auto=True)
-        
+
+    sns.lineplot(data=df_meanagents_tick_mean,ax=axs[0],errorbar=None,color=NOISE_GROUPS_PALETTE['all'],linewidth=line_width)
     sns.lineplot(data=df_meangood_tick_mean,ax=axs[0],errorbar=None,color=NOISE_GROUPS_PALETTE['good'],linewidth=line_width)
     sns.lineplot(data=df_meanbad_tick_mean,ax=axs[0],errorbar=None,color=NOISE_GROUPS_PALETTE['bad'],linewidth=line_width)
     if bad_slice is not None:
@@ -1148,31 +1193,32 @@ def market_metric_evolution(filename:str,
                                 metric=secondary_metric,experiment_part="df")
         agent_col_secondary=df_secondary.columns.to_list()[2:]
         df_secondary_allagents_tick_mean=df_secondary.groupby(['tick']).mean().drop(columns=sim_col)
+        df_secondary_meanagents_tick_mean=df_secondary_allagents_tick_mean.mean(axis=1)
         df_secondary_allgood_tick_mean=df_secondary_allagents_tick_mean[agent_col_secondary[:good_slice]]
         df_secondary_allbad_tick_mean=df_secondary_allagents_tick_mean[agent_col_secondary[good_slice:bad_slice]]
         df_secondary_meangood_tick_mean=df_secondary_allgood_tick_mean.mean(axis=1)
         df_secondary_meanbad_tick_mean=df_secondary_allbad_tick_mean.mean(axis=1)
 
+        sns.lineplot(data=df_secondary_meanagents_tick_mean,ax=axs[1],errorbar=None,color=NOISE_GROUPS_PALETTE['all'],linewidth=line_width)
         sns.lineplot(data=df_secondary_meangood_tick_mean,ax=axs[1],errorbar=None,color=NOISE_GROUPS_PALETTE['good'],linewidth=line_width)
         sns.lineplot(data=df_secondary_meanbad_tick_mean,ax=axs[1],errorbar=None,color=NOISE_GROUPS_PALETTE['bad'],linewidth=line_width)
         if bad_slice is not None:
             df_secondary_allsab_tick_mean=df_secondary_allagents_tick_mean[agent_col_secondary[bad_slice:]]
             df_secondary_meansab_tick_mean=df_secondary_allsab_tick_mean.mean(axis=1)
             sns.lineplot(data=df_secondary_meansab_tick_mean,ax=axs[1],errorbar=None,color=NOISE_GROUPS_PALETTE['saboteur'],linewidth=line_width)
-            legend.append("saboteur")
         axs[1].set_title(f"{secondary_metric.replace('_',' ').replace('evolution','mean').upper()}")
 
     #SUM VALUES (MEAN, paired with it)
     #TODO change order: better to have [0]:metric mean,[1]:m.sum, [2]:second m.mean, [3]:second m.sum?
-    sum_legend=(["market cap"] if individual_group_sum else [])+legend
+    sum_legend=(["market cap"] if individual_group_sum else [])+legend[1:]
     df_meanagent_tick_sum=df_allagents_tick_mean.sum(axis=1)
     df_meangood_tick_sum=df_allgood_tick_mean.sum(axis=1)
     df_meanbad_tick_sum=df_allbad_tick_mean.sum(axis=1)
 
     if individual_group_sum:
-        sns.lineplot(data=df_meanbad_tick_sum,ax=axs[1] if not pair_plot else axs[2],errorbar=None,color=NOISE_GROUPS_PALETTE['bad'],linewidth=line_width,linestyle='--')#group values
-        sns.lineplot(data=df_meangood_tick_sum,ax=axs[1] if not pair_plot else axs[2],errorbar=None,color=NOISE_GROUPS_PALETTE['good'],linewidth=line_width,linestyle='--')#
-        sns.lineplot(data=df_meanagent_tick_sum,ax=axs[1] if not pair_plot else axs[2],errorbar=None,color=MARKET_CAP_COLOR,linewidth=line_width,)#
+        sns.lineplot(data=df_meanagent_tick_sum,ax=axs[1] if not pair_plot else axs[2],errorbar=None,color=MARKET_CAP_COLOR,linewidth=line_width,)
+        sns.lineplot(data=df_meangood_tick_sum,ax=axs[1] if not pair_plot else axs[2],errorbar=None,color=NOISE_GROUPS_PALETTE['good'],linewidth=line_width,linestyle='--')
+        sns.lineplot(data=df_meanbad_tick_sum,ax=axs[1] if not pair_plot else axs[2],errorbar=None,color=NOISE_GROUPS_PALETTE['bad'],linewidth=line_width,linestyle='--')
     if bad_slice is not None:
         df_meansab_tick_sum=df_allsab_tick_mean.sum(axis=1)
         if individual_group_sum:
@@ -1207,16 +1253,15 @@ def market_metric_evolution(filename:str,
             axs[3].fill_between(df_secondary_meanbad_tick_sum.index,0,df_secondary_meanbad_tick_sum,color=NOISE_GROUPS_PALETTE['bad'],alpha=0.5)
             axs[3].fill_between(df_secondary_meanbad_tick_sum.index,df_secondary_meanbad_tick_sum,df_secondary_meanagent_tick_sum,color=NOISE_GROUPS_PALETTE['good'],alpha=0.5)
         axs[3].set_title(f"{secondary_metric.replace('_',' ').replace('evolution','sum').upper()}")
-    #TODO not working, showing in reverse
-    #     axs[2].legend(sum_legend[:-1 if bad_slice is not None else None],title="agent (noise) group")
-    # else:
-    #     axs[1].legend(sum_legend[:-1 if bad_slice is not None else None],title="agent (noise) group")
-    plt.legend(sum_legend[:-1 if bad_slice is not None else None],title="agent (noise) group")
+        axs[1].legend(legend,title="agent (noise) group")
+    else:
+        axs[0].legend(legend,title="agent (noise) group")
+    axs[-1].legend(sum_legend,title="agent (noise) group")
     plt.suptitle(title,fontweight='bold')
     if save_plot:
         plt.savefig(f"{save_folder}/{save_name}_mean_sum.png")
         plt.close()
-    
+
     fig,axs=plt.subplots(2 if pair_plot else 1,3,figsize=(15,10))#SECOND IMAGE
     # plt.subplots_adjust(bottom=0.1,top=0.90,right=0.98,left=0.025,wspace=None,hspace=None)
     plt.subplots_adjust(bottom=0.075,top=0.88,right=0.98,left=0.05,wspace=None,hspace=None)
@@ -1247,7 +1292,7 @@ def market_metric_evolution(filename:str,
         df_meansab_tick_min=df_allsab_tick_min.mean(axis=1)
         df_minsab_tick_min=df_allsab_tick_min.min(axis=1)
         legend_max+=['mean byz','abs byz']
-        legend_min+=['mean byz','abs byz']        
+        legend_min+=['mean byz','abs byz']
 
     sns.lineplot(data=df_reference_initial,ax=axs[0][0] if pair_plot else axs[0],errorbar=None,color=MARKET_CAP_COLOR,linewidth=line_width,linestyle=':')
     sns.lineplot(data=df_meangood_tick_max,ax=axs[0][0] if pair_plot else axs[0],errorbar=None,color=NOISE_GROUPS_PALETTE['good'],linewidth=line_width)
@@ -1280,7 +1325,7 @@ def market_metric_evolution(filename:str,
             df_secondary_allsab_tick_min=df_secondary_allagents_tick_min[agent_col_secondary[bad_slice:]]
             df_secondary_meansab_tick_min=df_secondary_allsab_tick_min.mean(axis=1)
             df_secondary_minsab_tick_min=df_secondary_allsab_tick_min.min(axis=1)
-        
+
         sns.lineplot(data=df_reference_initial,ax=axs[1][0],errorbar=None,color=MARKET_CAP_COLOR,linewidth=line_width,linestyle=':')
         sns.lineplot(data=df_secondary_meangood_tick_max,ax=axs[1][0],errorbar=None,color=NOISE_GROUPS_PALETTE['good'],linewidth=line_width)
         sns.lineplot(data=df_secondary_meanbad_tick_max,ax=axs[1][0],errorbar=None,color=NOISE_GROUPS_PALETTE['bad'],linewidth=line_width)
@@ -1305,7 +1350,7 @@ def market_metric_evolution(filename:str,
     if bad_slice is not None:
         sns.lineplot(data=df_meansab_tick_min,ax=axs[0][1] if pair_plot else axs[1],errorbar=None,color=NOISE_GROUPS_PALETTE['saboteur'],linewidth=line_width)
         sns.lineplot(data=df_minsab_tick_min,ax=axs[0][1] if pair_plot else axs[1],errorbar=None,color=NOISE_GROUPS_PALETTE['saboteur'],linewidth=line_width,linestyle='--')
-    
+
     if pair_plot:
         sns.lineplot(data=df_secondary_meangood_tick_min,ax=axs[1][1],errorbar=None,color=NOISE_GROUPS_PALETTE['good'],linewidth=line_width)
         sns.lineplot(data=df_secondary_meanbad_tick_min,ax=axs[1][1],errorbar=None,color=NOISE_GROUPS_PALETTE['bad'],linewidth=line_width)
@@ -1316,17 +1361,17 @@ def market_metric_evolution(filename:str,
             sns.lineplot(data=df_secondary_minsab_tick_min,ax=axs[1][1],errorbar=None,color=NOISE_GROUPS_PALETTE['saboteur'],linewidth=line_width,linestyle='--')
         axs[0][1].set_title(f"min values: {metric.replace('_',' ')}")
         axs[0][1].set_xlabel(None)
-        axs[1][1].set_title(f"min values: {secondary_metric.replace('_',' ')}")   
-        axs[1][1].legend(legend_min,)     
-        if not 'NODEFAULT' in data_folder_and_subfolder: 
+        axs[1][1].set_title(f"min values: {secondary_metric.replace('_',' ')}")
+        axs[1][1].legend(legend_min,)
+        if not 'NODEFAULT' in data_folder_and_subfolder:
             axs[0][1].set_ylim(-0.1,1)
             axs[1][1].set_ylim(-0.1,4)
     else:
-        axs[1].set_title(f"{params}\nmin values: {metric.replace('_',' ')}") 
+        axs[1].set_title(f"{params}\nmin values: {metric.replace('_',' ')}")
         axs[1].set_xlabel(None)
         axs[1].legend(legend_min,)
         if not 'NODEFAULT' in data_folder_and_subfolder: axs[1].set_ylim(-0.1,1)
-    
+
     #VARIANCE/STANDARD DEVIATION
     # df_allagents_tick_var=df.groupby(['tick']).var().drop(columns=sim_col)
     df_allagents_tick_var=df.groupby(['tick']).std().drop(columns=sim_col)
@@ -1391,7 +1436,565 @@ def market_metric_evolution(filename:str,
     if not multi_plot and not save_plot:plt.show()
 
 
-def buyers_sellers_groups(  filename:str,#[x]
+def performance_evolution(filename:str,#[x]
+                        data_folder_and_subfolder:str="",
+                        number_of_robots:int=25,
+                        window_size:int=5000,
+                        metric:str='items_evolution',
+                        multi_plot:bool=False,
+                        pair_plot:bool=False,
+                        # fill_between:bool=False,
+                        save_plot:bool=False,
+                        save_folder:str="",
+                        save_name:str="",
+                        ):
+    """
+    select a width of the sliding window and compute the evolution of performances in this interval
+    """
+    print(filename)
+    metric='items_evolution'
+
+    params=params_from_filename(filename,compact_format=True)
+    number_of_honest=int(params[0])
+    number_of_saboteurs=number_of_robots-number_of_honest
+    saboteur_performance=params[7][2]
+
+    if saboteur_performance=="avg" or saboteur_performance=="average":
+        good_slice=number_of_honest//2+(1 if number_of_saboteurs==0 else 0)
+    elif saboteur_performance=="perf" or saboteur_performance=="perfect":
+        good_slice=number_of_robots//2-number_of_saboteurs+1
+    bad_slice=-number_of_saboteurs if number_of_saboteurs>0 else None
+
+    title_params=params_from_filename(filename)
+    title=f"{title_params[0]}honest {BEHAVIORS_NAME_DICT[params[1]]},{title_params[5]} lie angle,"\
+    f"{'reputation' if params[4] and params[3]=='P' else ''} {'staking' if params[3]=='P' else 'no staking'}\n"\
+    f"noise: {title_params[7]}\n behaviour params: {title_params[6]}".replace(",",", ")
+
+    df_meanagents=dataframe_from_csv(join(data_folder_and_subfolder,metric,filename),
+        metric=metric,experiment_part='df').groupby('tick').mean().drop(columns=['simulation_id'])
+    selected_ticks=df_meanagents.index.unique().to_list()
+    df_meanagents_delta=pd.DataFrame().reindex_like(df_meanagents.loc[window_size:])
+    delta_ticks=selected_ticks[selected_ticks.index(window_size):]
+    for tick in delta_ticks:
+        val_min=df_meanagents.loc[tick-window_size]
+        val_max=df_meanagents.loc[tick]
+        df_meanagents_delta.loc[tick]=(val_max-val_min)
+    df_meanagents_delta['mean']=df_meanagents_delta.mean(axis=1)
+    df_meanagents_delta['good']=df_meanagents_delta.iloc[:,:good_slice].mean(axis=1)
+    df_meanagents_delta['bad']=df_meanagents_delta.iloc[:,bad_slice:].mean(axis=1)
+    if bad_slice is not None:
+        df_meanagents_delta['saboteur']=df_meanagents_delta.iloc[:,bad_slice:].mean(axis=1)
+
+        
+
+    
+
+def wealth_distribution(filename:str,
+                        data_folder_and_subfolder:str="",
+                        metric:str="reward_evolution",
+                        number_of_robots:int=25,
+                        multi_plot:bool=False,
+                        pair_plot:bool=False,
+                        fill_between:bool=False,
+                        save_plot:bool=False,
+                        save_folder:str="",
+                        save_name:str="",
+                        ):
+    """
+    devide the robots in groups of chosen percentile level and
+    compute the wealth distribution for the percentiles
+
+    """
+    # if 'reward' in metric:
+    #     metric="rewards_evolution"
+    # elif 'wealth' in metric:
+    #     metric="wealth_evolution"
+    metric="wealth_evolution"
+
+    params=params_from_filename(filename,compact_format=True)
+    number_of_honest=int(params[0])
+    number_of_saboteurs=number_of_robots-number_of_honest
+
+    title_params=params_from_filename(filename)
+    title=f"{title_params[0]}honest {BEHAVIORS_NAME_DICT[params[1]]},{title_params[5]} lie angle,"\
+    f"{'reputation' if params[4] and params[3]=='P' else ''} {'staking' if params[3]=='P' else 'no staking'}\n"\
+    f"noise: {title_params[7]}\n behaviour params: {title_params[6]}".replace(",",", ")
+
+    df=dataframe_from_csv(join(data_folder_and_subfolder,metric,filename),
+                            metric=metric,experiment_part="df")
+    selected_ticks=df[df.columns.to_list()[1]].unique()
+    df_last=df[df['tick']==selected_ticks.max()].drop(columns=['tick','simulation_id'])
+
+    df_last_allagents_sorted=pd.DataFrame(df_last.to_numpy().flatten()).sort_values(by=0,ascending=True).reset_index(drop=True)
+    df_last_allagents_max=df_last_allagents_sorted.max().to_numpy()[0]
+    df_last_allagents_min=df_last_allagents_sorted.min().to_numpy()[0]
+    df_last_allagents_delta=df_last_allagents_max-df_last_allagents_min
+    assigned_groups=[]
+    for val in df_last_allagents_sorted[0]:#split in quantiles, wrt robot population
+        assigned_groups.append(int((val-df_last_allagents_min)/df_last_allagents_delta*(number_of_robots-1)))
+    df_last_allagents_sorted['quantile']=assigned_groups
+    df_last_allagents_sorted['normalized_wealth']=df_last_allagents_sorted[0]/df_last_allagents_sorted.mean()[0]
+    number_of_ranges=100
+    normalized_wealth_max=df_last_allagents_sorted['normalized_wealth'].max()
+    df_last_allagents_sorted['wealth_range']=[int(x*100/normalized_wealth_max) for x in df_last_allagents_sorted['normalized_wealth']]
+    df_last_allagents_sorted['normalized_range']=df_last_allagents_sorted['normalized_wealth']
+    df_last_allagents_mean=df_last_allagents_sorted.mean()
+    df_last_range_count=pd.DataFrame(df_last_allagents_sorted.groupby('wealth_range').count()[0]).reindex(range(number_of_ranges),fill_value=0)
+    df_last_range_count['frequency']=df_last_range_count[0]/df_last_range_count[0].sum()
+
+    df_last_allagents_group=df_last_allagents_sorted.groupby('quantile').count().reindex(range(number_of_robots),fill_value=0)
+    df_last_allagents_group['frequency']=df_last_allagents_group[0]/df_last_allagents_group[0].sum()
+    df_last_allagents_group['cumulative_frequency']=df_last_allagents_group['frequency'].cumsum()
+    df_last_allagents_group['anticumulated_frequency']=df_last_allagents_group.loc[::-1,'frequency'].cumsum()[::-1]
+
+    df_last_meanagents_sorted=df_last.mean(axis=0).sort_values(ascending=True).to_frame()
+    df_last_meanagents_sorted['relative_wealth']=df_last_meanagents_sorted/df_last_meanagents_sorted.sum()
+    df_last_meanagents_sorted['cumulative_relative_wealth']=df_last_meanagents_sorted['relative_wealth'].cumsum()
+    df_last_meanagents_sorted['anticumulated_relative_wealth']=df_last_meanagents_sorted.loc[::-1,'relative_wealth'].cumsum()[::-1]
+    df_last_meanagents_sorted_mean=df_last_meanagents_sorted['relative_wealth'].mean()#use [0] for absolute wealth
+    df_last_meanagents_sorted_dev=df_last_meanagents_sorted['relative_wealth'].std()
+    poor_threshold=0.1
+    rich_threshold=0.87
+    selected_wealth_class=[]
+    for agent_crw,agent_rw in zip(df_last_meanagents_sorted['cumulative_relative_wealth'],
+                                df_last_meanagents_sorted['relative_wealth']):
+        if agent_crw<=poor_threshold:# and agent_rw<df_last_meanagents_sorted_mean-0.8*df_last_meanagents_sorted_dev:
+            selected_wealth_class.append('poor')
+        elif agent_crw>=rich_threshold and agent_rw>df_last_meanagents_sorted_mean+0.8*df_last_meanagents_sorted_dev:
+            selected_wealth_class.append('rich')
+        else:
+            selected_wealth_class.append('middle')
+    df_last_meanagents_sorted['wealth_class']=selected_wealth_class
+
+    df_last_meanagents_sorted['classile']=None
+    df_last_meanagents_sorted['classile'][df_last_meanagents_sorted['wealth_class']=='poor']=poor_threshold
+    df_last_meanagents_sorted['classile'][df_last_meanagents_sorted['wealth_class']=='rich']=rich_threshold
+    quantiles=[poor_threshold+(poor_threshold+rich_threshold)/6,(poor_threshold+rich_threshold)/2,rich_threshold-(poor_threshold+rich_threshold)/6]
+    assigned_quantiles=[]
+    mid_len=len(df_last_meanagents_sorted['wealth_class'][df_last_meanagents_sorted['wealth_class']=='middle'])
+    for l,_ in enumerate(df_last_meanagents_sorted['wealth_class'][df_last_meanagents_sorted['wealth_class']=='middle']):
+        if l/mid_len<=1/len(quantiles):assigned_quantiles.append(quantiles[0])
+        elif l/mid_len<=2/len(quantiles):assigned_quantiles.append(quantiles[1])
+        else:assigned_quantiles.append(quantiles[2])
+    df_last_meanagents_sorted['classile'][df_last_meanagents_sorted['wealth_class']=='middle']=assigned_quantiles
+    df_last_meanagents_sorted['id']=[int(_.split('_')[-1]) for _ in df_last_meanagents_sorted.index.tolist()]
+    df_last_meanagents_sorted['quantile']=range(number_of_robots)
+    df_last_meanagents_sorted=df_last_meanagents_sorted.set_index('quantile')
+
+    df_last_meanagents_classes=pd.DataFrame(df_last_meanagents_sorted.groupby('wealth_class',sort=False)[0].count())
+    df_last_meanagents_classes['wealth_sum']=pd.DataFrame(df_last_meanagents_sorted.groupby('wealth_class')[0].sum())
+    df_last_meanagents_classes['relative_wealth']=pd.DataFrame(df_last_meanagents_sorted.groupby('wealth_class')['relative_wealth'].sum())
+    df_last_meanagents_classes['cumulative_relative_wealth']=df_last_meanagents_classes['relative_wealth'].cumsum()
+    poor_ids=df_last_meanagents_sorted[df_last_meanagents_sorted['wealth_class']=='poor']['id'].tolist()
+    middle_ids=df_last_meanagents_sorted[df_last_meanagents_sorted['wealth_class']=='middle']['id'].tolist()
+    rich_ids=df_last_meanagents_sorted[df_last_meanagents_sorted['wealth_class']=='rich']['id'].tolist()
+    df_last_meanagents_classes['ids']=[poor_ids,middle_ids,rich_ids]
+
+    df_last_meanagents_extended_classes=pd.DataFrame(df_last_meanagents_sorted.groupby('classile',sort=False)[0].sum())
+    df_last_meanagents_extended_classes['relative_wealth']=pd.DataFrame(df_last_meanagents_sorted.groupby('classile')['relative_wealth'].sum())
+
+    #FREQUENCY PLOTS
+    fig,ax=plt.subplots(figsize=(20,10))
+    plt.title(f"wealth distribution and quantiles, with poor, mid and rich distinction for\n{filename}")
+    plt.xlabel("quantile")
+    plt.ylabel("frequency")
+    sns.lineplot(x=df_last_allagents_group.index,y=df_last_allagents_group['frequency'],color='black')
+    plt.fill_between(df_last_allagents_group.index,df_last_allagents_group['frequency'],
+                     where=(df_last_allagents_group.index>=0)&(df_last_allagents_group.index<=\
+                                                               number_of_saboteurs-1),
+                     color='blue',alpha=0.2)
+    if number_of_saboteurs!=len(df_last_meanagents_classes['ids']['poor']):
+        if number_of_saboteurs<len(df_last_meanagents_classes['ids']['poor']):
+            interval_min=number_of_saboteurs
+            interval_max=len(df_last_meanagents_classes['ids']['poor'])
+        elif number_of_saboteurs>len(df_last_meanagents_classes['ids']['poor']):
+            interval_min=len(df_last_meanagents_classes['ids']['poor'])
+            interval_max=number_of_saboteurs
+
+        plt.fill_between(df_last_allagents_group.index,df_last_allagents_group['frequency'],
+                        where=(df_last_allagents_group.index>=interval_min-1)&(df_last_allagents_group.index<=interval_max-1),
+                        color='red',alpha=0.2)
+    plt.fill_between(df_last_allagents_group.index,df_last_allagents_group['frequency'],
+                        where=(df_last_allagents_group.index>=number_of_saboteurs-1)&\
+                            (df_last_allagents_group.index<=len(df_last_meanagents_classes['ids']['poor'])+\
+                            len(df_last_meanagents_classes['ids']['middle'])-1),
+                        color='black',alpha=0.2)
+    plt.fill_between(df_last_allagents_group.index,df_last_allagents_group['frequency'],
+                        where=(df_last_allagents_group.index>=len(df_last_meanagents_classes['ids']['poor'])+\
+                            len(df_last_meanagents_classes['ids']['middle'])-1)&\
+                            (df_last_allagents_group.index<=len(df_last_meanagents_classes['ids']['poor'])+\
+                            len(df_last_meanagents_classes['ids']['middle'])+\
+                            len(df_last_meanagents_classes['ids']['rich'])-1),
+                        color='red',alpha=0.2)
+    #TODO finish: ideal poor line, considering the number of saboteurs
+    # if number_of_saboteurs>0:
+    #     plt.vlines(number_of_saboteurs-1,0,df_last_allagents_group['frequency'].max(),color='blue')
+    # if len(df_last_meanagents_group['ids']['poor'])>0:
+    #     plt.vlines(len(df_last_meanagents_group['ids']['poor'])-1,0,df_last_allagents_group['frequency'].max(),
+    #                color='red',linestyles='dashed')
+    # if len(df_last_meanagents_group['ids']['rich'])>0:
+    #     plt.vlines(len(df_last_meanagents_group['ids']['poor']+df_last_meanagents_group['ids']['middle'])-1,
+    #                0,df_last_allagents_group['frequency'].max(),color='red',linestyles='dashed')
+    plt.vlines(df_last_allagents_mean['quantile'],0,df_last_allagents_group['frequency'].max(),color='green',linestyles='dashed')
+    plt.xticks(range(number_of_robots))
+    wealth_class_text=f"mean quantile: {df_last_allagents_mean['quantile']:.2f}\n\nWEALTH CLASSES (relative wealth - numerosity):\n"
+    for wealt_class in df_last_meanagents_classes.index:
+        wealth_class_text+=f"{wealt_class.upper()}: {df_last_meanagents_classes.loc[wealt_class]['relative_wealth']:.2f}"
+        wealth_class_text+=f" - {len(df_last_meanagents_classes.loc[wealt_class]['ids'])}"
+        if wealt_class=='rich': wealth_class_text+=" (ideally 0)\n"
+        elif wealt_class=='poor': wealth_class_text+=f" (ideally {number_of_saboteurs})\n"
+        else: wealth_class_text+=f" (ideally {number_of_honest})\n"    
+    plt.text(number_of_robots*.38,df_last_allagents_group['frequency'].max()*0.8,wealth_class_text)
+
+    #ANTICUMULATED FREQUENCY PLOT
+    twax=ax.twinx()
+    sns.lineplot(x=df_last_allagents_group.index,y=df_last_allagents_group['anticumulated_frequency'],color='blue',alpha=0.2)
+    plt.ylabel("Anticumulated quantile frequency")
+    twax.spines['right'].set_color('blue')
+
+    #QUANTILE MEAN WEALTH
+    twax2=ax.twinx()
+    sns.lineplot(x=df_last_meanagents_sorted.index,y=df_last_meanagents_sorted[0],color='green',alpha=0.2)
+    plt.ylabel("quantile mean wealth")
+    fig.subplots_adjust(right=0.88)
+    twax2.spines['right'].set_position(('axes', 1.08))
+    twax2.set_frame_on(True)
+    twax2.patch.set_visible(False)
+    twax2.spines['right'].set_color('green')
+
+    if save_plot:
+        plt.savefig(f"{save_folder}/{save_name}_wealth_distribution.png")
+        plt.close()
+    elif not multi_plot:
+        plt.show()
+    
+
+#TODO inequality lorenz/gini also without agent aggregation
+def market_lorenz_gini(filename:str,#
+                        data_folder_and_subfolder:str="",
+                        metric:str="reward_evolution",
+                        number_of_robots:int=25,
+                        multi_plot:bool=False,
+                        pair_plot:bool=False,
+                        fill_between:bool=False,
+                        individual_group_sum:bool=True,
+                        compute_ideal:bool=False,
+                        save_plot:bool=False,
+                        save_folder:str="",
+                        save_name:str="",
+                        ):
+    '''
+    compute lorenz wealth distribution curve and the relative gini coefficient
+    in a market where agents may have negative wealth
+
+    also show the presence of an oligarchy of an agent, in the case it has more that
+    a certain percentage of the total wealth (default 10%)
+
+    gini coefficient is the area between the lorenz curve and the line
+    of perfect equality (the diagonal line); in case of oligarchy, the coefficient must be
+    corrected.
+
+    Gini coeff is usually between 0 and 1, but can be greater if the number of negative wealth
+    agents is large enough
+
+    :param compute_ideal: if True, compute the ideal curve based
+      on the number of byzantine agents: in this case, they should have zero wealth/reward;
+      everyone else should have the same wealth/reward, namely:
+        initial_wealth_per_agent +sum_of_byzantine_wealth/number_of_honest_agents
+
+    '''
+    if 'reward' in metric:
+        metric="rewards_evolution"
+    elif 'wealth' in metric:
+        metric="wealth_evolution"
+
+    params=params_from_filename(filename,compact_format=True)
+    title_params=params_from_filename(filename)
+    title=f"{title_params[0]}honest {BEHAVIORS_NAME_DICT[params[1]]},{title_params[5]} lie angle,"\
+    f"{'reputation' if params[4] and params[3]=='P' else ''} {'staking' if params[3]=='P' else 'no staking'}\n"\
+    f"noise: {title_params[7]}\n behaviour params: {title_params[6]}".replace(",",", ")
+
+    number_of_honest=int(params[0])
+    number_of_saboteurs=number_of_robots-number_of_honest
+    saboteur_performance=params[7][2]
+    if saboteur_performance=="avg" or saboteur_performance=="average":
+        good_slice=number_of_honest//2+(1 if number_of_saboteurs==0 else 0)
+    elif saboteur_performance=="perf" or saboteur_performance=="perfect":
+        good_slice=number_of_robots//2-number_of_saboteurs+1
+    bad_slice=-number_of_saboteurs if number_of_saboteurs>0 else None
+
+    if compute_ideal:
+        if "IM" in data_folder_and_subfolder or "IM" in filename:
+            initial_wealth_per_agent=7
+        elif "IFM" in data_folder_and_subfolder or "IFM" in filename:
+            initial_wealth_per_agent=1
+
+        byzantine_wealth=0
+        honest_wealth=initial_wealth_per_agent+initial_wealth_per_agent*number_of_saboteurs/number_of_honest
+        ideal_wealths=[byzantine_wealth]*number_of_saboteurs+[honest_wealth]*number_of_honest
+        df_last_allagents_mean_sorted=pd.Series(ideal_wealths,index=range(number_of_robots))
+
+    else:
+        df=dataframe_from_csv(join(data_folder_and_subfolder,metric,filename),
+                                metric=metric,experiment_part="df")
+        # sim_col=df.columns.to_list()[0]
+        # tick_col=df.columns.to_list()[1]
+        # agent_col=df.columns.to_list()[2:]
+        # selected_runs=df[df.columns.to_list()[0]].unique()
+        selected_ticks=df[df.columns.to_list()[1]].unique()
+        # df_reference_initial=pd.Series(7,index=selected_ticks)
+        df_last=df[df['tick']==selected_ticks.max()].drop(columns=['tick','simulation_id'])
+        df_last_allagents_mean_sorted=df_last.mean(axis=0).sort_values(ascending=True)
+
+    #LORENZ CURVE AND GINI COEFFICIENT
+    df_cumsum=df_last_allagents_mean_sorted.cumsum()
+    df_cumsum=pd.DataFrame(pd.concat([pd.Series([0]),df_cumsum])).reset_index()
+    df_cumsum.columns=['Fi','cumsum']
+    df_cumsum['Fi']=df_cumsum.index/(len(df_cumsum)-1)
+    df_cumsum['Si']=df_cumsum['cumsum']/len(df_cumsum)
+    df_cumsum['Li']=df_cumsum['Si']/df_cumsum['Si'].iloc[-1]
+
+    #expressed in fraction of total wealth
+    MIN_OLIGARCH_DIFF=.1
+    if df_cumsum['Li'].iloc[-1]-df_cumsum['Li'].iloc[-2]>MIN_OLIGARCH_DIFF:
+        oligarch_exists=True
+        df_cumsum['Fi']=df_cumsum['Fi']*len(df_cumsum-1)
+        df_cumsum['Fi']=df_cumsum['Fi']/(len(df_cumsum)-2)
+        df_cumsum['Fi']=df_cumsum['Fi']/df_cumsum['Fi'].iloc[-2]
+        df_oligarch=df_cumsum.iloc[-1]
+        df_cumsum=df_cumsum.iloc[:-1]
+    else:
+        oligarch_exists=False
+
+    zero_crossing = np.where(np.diff(np.sign(df_cumsum['Li'].to_list())))[0][-1]
+    #####simpsons 3/8 rule
+    # a=df_cumsum['Fi'].iloc[zero_crossing]
+    # b=df_cumsum['Fi'].iloc[-1]
+    # hh=(b-a)/len(df_cumsum['Fi'].iloc[zero_crossing:])
+    # f_a=df_cumsum['Li'].iloc[zero_crossing]
+    # f_b=df_cumsum['Li'].iloc[-1]
+    # try:
+    #     #c1=(2a+b)/3
+    #     print(df_cumsum.index[abs(df_cumsum['Fi']-(2*a+b)/3)<0.01].tolist())
+    #     print(df_cumsum['Fi'])
+    #     print((2*a+b)/3)
+    #     c1=df_cumsum.index[abs(df_cumsum['Fi']-(2*a+b)/3)<0.01].tolist()[-1]
+    #     f_c1=df_cumsum['Li'].iloc[c1]
+    # except IndexError:
+    #     f_c1=0
+    # try:
+    #     #c2=(a+2b)/3
+    #     print(df_cumsum.index[abs(df_cumsum['Fi']-(a+2*b)/3)<0.01].tolist())
+    #     c2=df_cumsum.index[abs(df_cumsum['Fi']-(a+2*b)/3)<0.01].tolist()[-1]
+    #     f_c2=df_cumsum['Li'].iloc[c2]
+    # except IndexError:
+    #     f_c2=0
+    # B=3*hh/8*(f_a+3*f_c1+3*f_c2+f_b)
+
+    #####composite trapzoid rule
+    a=df_cumsum['Fi'].iloc[zero_crossing]
+    b=df_cumsum['Fi'].iloc[-1]
+    h=(b-a)/len(df_cumsum['Fi'].iloc[zero_crossing:])
+    B=0
+    for ii,_ in enumerate(df_cumsum['Fi'].iloc[zero_crossing:-1]):
+        li=df_cumsum['Li'].iloc[zero_crossing+ii]
+        li_next=df_cumsum['Li'].iloc[zero_crossing+ii+1]
+        B+=h/2*(li+li_next)
+
+    if df_cumsum['Li'].min()<0:
+        # if oligarch_exists:
+        a=df_cumsum['Fi'].iloc[0]
+        b=df_cumsum['Fi'].iloc[zero_crossing-1 if zero_crossing>0 else 0]
+        h=(b-a)/len(df_cumsum['Fi'].iloc[:zero_crossing-1 if zero_crossing>0 else 0])
+        C=0
+        for ii,_ in enumerate(df_cumsum['Fi'].iloc[:zero_crossing-1 if zero_crossing>0 else 0]):
+            li=df_cumsum['Li'].iloc[ii]
+            li_next=df_cumsum['Li'].iloc[ii+1]
+            C+=h/2*abs(li+li_next)
+        #Gini coeff = (A-C)/(A-C +B)
+        Gini=(1-2*(B+C))/(1-2*C)
+        # else:
+        #     #Gini coeff = A/(A+B)
+        #     Gini=(1-2*B)
+    else:
+        #Gini coeff = A/(A+B)
+        Gini=(1-2*B)
+
+    plt.figure(figsize=(10,10))
+    plt.plot([0,1],[0,1],color='black',linewidth=1)#EQUALITY CURVE
+    sns.lineplot(data=df_cumsum,x=df_cumsum['Fi'], y=df_cumsum['Li'],color='red',linewidth=2)#LORENZ CURVE
+    plt.fill_between(df_cumsum['Fi'],df_cumsum['Li'],color='red',alpha=0.2)#LORENZ CURVE AREA
+    #TODO add dots/lines/whatever below the curve, to represent where each robot of each noise group is
+    #       in the distribution of wealth
+    plt.title(f"{params}\nLorenz Curve and Gini Coefficient: {metric.replace('_',' ')}")
+    plt.xlabel("Percentage of Agents")
+    plt.ylabel("Percentage of Wealth")
+    plt.legend(['Equality','Lorenz Curve'])
+    plt.text(0.4,0.65,f"G: {round(Gini,3)}\nB: {round(B,3)}\nC: {round(C,3) if df_cumsum['Li'].min()<0 else 'N/A'}",
+             horizontalalignment='center',verticalalignment='center',transform=plt.gca().transAxes)
+    # plt.text(0.4,0.65,f"Gini Coefficient: {round(Gini,3)}",horizontalalignment='center',verticalalignment='center',transform=plt.gca().transAxes)
+    if oligarch_exists:
+        plt.text(1,1-(df_oligarch['Li']-df_cumsum['Li'].iloc[-1])/2+.01,r"}",fontsize=50,fontweight='normal',
+                 horizontalalignment='right',verticalalignment='top',transform=plt.gca().transAxes)
+        plt.text(1.085,1-(df_oligarch['Li']-df_cumsum['Li'].iloc[-1])/2+.01,f"oligarchy\n{round(100*(df_oligarch['Li']-df_cumsum['Li'].iloc[-1]))}%",
+                    horizontalalignment='right',verticalalignment='top',transform=plt.gca().transAxes)
+
+    if save_plot:
+        plt.savefig(f"{save_folder}/{save_name}_gini.png")
+        plt.close()
+
+    if not multi_plot and not save_plot:plt.show()
+
+    # mytext=filename+"\nG:"+str(round(Gini,3))+", B:"+str(round(B,3))+", C:"+(str(round(C,3)) if oligarch_exists else "N/A")+"\n\n"
+    # with open("/home/uga/Scrivania/gini.txt","a") as textfile:
+    #     textfile.write(mytext)
+
+
+def target_lorenz_gini(number_of_robots:int=25,
+                        number_of_saboteurs:int=0,
+                        multi_plot:bool=False,
+                        ideal_scenario:bool=True,
+                        market_type:str="IM-D",
+                        save_plot:bool=False,
+                        save_folder:str="",
+                        save_name:str="",
+                        ):
+    '''
+    compute lorenz wealth distribution curve and the relative gini coefficient
+    for a target scenario where agents may have negative wealth
+
+    gini coefficient is the area between the lorenz curve and the line
+    of perfect equality (the diagonal line); in case of oligarchy, the coefficient must be
+    corrected.
+
+    Gini coeff is usually between 0 and 1, but can be greater if the number of negative wealth
+    agents is large enough
+
+    :param ideal_scenario: scenario to be tested. Possible values:
+    - True (ideal): all byzantines have no wealth, all honests have equally distributed wealth.
+    - False (real): byzantines retain a small amount of wealth, distributed according to
+     #TODO SOME distribution, higly penalizing all except the (1+) richest poors;
+      honests have wealth distributed according to a #TODO SOME distribution which
+      penalizes greatly rich agents. Wealth positivity is prescribed by the market type.
+    -"oligarchy": NOT IMPLEMENTED
+
+    NOTE: real situations may be dependent by the parameters of market, behavior,...
+        yet, it is considered independent from this (namely, averaging between all real situations)
+
+    :param market_type: in the shape of m-d, where m is the income source(s) and
+                            d is the default system
+    Possible values for m:
+    - "IM": information market (no foraging income)
+    - "IFM": information and foraging market
+
+    Possible values for d:
+    - "D": deafult is permitted, no negative wealth allowed
+    - "ND": no default is permitted, negative wealth allowed
+
+    NOTE: "-" in the value string can be omitted
+
+    '''
+    # line_width=1
+
+    if 'reward' in metric:
+        metric="rewards_evolution"
+    elif 'wealth' in metric:
+        metric="wealth_evolution"
+
+    title=f"ideal situation for {number_of_robots} robots and {number_of_honest} honests"
+
+    number_of_honest=number_of_robots-number_of_saboteurs
+
+    if ideal_scenario:
+        if "IM" in market_type:
+            initial_wealth_per_agent=7
+        elif "IFM" in market_type:
+            initial_wealth_per_agent=1
+
+        byzantine_wealth=0
+        honest_wealth=initial_wealth_per_agent+initial_wealth_per_agent*number_of_saboteurs/number_of_honest
+        wealths=[byzantine_wealth]*number_of_saboteurs+[honest_wealth]*number_of_honest
+
+    else:
+        #TODO
+        pass
+
+    df_last_allagents_mean_sorted=pd.Series(wealths,index=range(number_of_robots))
+
+    #LORENZ CURVE AND GINI COEFFICIENT
+    df_cumsum=df_last_allagents_mean_sorted.cumsum()
+    df_cumsum=pd.DataFrame(pd.concat([pd.Series([0]),df_cumsum])).reset_index()
+    df_cumsum.columns=['Fi','cumsum']
+    df_cumsum['Fi']=df_cumsum.index/(len(df_cumsum)-1)
+    df_cumsum['Si']=df_cumsum['cumsum']/len(df_cumsum)
+    df_cumsum['Li']=df_cumsum['Si']/df_cumsum['Si'].iloc[-1]
+
+    MIN_OLIGARCH_DIFF=.1
+    if df_cumsum['Li'].iloc[-1]-df_cumsum['Li'].iloc[-2]>MIN_OLIGARCH_DIFF:
+        oligarch_exists=True
+        df_cumsum['Fi']=df_cumsum['Fi']*len(df_cumsum-1)
+        df_cumsum['Fi']=df_cumsum['Fi']/(len(df_cumsum)-2)
+        df_cumsum['Fi']=df_cumsum['Fi']/df_cumsum['Fi'].iloc[-2]
+        df_oligarch=df_cumsum.iloc[-1]
+        df_cumsum=df_cumsum.iloc[:-1]
+    else:
+        oligarch_exists=False
+
+    zero_crossing = np.where(np.diff(np.sign(df_cumsum['Li'].to_list())))[0][-1]
+
+    #####composite trapzoid rule
+    a=df_cumsum['Fi'].iloc[zero_crossing]
+    b=df_cumsum['Fi'].iloc[-1]
+    h=(b-a)/len(df_cumsum['Fi'].iloc[zero_crossing:])
+    B=0
+    for ii,_ in enumerate(df_cumsum['Fi'].iloc[zero_crossing:-1]):
+        li=df_cumsum['Li'].iloc[zero_crossing+ii]
+        li_next=df_cumsum['Li'].iloc[zero_crossing+ii+1]
+        B+=h/2*(li+li_next)
+
+    if df_cumsum['Li'].min()<0:
+        # if oligarch_exists:
+        a=df_cumsum['Fi'].iloc[0]
+        b=df_cumsum['Fi'].iloc[zero_crossing-1 if zero_crossing>0 else 0]
+        h=(b-a)/len(df_cumsum['Fi'].iloc[:zero_crossing-1 if zero_crossing>0 else 0])
+        C=0
+        for ii,_ in enumerate(df_cumsum['Fi'].iloc[:zero_crossing-1 if zero_crossing>0 else 0]):
+            li=df_cumsum['Li'].iloc[ii]
+            li_next=df_cumsum['Li'].iloc[ii+1]
+            C+=h/2*abs(li+li_next)
+        #Gini coeff = (A-C)/(A-C +B)
+        Gini=(1-2*(B+C))/(1-2*C)
+        # else:
+        #     #Gini coeff = A/(A+B)
+        #     Gini=(1-2*B)
+    else:
+        #Gini coeff = A/(A+B)
+        Gini=(1-2*B)
+
+    plt.figure(figsize=(10,10))
+    plt.plot([0,1],[0,1],color='black',linewidth=1)
+    sns.lineplot(data=df_cumsum,x=df_cumsum['Fi'], y=df_cumsum['Li'],color='red',linewidth=2)
+    plt.fill_between(df_cumsum['Fi'],df_cumsum['Li'],color='red',alpha=0.2)
+    plt.title(title)
+    plt.xlabel("Percentage of Agents")
+    plt.ylabel("Percentage of Wealth")
+    plt.legend(['Equality','Lorenz Curve'])
+    plt.text(0.4,0.65,f"G: {round(Gini,3)}\nB: {round(B,3)}\nC: {round(C,3) if oligarch_exists else 'N/A'}",
+             horizontalalignment='center',verticalalignment='center',transform=plt.gca().transAxes)
+    if oligarch_exists:
+        plt.text(1,1-(df_oligarch['Li']-df_cumsum['Li'].iloc[-1])/2+.01,r"}",fontsize=50,fontweight='normal',
+                 horizontalalignment='right',verticalalignment='top',transform=plt.gca().transAxes)
+        plt.text(1.085,1-(df_oligarch['Li']-df_cumsum['Li'].iloc[-1])/2+.01,f"oligarchy\n{round(100*(df_oligarch['Li']-df_cumsum['Li'].iloc[-1]))}%",
+                    horizontalalignment='right',verticalalignment='top',transform=plt.gca().transAxes)
+
+    if save_plot:
+        plt.savefig(f"{save_folder}/{save_name}_gini.png")
+        plt.close()
+
+    if not multi_plot and not save_plot:plt.show()
+
+
+def buyers_sellers_groups(  filename:str,
                             data_folder_and_subfolder:str="",
                             number_of_robots:int=25,
                             multi_plot:bool=False,
@@ -1421,7 +2024,7 @@ def buyers_sellers_groups(  filename:str,#[x]
     f"{'reputation' if params[4] and params[3]=='P' else ''} {'staking' if params[3]=='P' else 'no staking'}\n"\
     f"noise: {title_params[7]}\n behaviour params: {title_params[6]}".replace(",",", ")
 
-    # number_of_robots=len(df.colums)    
+    # number_of_robots=len(df.colums)
     number_of_honest=int(params[0])
     number_of_saboteurs=number_of_robots-number_of_honest
     saboteur_performance=params[7][2]
@@ -1649,7 +2252,7 @@ def buyers_sellers_groups(  filename:str,#[x]
         df_buys_sab_ratio=pd.DataFrame(pd.Series(df_buys_sab_ratio.mean()))
         df_buys_sab_ratio['plot_order']=2
 
-    fig,axs=plt.subplots(2,5 if show_variance else 4, figsize=(15,10))#with relative percentages 
+    fig,axs=plt.subplots(2,5 if show_variance else 4, figsize=(15,10))#with relative percentages
     # fig,axs=plt.subplots(2,4 if show_variance else 3, figsize=(15,10))
     plt.subplots_adjust(bottom=0.05,top=0.88,left=0.05,right=0.98,wspace=None,hspace=0.1)
     plt.suptitle(title,fontweight='bold')
@@ -1688,7 +2291,7 @@ def buyers_sellers_groups(  filename:str,#[x]
         # axs[0,0].set_ylabel('acceptance rate')
         # axs[0,0].set_title('sells mean')
         # axs[1,0].set_xticklabels(['mean'])
-        # axs[1,0].set_xlabel(None) 
+        # axs[1,0].set_xlabel(None)
         # axs[1,0].set_ylabel('acceptance rate')
         # axs[1,0].set_title('buys mean')
 
@@ -1911,8 +2514,8 @@ def behaviours_buyers_sellers_groups(
                                             if save_plot:
                                                 # save_name=f"{n_honest}_{behavior_initials}_{payment_system}_{repu_stake}_{lie_angle}_{noise_mu}_{noise_range}_{saboteur_performance}"
                                                 save_name=f.split("/")[-1].split(".csv")[0]
-                                            
-                                            buyers_sellers_groups(  
+
+                                            buyers_sellers_groups(
                                                                 filename=f,
                                                                 data_folder_and_subfolder=join(data_folder,experiment,SUB_FOLDERS_DICT[behavior_initials]),
                                                                 number_of_robots=n_robots,
@@ -1928,7 +2531,6 @@ def behaviours_buyers_sellers_groups(
 
     if multi_plot:plt.show()
     elif save_plot:print(f"saved {fig_count} figures in {join(save_folder,experiment)}")
-
 
 
 def behaviours_market_evolution(#
@@ -2047,8 +2649,10 @@ def behaviours_market_evolution(#
                                             if save_plot:
                                                 # save_name=f"{n_honest}_{behavior_initials}_{payment_system}_{repu_stake}_{lie_angle}_{noise_mu}_{noise_range}_{saboteur_performance}"
                                                 save_name=f.split("/")[-1].split(".csv")[0]
-                                            
-                                            market_metric_evolution(filename=f,
+
+                                            # market_metric_evolution(filename=f,
+                                            market_lorenz_gini(filename=f,
+                                            # wealth_distribution(filename=f,
                                                                     data_folder_and_subfolder=join(data_folder,experiment,SUB_FOLDERS_DICT[behavior_initials]),
                                                                     metric=performance_metric,
                                                                     number_of_robots=n_robots,
@@ -2275,6 +2879,18 @@ def compare_behaviors_performance_quality(
                                             secondary_filenames=[f.replace(performance_folder,secondary_performance_folder) for f in filenames]
                                             filenames=[filenames,secondary_filenames]
                                         if not compare_best_of_only:
+
+                                            # performance_evolution(filename=f,#[x]
+                                            #                         # data_folder_and_subfolder=join(data_folder,experiment,SUB_FOLDERS_DICT[behavior_initials]),
+                                            #                         # metric=performance_metric,
+                                            #                         number_of_robots=n_robots,
+                                            #                         multi_plot=multi_plot,
+                                            #                         pair_plot=pair_plot,
+                                            #                         save_plot=save_plot,
+                                            #                         save_folder=behav_save_folder,
+                                            #                         save_name=save_name
+                                            #                         )
+                                            
                                             performance_with_quality(
                                                                     filenames,
                                                                     experiment_part=experiment_part,
@@ -2484,36 +3100,113 @@ def plot_results(filenames,
 ##############################################################################################################
 ##############################################################################################################
 if __name__ == '__main__':
-# if __name__ == '__main__':
-    pass
     #TODO: create this as a summary from config generation / running
 
-    # bimodal_uniform_noise_comparison(data_folder=CONFIG_FILE.DATA_DIR,
-    #                                 experiment="",
-    #                                 metric="rewards",
-    #                                 n_robots=25,
-    #                                 n_honests=[25,24],
-    #                                 behaviors=["n","s","r","Nv","t","w"],
-    #                                 behavior_params_experiments=BEHAV_PARAMS_COMBINATIONS,
-    #                                 multi_plot=True,
-    #                                 save_plot=False,
-    #                                 save_folder=""#CONFIG_FILE.PLOT_DIR
-    #                                 )
+    compare_behaviors_performance_quality(
+                                        data_folder=CONFIG_FILE.DATA_DIR,
+                                        experiment="IM_7_1_1_UNBIASED_NODEFAULT_NORMALIZED",
+                                        #BUG WEALTH_THRESHOLD not working anymore with LASTn
+                                        experiment_part="last.33",
+                                        # experiment_part="whole",
+                                        performance_metric="items",
+                                        pair_plot=True,
+                                        short_x_labels=True,
+                                        quality_index="transactionsS",
+                                        multi_quality=True,
+                                        show_dishonests=True,
+                                        auto_xlabels=False,
+                                        n_honests=[
+                                            24,
+                                            25,
+                                            22,
+                                            17,
+                                            20
+                                            ],
+                                        behaviours=[
+                                            # 'n',
+                                            # 's',
+                                            # "b",
+                                            'c',
+                                            # 't',
+                                            'r',
+                                            # 'Nv',
+                                            # 'h',
+                                            # 'hs',
+                                            ],#to compare w/ n+NP,n+P,s+NP,s+P
+                                        behavior_params_experiments=BEHAV_PARAMS_COMBINATIONS,
+                                        payment_systems=[
+                                            # "NP",
+                                            "P"
+                                            ],
+                                        reputation_stake_list=[
+                                                                False,
+                                                                # True,
+                                                            ],
+                                        saboteur_performance_list=[
+                                                                    "avg",
+                                                                    "perf",
+                                                                ],
+                                        compare_with_reference=True,
+                                        compare_best_of=False,
+                                        compare_best_of_only=False,
+                                        multi_plot=1,
+                                        save_folder=join(CONFIG_FILE.PLOT_DIR,"behav_compar_quality"),
+                                        save_plot=0
+                                    )
 
-    # find_best_worst_seeds(filenames=[],
-    #                     data_folder="../data/sceptical/",
-    #                     metric="items_collected",
-    #                     base_seed=5684436,
-    #                     amount_to_find=3,
-    #                 )
 
-    # print(dataframe_from_csv(filename="22r_waaCS_NP_90LIA_0.3RT_0.051NMU_0.1NRANG_avgSAB.csv",
-    #                 data_folder_and_subfolder=join(CONFIG_FILE.DATA_DIR,"FULL_TEST/ranking"),
-    #                 metric="items",
-    #                 experiment_part="whole",
-    #                 noise_group="s",
-    #                 post_processing="row-mean"
-    #                 ))
+    exit()
+
+    behaviours_market_evolution(
+                            data_folder=CONFIG_FILE.DATA_DIR,
+                            # experiment="IFM_1_05_1_UNBIASED_DEFAULT_TWOTRANS_r",
+                            experiment="IM_7_1_1_UNBIASED_NODEFAULT_NORMALIZED",
+                            performance_metric="wealth",    
+                            pair_plot=1,
+                            fill_between=True,
+                            # auto_xlabels=True,
+                            n_honests=[
+                                        22,
+                                        25,
+                                        17,
+                                        24,
+                                        20,
+                                        ],
+                            behaviours=[
+                                    # "b",
+                                    't',
+                                    'c',
+                                    's',
+                                    'n',
+                                    'r',
+                                    # 'Nv',
+                                    # 'h',
+                                    # 'hs',
+                                    ],
+                            behavior_params_experiments=BEHAV_PARAMS_COMBINATIONS,
+                            payment_systems=[
+                                                "P",
+                                                # "NP"
+                                                ],
+                            reputation_stake_list=[
+                                                    True,
+                                                    False
+                                                    ],
+                            saboteur_performance_list=[
+                                                        "avg",
+                                                        "perf"
+                                                        ],
+                            # compare_with_reference=False,
+                            # compare_best_of=False,
+                            # compare_best_of_only=False,
+                            multi_plot=0,
+                            # save_folder=join(CONFIG_FILE.PLOT_DIR,"wealth_distribution"),
+                            # save_folder=join(CONFIG_FILE.PLOT_DIR,"market_values"),
+                            save_folder=join(CONFIG_FILE.PLOT_DIR,"gini_index"),
+                            save_plot=1
+                            )
+
+
     behaviours_buyers_sellers_groups(
                             data_folder=CONFIG_FILE.DATA_DIR,
                             experiment="IM_7_1_1_UNBIASED_NODEFAULT_HEURISTIC",
@@ -2558,52 +3251,6 @@ if __name__ == '__main__':
                             save_plot=0
                             )
 
-    exit()
-    behaviours_market_evolution(
-                            data_folder=CONFIG_FILE.DATA_DIR,
-                            experiment="IM_7_1_1_UNBIASED_NODEFAULT_HEURISTIC",
-                            performance_metric="reward",
-                            pair_plot=True,
-                            fill_between=True,
-                            # auto_xlabels=True,
-                            n_honests=[
-                                        25,
-                                        24,
-                                        22,
-                                        20,
-                                        17
-                                        ],
-                            behaviours=[
-                                    'n',
-                                    's',
-                                    "b",
-                                    'r',
-                                    't',
-                                    'c',
-                                    # 'Nv',
-                                    # 'h',
-                                    # 'hs',
-                                    ],
-                            behavior_params_experiments=BEHAV_PARAMS_COMBINATIONS,
-                            payment_systems=[
-                                                "P",
-                                                # "NP"
-                                                ],
-                            reputation_stake_list=[
-                                                    True,
-                                                    False
-                                                    ],
-                            saboteur_performance_list=[
-                                                        "avg",
-                                                        "perf"
-                                                        ],
-                            # compare_with_reference=False,
-                            # compare_best_of=False,
-                            # compare_best_of_only=False,
-                            multi_plot=False,
-                            save_folder=join(CONFIG_FILE.PLOT_DIR,"market_values"),
-                            save_plot=0
-                            )
 
     compare_behaviors_performance_quality(
                                         data_folder=CONFIG_FILE.DATA_DIR,
@@ -2655,6 +3302,28 @@ if __name__ == '__main__':
                                         save_folder=join(CONFIG_FILE.PLOT_DIR,"behav_compar_quality"),
                                         save_plot=0
                                     )
+
+
+    bimodal_uniform_noise_comparison(data_folder=CONFIG_FILE.DATA_DIR,
+                                    experiment="",
+                                    metric="rewards",
+                                    n_robots=25,
+                                    n_honests=[25,24],
+                                    behaviors=["n","s","r","Nv","t","w"],
+                                    behavior_params_experiments=BEHAV_PARAMS_COMBINATIONS,
+                                    multi_plot=True,
+                                    save_plot=False,
+                                    save_folder=""#CONFIG_FILE.PLOT_DIR
+                                    )
+
+
+    find_best_worst_seeds(filenames=[],
+                        data_folder="../data/sceptical/",
+                        metric="items_collected",
+                        base_seed=5684436,
+                        amount_to_find=3,
+                    )
+
 
 # for n_s in range(0,9):
 #     noise_level(
