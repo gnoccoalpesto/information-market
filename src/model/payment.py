@@ -107,12 +107,12 @@ class PaymentDB:
         # stake_ratio_max=3
         if reputation is not None:
             #TODO requires tuning coeff for "r" reputation
-            # POLYNOMIAL: higly penalizing/rewarding
+            #[ ]POLYNOMIAL STAKING: higly penalizing/rewarding
             stake_ratio=stake_ratio_min**(2*reputation/self.history_span)
-            # EXPONENTIAL: less penalizing/rewarding
+            #[ ]EXPONENTIAL STAKING: less penalizing/rewarding
             # stake_ratio=(stake_ratio_min+(stake_ratio_0-stake_ratio_min)*np.exp(-robot_reputation/history_len) \
             #                             -(stake_ratio_0-stake_ratio_max)*np.exp(-robot_reputation/history_len))/3
-            # BY PARTS: non rewarding
+            #[ ]BY PARTS STAKING: non rewarding
             if reputation<0:
                 stake_ratio=stake_ratio_min**(2*reputation/self.history_span)
                 #NOTE: history_span is used in all cases to normalize reputation span
@@ -121,7 +121,7 @@ class PaymentDB:
                 RICH_THRESHOLD=7
                 if reputation>RICH_THRESHOLD:
                     stake_ratio=0.5*stake_ratio_min**(-reputation/self.history_span)
-                # NO HIGHT REWARD PENALTY
+                #[ ]NO HIGH REWARD PENALTY
                 '''
                 stake_ratio=1
                 #'''
@@ -194,9 +194,9 @@ class PaymentDB:
             if isinstance(robot_id,int):
                 reward=self.get_reward(robot_id)
                 if verification_method=="mean":
-                    '''#[ ] HEURISTIC REPUTATION, works great
+                    '''#[ ] HEURISTIC REPUTATION
                     return reward-self.get_lowest_reward()*3
-                    '''# NORMALIZED REPUTATION
+                    '''#[ ] NORMALIZED REPUTATION
                     # if reward>0:
                     #     bias_sign=1
                     # else:
@@ -217,7 +217,7 @@ class PaymentDB:
             else:
                 raise ValueError("Robot id not recognized")
             
-        elif method=="total" or method=="t" or method=="T":#[ ]
+        elif method=="total" or method=="t" or method=="T":
             wealth=self.database[robot_id]["reward"]+\
                             sum(self.database[robot_id]["stake"].values())
             return wealth - self.get_lowest_reward()*3
@@ -258,7 +258,7 @@ class PaymentDB:
     def get_mean_reputation(self,method="reward",verification_method="discrete"):
         if method=="reward" or method=="r" or method=="R" or method=="w":
             return self.get_mean_reward()
-        elif method=="total" or method=="t" or method=="T":#[ ]
+        elif method=="total" or method=="t" or method=="T":
             total_wealths=[self.database[robot_id]["reward"]+ 
                             sum(self.database[robot_id]["stake"].values()) \
                            for robot_id in self.database]
@@ -343,7 +343,7 @@ class PaymentDB:
             raise InsufficientFundsException#(robot_id)
         else:
             self.database[robot_id]["reward"] -= cost
-        '''# NO DEFAULT MARKET
+        '''#[ ] NO DEFAULT MARKET
         self.database[robot_id]["reward"] -= cost
         #'''
 
@@ -456,9 +456,9 @@ class OutlierPenalisationPaymentSystem(PaymentSystem):
 
 
     def new_reward(self, reward, payment_api:PaymentAPI, rewarded_id):
-        #'''#[ ] NORMAL DEFAULT: robot could cause IFE 
+        #'''#[ ]DEFAULT MARKET: robot could cause IFE 
         reward_share_to_distribute = self.information_share * reward
-        '''#DEFAULT PROTECTION: robot cannot cause IFE
+        '''#[ ]DEFAULT-PROTECTED MARKET: robot cannot cause IFE
         # reward_share_to_distribute=min(reward_share_to_distribute,payment_api.get_reward(rewarded_id))
         if reward_share_to_distribute<0: reward_share_to_distribute=0
         # '''
@@ -467,23 +467,23 @@ class OutlierPenalisationPaymentSystem(PaymentSystem):
         shares_mapping = self.calculate_shares_mapping()
         try:
             for seller_id, share in shares_mapping.items():
-                # ''' #[ ] DOUBLE TRANSFER
+                # ''' #[ ]DOUBLE TRANSFER
                 payment_api.transfer(rewarded_id, seller_id, share*self.pot_amount)
 
             for seller_id, share in shares_mapping.items():
                 payment_api.transfer(rewarded_id, seller_id, share*reward_share_to_distribute)
-                '''#SINGLE TRANSFER
+                '''#[ ]SINGLE TRANSFER
                 payment_api.transfer(rewarded_id, seller_id, share*reward_share_to_distribute)
                 #'''
                 #[ ] POT-BIASED & REWARD BIASED REPUTATION: great performance improvement
                 # last_redistribution= share*(self.pot_amount+reward_share_to_distribute)-(self.stake_amount if hasattr(self,"stake_amount") else 0)
-                #UNBIASED REPUTATION #NOTE if reward<1, *reward will have a penalizing effect
+                #[ ]UNBIASED REPUTATION #NOTE if reward<1, *reward will have a penalizing effect
                 #NOTE_ could be reward scaled: w_x [*reward_share_to_distribute]
-                # REWARD-SCALED BIASED
+                #[ ]REWARD-SCALED BIASED
                 # last_redistribution= share*reward_share_to_distribute-(self.stake_amount if hasattr(self,"stake_amount") else 0)
-                # POT-BIASED ONLY
+                #[ ]POT-BIASED ONLY
                 # last_redistribution= share*self.pot_amount-(self.stake_amount if hasattr(self,"stake_amount") else 0)
-                # UNBIASED
+                #[ ]UNBIASED
                 last_redistribution= share- 1/len(shares_mapping)
                 #TODO use current stake amount, base stake amount, or stake amount at the time of the transaction?
                 # seller_stake_amount=self.get_stake_amount(payment_api,seller_id)#stake(t)k

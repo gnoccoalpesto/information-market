@@ -24,10 +24,10 @@ def generate_uniform_noise_list(n_robots,n_dishonest,dishonest_noise_performance
     noise not drawed from a bimodal distribution
     noise is generated, increasing with agent_id, s.t. last one has a value covering 
         99% (coverage_coeff==2.3) of the previous bimodal distribution values
-    :param dishonest position: informs the generator how much noise dishonests agent will have:
+    :param dishonest_noise_performance: saboteurs noise level assignment
         -"average": d. have average noise,
         -"perfect": d. have lowest noise,
-        -"worst": d. have highest noise
+        -UNUSED:    "worst": d. have highest noise 
 
     return value is always ordered wrt robots_id, but will have different values
     based on range, and dishonest_noise_performance request
@@ -43,13 +43,25 @@ def generate_uniform_noise_list(n_robots,n_dishonest,dishonest_noise_performance
         return sampled
     
     if dishonest_noise_performance=="average":
-        "eg 6robots, 2 d: 2,3,4,5,6,0,1"
-        rounded_n_honests=n_robots//2-2
-        generation_list=[_ for _ in [_ for _ in range(rounded_n_honests)]+
-                                    [_ for _ in range(rounded_n_honests+n_dishonest,n_robots)]+
-                                    [_ for _ in range(rounded_n_honests,rounded_n_honests+n_dishonest)]]
+        """in this case, to saboteurs is assigned a noise lever which is
+            in the average of all noise levels.
+            good group will have less, bad group more
+        """
+        n_honest=n_robots-n_dishonest
+        n_good=(n_honest+1)//2
+        generation_list=list(range(n_good))+\
+                        list(range(n_good+n_dishonest,n_robots))+\
+                        list(range(n_good,n_good+n_dishonest))
+        
     elif dishonest_noise_performance=="perfect":
-        #heuristic for perfect saboteur in conditions around nominal: mean=0.05, range=0.1-0.14
+        """in this case, to saboteurs is assigned a noise lever which is
+            the lowest of all noise levels.
+            good group will have less that the average (but more than the saboter),
+            bad group will have more than the average
+
+            NOTE: heuristic for perfect saboteur in conditions around nominal: mean=0.05, range=0.1-0.14
+            TODO surely there is a method similar to noise groups slicing
+        """
         ids_negative_value_dict={"0.1":int(200*(0.05-noise_mu)),
                                 "0.15":n_robots//7,
                                 "0.2":n_robots//5}
@@ -62,19 +74,16 @@ def generate_uniform_noise_list(n_robots,n_dishonest,dishonest_noise_performance
                 ids_negative_value=int((ids_negative_value_dict["0.2"]+ids_negative_value_dict["0.15"])//2)
             elif noise_range>0.2:
                 ids_negative_value=n_robots//3
-
         "eg 6robots, 2 d: 0,1,2,3,4,5,6"
-        generation_list=[_ for _ in [_ for _ in range(ids_negative_value)]+
-                                    [_ for _ in range(ids_negative_value+n_dishonest,n_robots)]+
-                                    [_ for _ in range(ids_negative_value,ids_negative_value+n_dishonest)]]
+        generation_list=list(range(ids_negative_value))+\
+                        list(range(ids_negative_value+n_dishonest,n_robots))+\
+                        list(range(ids_negative_value,ids_negative_value+n_dishonest))
+                        
     random_seeder(random_seed)
-    noise_list=[generate_noise(noise_mu,
-                            noise_range,
-                            robot_id,
-                            n_robots,
-                            random_switch) 
+    return [generate_noise(noise_mu,noise_range,
+                           robot_id,n_robots,
+                           random_switch) 
                 for robot_id in generation_list ]
-    return noise_list
     
 
 class Environment:
@@ -106,6 +115,7 @@ class Environment:
         self.market = market_factory(market_params)
         self.img = None
         self.timestep = 0
+        # self.food_expiration_time=1000#[x]IEFM
 
 
     def step(self):
@@ -117,12 +127,14 @@ class Environment:
         neighbors_table = [[] for i in range(pop_size)]
         for id1 in range(pop_size):
             for id2 in range(id1 + 1, pop_size):
-                if distance_between(self.population[id1], self.population[id2]) < self.population[id1].communication_radius:
+                if distance_between(self.population[id1],
+                        self.population[id2]) < self.population[id1].communication_radius:
                     neighbors_table[id1].append(self.population[id2])
                     neighbors_table[id2].append(self.population[id1])
         # 1. Negotiation/communication
         for robot in self.population:
             robot.communicate(neighbors_table[robot.id])
+            #[x]buy_info is here
         # 2. Movement
         for robot in self.population:
             self.check_locations(robot)
@@ -136,7 +148,7 @@ class Environment:
         #NOTE OVERLOADED IN gui.py: self.img = ImageTk.PhotoImage(file="../assets/strawberry.png")
 
 
-    #[ ] NEWCOMERS
+    #[ ]NEWCOMERS
     def create_newcomers(self, newcomers_type, newcomers_amount):
         if newcomers_type=='honest':selected=0
         elif newcomers_type=='dishonest':selected=1
@@ -248,7 +260,6 @@ class Environment:
             collide_x = True
         if new_y + robot._radius >= self.height or new_y - robot._radius < 0:
             collide_y = True
-        # BUG any moved in the calling parent: return any([collide_x, collide_y])
         return collide_x, collide_y
 
 
@@ -358,6 +369,8 @@ class Environment:
                 # Check if robot can deposit food
                 if self.is_on_top_of_spawn(robot, Location.NEST):
                     self.deposit_food(robot)
+                    # self.reset_food_counter(robot)#[x]IEFM
+            # else: self.increment_food_expiration_counter(robot)#[x]IEFM
         else:
             if self.senses(robot, Location.FOOD):
                 # Spawn food if needed
@@ -380,20 +393,34 @@ class Environment:
         robot.drop_food()
         self.foraging_spawns[Location.NEST].pop(robot.id)
 
-        reward = self.market.sell_strawberry(robot.id)
-        
         '''#[ ]INFORMATION-FORAGING MARKET (IFM) #############
         #       reward comes from selling strawberries and information
-        self.payment_database.pay_reward(robot.id, reward=reward)
-        '''#INFORMATION MARKET (IM) ###########################
+        foraging_reward = information_reward
+        information_reward = self.market.sell_strawberry(robot.id)
+
+        #[ ]INFORMATION-EXPIRING FORAGING MARKET (IEFM) ####
+        #   reward comes from selling strawberries and information
+        #   but reward for foraging is obtained only if the item is
+        #   sold before it expires
+        # information_reward = self.market.sell_strawberry(robot.id)
+        # foraging_reward = information_reward if self.food_not_expired(robot)
+        #                        else 0
+
+        '''#[ ]INFORMATION MARKET (IM) ###########################
         #       reward comes from selling information only
-        self.payment_database.pay_reward(robot.id, reward=0)
+        foraging_reward=0
+        information_reward = self.market.sell_strawberry(robot.id)
         #'''
 
         #NOTE full reward is paid to depositing robot, then he will pair creditors their share
-        self.payment_database.pay_creditors(robot.id, total_reward=reward)
+        self.payment_database.pay_reward(robot.id, reward=foraging_reward)
+        self.payment_database.pay_creditors(robot.id, total_reward=information_reward)
 
 
     def pickup_food(self, robot):
         robot.pickup_food()
         self.foraging_spawns[Location.FOOD].pop(robot.id)
+
+    #[x]IEFM
+    # def food_not_expired(self, robot):
+    #     return robot.get_expiration_timer() < self.food_expiration_time
