@@ -16,8 +16,10 @@ import scipy.stats as stats
 
 import config as CONFIG_FILE
 from model.environment import generate_uniform_noise_list
-from model.behavior import  BEHAVIORS_NAME_DICT, SUB_FOLDERS_DICT, PARAMS_NAME_DICT, BEHAVIOR_PARAMS_DICT,COMBINE_STRATEGY_NAME_DICT
-from info_market import filename_from_params, params_from_filename,is_bad_param_combination, is_best_param_combination
+from model.behavior import  BEHAVIORS_NAME_DICT, SUB_FOLDERS_DICT, PARAMS_NAME_DICT, \
+                        BEHAVIOR_PARAMS_DICT,COMBINE_STRATEGY_NAME_DICT, noise_groups_slices
+from info_market import filename_from_params, params_from_filename,\
+                    is_bad_param_combination, is_best_param_combination
 
 
 #  blue        orange    green     red        purple      brown     pink         grey      yellow    cyan
@@ -917,11 +919,7 @@ def performance_with_quality(
                         df_q_num=dataframe_from_csv(fq_num,post_processing="col-"+quality_function)
                         df_q_den=dataframe_from_csv(fq_den,post_processing="col-"+quality_function)
 
-                        if saboteur_performance=="avg":
-                            good_slice=n_honest//2+(1 if n_dishonest==0 else 0)
-                        elif saboteur_performance=="perf":
-                            good_slice=n_robots//2-n_dishonest+1
-                        bad_slice=-n_dishonest if n_dishonest>0 else None
+                        good_slice,bad_slice=noise_groups_slices(n_robots,n_dishonest,saboteur_performance)
                         #TODO narrower good/bad groups
                         # narrow_slice=0#BUG  empty color sequence error
                         df_q_good_num=df_q_num.iloc[:good_slice]#-narrow_slice]
@@ -1126,12 +1124,8 @@ def market_metric_evolution(filename:str,
     number_of_honest=int(params[0])
     number_of_saboteurs=number_of_robots-number_of_honest
     saboteur_performance=params[7][2]
-    if saboteur_performance=="avg" or saboteur_performance=="average":
-        good_slice=number_of_honest//2+(1 if number_of_saboteurs==0 else 0)
-    elif saboteur_performance=="perf" or saboteur_performance=="perfect":
-        good_slice=number_of_robots//2-number_of_saboteurs+1
-    bad_slice=-number_of_saboteurs if number_of_saboteurs>0 else None
-
+    
+    good_slice,bad_slice=noise_groups_slices(number_of_robots,number_of_saboteurs,saboteur_performance)
     df=dataframe_from_csv(join(data_folder_and_subfolder,metric,filename),
                                 metric=metric,experiment_part="df")
 
@@ -1176,7 +1170,7 @@ def market_metric_evolution(filename:str,
     sns.lineplot(data=df_meanagents_tick_mean,ax=axs[0],errorbar=None,color=NOISE_GROUPS_PALETTE['all'],linewidth=line_width)
     sns.lineplot(data=df_meangood_tick_mean,ax=axs[0],errorbar=None,color=NOISE_GROUPS_PALETTE['good'],linewidth=line_width)
     sns.lineplot(data=df_meanbad_tick_mean,ax=axs[0],errorbar=None,color=NOISE_GROUPS_PALETTE['bad'],linewidth=line_width)
-    if bad_slice is not None:
+    if number_of_saboteurs>0:
         legend.append("saboteur")
         df_allsab_tick_mean=df_allagents_tick_mean[agent_col[bad_slice:]]
         df_meansab_tick_mean=df_allsab_tick_mean.mean(axis=1)
@@ -1202,7 +1196,7 @@ def market_metric_evolution(filename:str,
         sns.lineplot(data=df_secondary_meanagents_tick_mean,ax=axs[1],errorbar=None,color=NOISE_GROUPS_PALETTE['all'],linewidth=line_width)
         sns.lineplot(data=df_secondary_meangood_tick_mean,ax=axs[1],errorbar=None,color=NOISE_GROUPS_PALETTE['good'],linewidth=line_width)
         sns.lineplot(data=df_secondary_meanbad_tick_mean,ax=axs[1],errorbar=None,color=NOISE_GROUPS_PALETTE['bad'],linewidth=line_width)
-        if bad_slice is not None:
+        if number_of_saboteurs>0:
             df_secondary_allsab_tick_mean=df_secondary_allagents_tick_mean[agent_col_secondary[bad_slice:]]
             df_secondary_meansab_tick_mean=df_secondary_allsab_tick_mean.mean(axis=1)
             sns.lineplot(data=df_secondary_meansab_tick_mean,ax=axs[1],errorbar=None,color=NOISE_GROUPS_PALETTE['saboteur'],linewidth=line_width)
@@ -1219,7 +1213,7 @@ def market_metric_evolution(filename:str,
         sns.lineplot(data=df_meanagent_tick_sum,ax=axs[1] if not pair_plot else axs[2],errorbar=None,color=MARKET_CAP_COLOR,linewidth=line_width,)
         sns.lineplot(data=df_meangood_tick_sum,ax=axs[1] if not pair_plot else axs[2],errorbar=None,color=NOISE_GROUPS_PALETTE['good'],linewidth=line_width,linestyle='--')
         sns.lineplot(data=df_meanbad_tick_sum,ax=axs[1] if not pair_plot else axs[2],errorbar=None,color=NOISE_GROUPS_PALETTE['bad'],linewidth=line_width,linestyle='--')
-    if bad_slice is not None:
+    if number_of_saboteurs>0:
         df_meansab_tick_sum=df_allsab_tick_mean.sum(axis=1)
         if individual_group_sum:
             sns.lineplot(data=df_meansab_tick_sum,ax=axs[1] if not pair_plot else axs[2],errorbar=None,color=NOISE_GROUPS_PALETTE['saboteur'],linewidth=line_width,linestyle='--')
@@ -1241,7 +1235,7 @@ def market_metric_evolution(filename:str,
             sns.lineplot(data=df_secondary_meanagent_tick_sum,ax=axs[3],errorbar=None,color=MARKET_CAP_COLOR,linewidth=line_width,)
             sns.lineplot(data=df_secondary_meangood_tick_sum,ax=axs[3],errorbar=None,color=NOISE_GROUPS_PALETTE['good'],linewidth=line_width,linestyle='--')
             sns.lineplot(data=df_secondary_meanbad_tick_sum,ax=axs[3],errorbar=None,color=NOISE_GROUPS_PALETTE['bad'],linewidth=line_width,linestyle='--')
-        if bad_slice is not None:
+        if number_of_saboteurs>0:
             df_secondary_meansab_tick_sum=df_secondary_allsab_tick_mean.sum(axis=1)
             if individual_group_sum:
                 sns.lineplot(data=df_secondary_meansab_tick_sum,ax=axs[3],errorbar=None,color=NOISE_GROUPS_PALETTE['saboteur'],linewidth=line_width,linestyle='--')
@@ -1284,7 +1278,7 @@ def market_metric_evolution(filename:str,
     legend_max=['initial']+legend_max
     legend_min=['mean good','mean bad','abs good','abs bad']
     # legend_min=['initial val.']+legend_min
-    if bad_slice is not None:
+    if number_of_saboteurs>0:
         df_allsab_tick_max=df_allagents_tick_max[agent_col[bad_slice:]]
         df_meansab_tick_max=df_allsab_tick_max.mean(axis=1)
         df_maxsab_tick_max=df_allsab_tick_max.max(axis=1)
@@ -1299,7 +1293,7 @@ def market_metric_evolution(filename:str,
     sns.lineplot(data=df_meanbad_tick_max,ax=axs[0][0] if pair_plot else axs[0],errorbar=None,color=NOISE_GROUPS_PALETTE['bad'],linewidth=line_width)
     sns.lineplot(data=df_maxgood_tick_max,ax=axs[0][0] if pair_plot else axs[0],errorbar=None,color=NOISE_GROUPS_PALETTE['good'],linewidth=line_width,linestyle='--')
     sns.lineplot(data=df_maxbad_tick_max,ax=axs[0][0] if pair_plot else axs[0],errorbar=None,color=NOISE_GROUPS_PALETTE['bad'],linewidth=line_width,linestyle='--')
-    if bad_slice is not None:
+    if number_of_saboteurs>0:
         sns.lineplot(data=df_meansab_tick_max,ax=axs[0][0] if pair_plot else axs[0],errorbar=None,color=NOISE_GROUPS_PALETTE['saboteur'],linewidth=line_width)
         sns.lineplot(data=df_maxsab_tick_max,ax=axs[0][0] if pair_plot else axs[0],errorbar=None,color=NOISE_GROUPS_PALETTE['saboteur'],linewidth=line_width,linestyle='--')
 
@@ -1318,7 +1312,7 @@ def market_metric_evolution(filename:str,
         df_secondary_meanbad_tick_min=df_secondary_allbad_tick_min.mean(axis=1)
         df_secondary_mingood_tick_min=df_secondary_allgood_tick_min.min(axis=1)
         df_secondary_minbad_tick_min=df_secondary_allbad_tick_min.min(axis=1)
-        if bad_slice is not None:
+        if number_of_saboteurs>0:
             df_secondary_allsab_tick_max=df_secondary_allagents_tick_max[agent_col_secondary[bad_slice:]]
             df_secondary_meansab_tick_max=df_secondary_allsab_tick_max.mean(axis=1)
             df_secondary_maxsab_tick_max=df_secondary_allsab_tick_max.max(axis=1)
@@ -1331,7 +1325,7 @@ def market_metric_evolution(filename:str,
         sns.lineplot(data=df_secondary_meanbad_tick_max,ax=axs[1][0],errorbar=None,color=NOISE_GROUPS_PALETTE['bad'],linewidth=line_width)
         sns.lineplot(data=df_secondary_maxgood_tick_max,ax=axs[1][0],errorbar=None,color=NOISE_GROUPS_PALETTE['good'],linewidth=line_width,linestyle='--')
         sns.lineplot(data=df_secondary_maxbad_tick_max,ax=axs[1][0],errorbar=None,color=NOISE_GROUPS_PALETTE['bad'],linewidth=line_width,linestyle='--')
-        if bad_slice is not None:
+        if number_of_saboteurs>0:
             sns.lineplot(data=df_secondary_meansab_tick_max,ax=axs[1][0],errorbar=None,color=NOISE_GROUPS_PALETTE['saboteur'],linewidth=line_width)
             sns.lineplot(data=df_secondary_maxsab_tick_max,ax=axs[1][0],errorbar=None,color=NOISE_GROUPS_PALETTE['saboteur'],linewidth=line_width,linestyle='--')
         axs[0][0].set_title(f"max values: {metric.replace('_',' ')}")
@@ -1347,7 +1341,7 @@ def market_metric_evolution(filename:str,
     sns.lineplot(data=df_meanbad_tick_min,ax=axs[0][1] if pair_plot else axs[1],errorbar=None,color=NOISE_GROUPS_PALETTE['bad'],linewidth=line_width)
     sns.lineplot(data=df_mingood_tick_min,ax=axs[0][1] if pair_plot else axs[1],errorbar=None,color=NOISE_GROUPS_PALETTE['good'],linewidth=line_width,linestyle='--')
     sns.lineplot(data=df_minbad_tick_min,ax=axs[0][1] if pair_plot else axs[1],errorbar=None,color=NOISE_GROUPS_PALETTE['bad'],linewidth=line_width,linestyle='--')
-    if bad_slice is not None:
+    if number_of_saboteurs>0:
         sns.lineplot(data=df_meansab_tick_min,ax=axs[0][1] if pair_plot else axs[1],errorbar=None,color=NOISE_GROUPS_PALETTE['saboteur'],linewidth=line_width)
         sns.lineplot(data=df_minsab_tick_min,ax=axs[0][1] if pair_plot else axs[1],errorbar=None,color=NOISE_GROUPS_PALETTE['saboteur'],linewidth=line_width,linestyle='--')
 
@@ -1356,7 +1350,7 @@ def market_metric_evolution(filename:str,
         sns.lineplot(data=df_secondary_meanbad_tick_min,ax=axs[1][1],errorbar=None,color=NOISE_GROUPS_PALETTE['bad'],linewidth=line_width)
         sns.lineplot(data=df_secondary_mingood_tick_min,ax=axs[1][1],errorbar=None,color=NOISE_GROUPS_PALETTE['good'],linewidth=line_width,linestyle='--')
         sns.lineplot(data=df_secondary_minbad_tick_min,ax=axs[1][1],errorbar=None,color=NOISE_GROUPS_PALETTE['bad'],linewidth=line_width,linestyle='--')
-        if bad_slice is not None:
+        if number_of_saboteurs>0:
             sns.lineplot(data=df_secondary_meansab_tick_min,ax=axs[1][1],errorbar=None,color=NOISE_GROUPS_PALETTE['saboteur'],linewidth=line_width)
             sns.lineplot(data=df_secondary_minsab_tick_min,ax=axs[1][1],errorbar=None,color=NOISE_GROUPS_PALETTE['saboteur'],linewidth=line_width,linestyle='--')
         axs[0][1].set_title(f"min values: {metric.replace('_',' ')}")
@@ -1382,7 +1376,7 @@ def market_metric_evolution(filename:str,
     df_mingood_tick_var=df_allgood_tick_var.min(axis=1)
     df_minbad_tick_var=df_allbad_tick_var.min(axis=1)
     legend_var=['mean good','mean bad','min good','min bad',]
-    if bad_slice is not None:
+    if number_of_saboteurs>0:
         df_allsab_tick_var=df_allagents_tick_var[agent_col[bad_slice:]]
         df_meansab_tick_var=df_allsab_tick_var.mean(axis=1)
         df_minsab_tick_var=df_allsab_tick_var.min(axis=1)
@@ -1392,7 +1386,7 @@ def market_metric_evolution(filename:str,
     sns.lineplot(data=df_meanbad_tick_var,ax=axs[0][2] if pair_plot else axs[2],errorbar=None,color=NOISE_GROUPS_PALETTE['bad'],linewidth=line_width)
     sns.lineplot(data=df_mingood_tick_var,ax=axs[0][2] if pair_plot else axs[2],errorbar=None,color=NOISE_GROUPS_PALETTE['good'],linewidth=line_width,linestyle='--')
     sns.lineplot(data=df_minbad_tick_var,ax=axs[0][2] if pair_plot else axs[2],errorbar=None,color=NOISE_GROUPS_PALETTE['bad'],linewidth=line_width,linestyle='--')
-    if bad_slice is not None:
+    if number_of_saboteurs>0:
         sns.lineplot(data=df_meansab_tick_var,ax=axs[0][2] if pair_plot else axs[2],errorbar=None,color=NOISE_GROUPS_PALETTE['saboteur'],linewidth=line_width)
         sns.lineplot(data=df_minsab_tick_var,ax=axs[0][2] if pair_plot else axs[2],errorbar=None,color=NOISE_GROUPS_PALETTE['saboteur'],linewidth=line_width,linestyle='--')
 
@@ -1405,7 +1399,7 @@ def market_metric_evolution(filename:str,
         df_secondary_meanbad_tick_var=df_secondary_allbad_tick_var.mean(axis=1)
         df_secondary_mingood_tick_var=df_secondary_allgood_tick_var.min(axis=1)
         df_secondary_minbad_tick_var=df_secondary_allbad_tick_var.min(axis=1)
-        if bad_slice is not None:
+        if number_of_saboteurs>0:
             df_secondary_allsab_tick_var=df_secondary_allagents_tick_var[agent_col_secondary[bad_slice:]]
             df_secondary_meansab_tick_var=df_secondary_allsab_tick_var.mean(axis=1)
             df_secondary_minsab_tick_var=df_secondary_allsab_tick_var.min(axis=1)
@@ -1413,7 +1407,7 @@ def market_metric_evolution(filename:str,
         sns.lineplot(data=df_secondary_meanbad_tick_var,ax=axs[1][2],errorbar=None,color=NOISE_GROUPS_PALETTE['bad'],linewidth=line_width)
         sns.lineplot(data=df_secondary_mingood_tick_var,ax=axs[1][2],errorbar=None,color=NOISE_GROUPS_PALETTE['good'],linewidth=line_width,linestyle='--')
         sns.lineplot(data=df_secondary_minbad_tick_var,ax=axs[1][2],errorbar=None,color=NOISE_GROUPS_PALETTE['bad'],linewidth=line_width,linestyle='--')
-        if bad_slice is not None:
+        if number_of_saboteurs>0:
             sns.lineplot(data=df_secondary_meansab_tick_var,ax=axs[1][2],errorbar=None,color=NOISE_GROUPS_PALETTE['saboteur'],linewidth=line_width)
             sns.lineplot(data=df_secondary_minsab_tick_var,ax=axs[1][2],errorbar=None,color=NOISE_GROUPS_PALETTE['saboteur'],linewidth=line_width,linestyle='--')
         axs[0][2].set_title(f"standard deviation values: {metric.replace('_',' ')}")
@@ -1436,7 +1430,7 @@ def market_metric_evolution(filename:str,
     if not multi_plot and not save_plot:plt.show()
 
 
-def performance_evolution(filename:str,#[x]
+def performance_evolution(filename:str,#[x]performance evolution
                         data_folder_and_subfolder:str="",
                         number_of_robots:int=25,
                         window_size:int=5000,
@@ -1459,11 +1453,7 @@ def performance_evolution(filename:str,#[x]
     number_of_saboteurs=number_of_robots-number_of_honest
     saboteur_performance=params[7][2]
 
-    if saboteur_performance=="avg" or saboteur_performance=="average":
-        good_slice=number_of_honest//2+(1 if number_of_saboteurs==0 else 0)
-    elif saboteur_performance=="perf" or saboteur_performance=="perfect":
-        good_slice=number_of_robots//2-number_of_saboteurs+1
-    bad_slice=-number_of_saboteurs if number_of_saboteurs>0 else None
+    good_slice,bad_slice=noise_groups_slices(number_of_robots,number_of_saboteurs,saboteur_performance)
 
     title_params=params_from_filename(filename)
     title=f"{title_params[0]}honest {BEHAVIORS_NAME_DICT[params[1]]},{title_params[5]} lie angle,"\
@@ -1482,7 +1472,7 @@ def performance_evolution(filename:str,#[x]
     df_meanagents_delta['mean']=df_meanagents_delta.mean(axis=1)
     df_meanagents_delta['good']=df_meanagents_delta.iloc[:,:good_slice].mean(axis=1)
     df_meanagents_delta['bad']=df_meanagents_delta.iloc[:,bad_slice:].mean(axis=1)
-    if bad_slice is not None:
+    if number_of_saboteurs>0:
         df_meanagents_delta['saboteur']=df_meanagents_delta.iloc[:,bad_slice:].mean(axis=1)
 
         
@@ -1717,11 +1707,6 @@ def market_lorenz_gini(filename:str,#
     number_of_honest=int(params[0])
     number_of_saboteurs=number_of_robots-number_of_honest
     saboteur_performance=params[7][2]
-    if saboteur_performance=="avg" or saboteur_performance=="average":
-        good_slice=number_of_honest//2+(1 if number_of_saboteurs==0 else 0)
-    elif saboteur_performance=="perf" or saboteur_performance=="perfect":
-        good_slice=number_of_robots//2-number_of_saboteurs+1
-    bad_slice=-number_of_saboteurs if number_of_saboteurs>0 else None
 
     if compute_ideal:
         if "IM" in data_folder_and_subfolder or "IM" in filename:
@@ -2028,17 +2013,16 @@ def buyers_sellers_groups(  filename:str,
     number_of_honest=int(params[0])
     number_of_saboteurs=number_of_robots-number_of_honest
     saboteur_performance=params[7][2]
-    if saboteur_performance=="avg" or saboteur_performance=="average":
-        good_slice=number_of_honest//2+(1 if number_of_saboteurs==0 else 0)
-    elif saboteur_performance=="perf" or saboteur_performance=="perfect":
-        good_slice=number_of_robots//2-number_of_saboteurs+1
-    bad_slice=-number_of_saboteurs if number_of_saboteurs>0 else None
+
+    good_slice,bad_slice=noise_groups_slices(number_of_robots,number_of_saboteurs,saboteur_performance)
 
     # sellers_to_good_list=[]
     # sellers_to_bad_list=[]
-    # if bad_slice is not None:sellers_to_sab_list=[]
+    # #if bad_slice is not None:sellers_to_sab_list=[]
+    # if number_of_saboteurs>0:
     # if separate_groups:
-    #     if bad_slice is not None:
+    #     #if bad_slice is not None:
+    #     if number_of_saboteurs>0:
     #         sellers_to_good_list=[[],[],[]]
     #         sellers_to_bad_list=[[],[],[]]
     #         sellers_to_sab_list=[[],[],[]]
@@ -2059,7 +2043,8 @@ def buyers_sellers_groups(  filename:str,
     df_buys=100*df_buys_num/df_buys_den
     df_buys_good_ratio=100*(df_buys[0:good_slice].sum(axis=0)/df_buys.sum(axis=0)).mean().round(3)
     df_buys_bad_ratio=100*(df_buys[good_slice:bad_slice].sum(axis=0)/df_buys.sum(axis=0)).mean().round(3)
-    if bad_slice is not None:df_buys_sab_ratio=100*(df_buys[bad_slice:].sum(axis=0)/df_buys.sum(axis=0)).mean().round(3)
+    if number_of_saboteurs>0:
+        df_buys_sab_ratio=100*(df_buys[bad_slice:].sum(axis=0)/df_buys.sum(axis=0)).mean().round(3)
     df_buys_mean=df_buys.mean(axis=0)
     df_buys_median=df_buys.median(axis=0)
     df_buys_var=df_buys.var(axis=0)
@@ -2070,7 +2055,8 @@ def buyers_sellers_groups(  filename:str,
     df_sells=100*df_sells_num/df_sells_den
     df_sells_good_ratio=100*(df_sells[0:good_slice].sum(axis=0)/df_sells.sum(axis=0)).mean().round(3)
     df_sells_bad_ratio=100*(df_sells[good_slice:bad_slice].sum(axis=0)/df_sells.sum(axis=0)).mean().round(3)
-    if bad_slice is not None:df_sells_sab_ratio=100*(df_sells[bad_slice:].sum(axis=0)/df_sells.sum(axis=0)).mean().round(3)
+    if number_of_saboteurs>0:
+        df_sells_sab_ratio=100*(df_sells[bad_slice:].sum(axis=0)/df_sells.sum(axis=0)).mean().round(3)
     df_sells_mean=df_sells.mean(axis=0)
     df_sells_median=df_sells.median(axis=0)
     df_sells_var=df_sells.var(axis=0)
@@ -2192,7 +2178,7 @@ def buyers_sellers_groups(  filename:str,
     df_buys_good_ratio['plot_order']=0
     df_buys_bad_ratio=pd.DataFrame(pd.Series(df_buys_bad_ratio))
     df_buys_bad_ratio['plot_order']=1
-    if bad_slice is not None:
+    if number_of_saboteurs>0:
         df_buys_mean_sab=df_buys_mean[bad_slice:]
         df_buys_median_sab=df_buys_median[bad_slice:]
         df_buys_mean_sab_mean=pd.DataFrame(pd.Series(df_buys_mean_sab.mean()))
@@ -2274,7 +2260,7 @@ def buyers_sellers_groups(  filename:str,
         sns.pointplot(data=pd.melt(df_sells_var_bad,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[0,4],color=NOISE_GROUPS_PALETTE['bad'],join=False,scale=1.6,markers='s')
         sns.pointplot(data=pd.melt(df_buys_var_good,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[1,4],color=NOISE_GROUPS_PALETTE['good'],join=False,scale=2.2,markers='^')
         sns.pointplot(data=pd.melt(df_buys_var_bad,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[1,4],color=NOISE_GROUPS_PALETTE['bad'],join=False,scale=1.6,markers='s')
-    if bad_slice is not None:
+    if number_of_saboteurs>0:
         warnings.filterwarnings( "ignore", module = "seaborn\..*" )#ignore color of "x" warning
         sns.pointplot(data=pd.melt(df_sells_mean_sab,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[0,0],color=NOISE_GROUPS_PALETTE['saboteur'],join=False,markers='x')
         sns.pointplot(data=pd.melt(df_buys_mean_sab,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[1,0],color=NOISE_GROUPS_PALETTE['saboteur'],join=False,markers='x')
@@ -2331,7 +2317,7 @@ def buyers_sellers_groups(  filename:str,
     sns.pointplot(data=pd.melt(df_buys_good_ratio,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[1,3],color=NOISE_GROUPS_PALETTE['good'],join=False,scale=2.2,markers='^')
     sns.pointplot(data=pd.melt(df_sells_bad_ratio,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[0,3],color=NOISE_GROUPS_PALETTE['bad'],join=False,scale=1.6,markers='s')
     sns.pointplot(data=pd.melt(df_buys_bad_ratio,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[1,3],color=NOISE_GROUPS_PALETTE['bad'],join=False,scale=1.6,markers='s')
-    if bad_slice is not None:
+    if number_of_saboteurs>0:
         warnings.filterwarnings( "ignore", module = "seaborn\..*" )#ignore color of "x" warning
         sns.pointplot(data=pd.melt(df_sells_sab_ratio,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[0,3],color=NOISE_GROUPS_PALETTE['saboteur'],join=False,markers='x')
         sns.pointplot(data=pd.melt(df_buys_sab_ratio,id_vars=['plot_order']),x='plot_order',y='value',ax=axs[1,3],color=NOISE_GROUPS_PALETTE['saboteur'],join=False,markers='x')
@@ -2533,7 +2519,7 @@ def behaviours_buyers_sellers_groups(
     elif save_plot:print(f"saved {fig_count} figures in {join(save_folder,experiment)}")
 
 
-def behaviours_market_evolution(#
+def behaviours_market_evolution(
                                 data_folder,
                                 experiment="",
                                 performance_metric="",
@@ -2650,9 +2636,10 @@ def behaviours_market_evolution(#
                                                 # save_name=f"{n_honest}_{behavior_initials}_{payment_system}_{repu_stake}_{lie_angle}_{noise_mu}_{noise_range}_{saboteur_performance}"
                                                 save_name=f.split("/")[-1].split(".csv")[0]
 
-                                            # market_metric_evolution(filename=f,
-                                            market_lorenz_gini(filename=f,
-                                            # wealth_distribution(filename=f,
+                                            # market_metric_evolution(
+                                            market_lorenz_gini(
+                                            # wealth_distribution(
+                                                                    filename=f,
                                                                     data_folder_and_subfolder=join(data_folder,experiment,SUB_FOLDERS_DICT[behavior_initials]),
                                                                     metric=performance_metric,
                                                                     number_of_robots=n_robots,
@@ -3104,7 +3091,7 @@ if __name__ == '__main__':
 
     compare_behaviors_performance_quality(
                                         data_folder=CONFIG_FILE.DATA_DIR,
-                                        experiment="IM_7_1_1_UNBIASED_NODEFAULT_NORMALIZED",
+                                        experiment="IM_7_1_1_UNBIASED_DEFAULT_NORMALIZED",
                                         #BUG WEALTH_THRESHOLD not working anymore with LASTn
                                         experiment_part="last.33",
                                         # experiment_part="whole",
@@ -3126,9 +3113,9 @@ if __name__ == '__main__':
                                             # 'n',
                                             # 's',
                                             # "b",
-                                            'c',
+                                            # 'c',
                                             # 't',
-                                            'r',
+                                            # 'r',
                                             # 'Nv',
                                             # 'h',
                                             # 'hs',
@@ -3140,7 +3127,7 @@ if __name__ == '__main__':
                                             ],
                                         reputation_stake_list=[
                                                                 False,
-                                                                # True,
+                                                                True,
                                                             ],
                                         saboteur_performance_list=[
                                                                     "avg",
@@ -3155,12 +3142,9 @@ if __name__ == '__main__':
                                     )
 
 
-    exit()
-
     behaviours_market_evolution(
                             data_folder=CONFIG_FILE.DATA_DIR,
-                            # experiment="IFM_1_05_1_UNBIASED_DEFAULT_TWOTRANS_r",
-                            experiment="IM_7_1_1_UNBIASED_NODEFAULT_NORMALIZED",
+                            experiment="IM_7_1_1_UNBIASED_DEFAULT_NORMALIZED",
                             performance_metric="wealth",    
                             pair_plot=1,
                             fill_between=True,
@@ -3174,10 +3158,10 @@ if __name__ == '__main__':
                                         ],
                             behaviours=[
                                     # "b",
-                                    't',
-                                    'c',
-                                    's',
-                                    'n',
+                                    # 't',
+                                    # 'c',
+                                    # 's',
+                                    # 'n',
                                     'r',
                                     # 'Nv',
                                     # 'h',
@@ -3203,13 +3187,14 @@ if __name__ == '__main__':
                             # save_folder=join(CONFIG_FILE.PLOT_DIR,"wealth_distribution"),
                             # save_folder=join(CONFIG_FILE.PLOT_DIR,"market_values"),
                             save_folder=join(CONFIG_FILE.PLOT_DIR,"gini_index"),
-                            save_plot=1
+                            save_plot=0
                             )
 
+    exit()
 
     behaviours_buyers_sellers_groups(
                             data_folder=CONFIG_FILE.DATA_DIR,
-                            experiment="IM_7_1_1_UNBIASED_NODEFAULT_HEURISTIC",
+                            experiment="IM_7_1_1_UNBIASED_DEFAULT_NORMALIZED",
                             n_honests=[
                                         25,
                                         24,
@@ -3222,8 +3207,8 @@ if __name__ == '__main__':
                                     # 's',
                                     # "b",
                                     'r',
-                                    't',
-                                    'c',
+                                    # 't',
+                                    # 'c',
                                     # 'Nv',
                                     # 'h',
                                     # 'hs',
@@ -3248,60 +3233,8 @@ if __name__ == '__main__':
                             # compare_best_of_only=False,
                             multi_plot=False,
                             save_folder=join(CONFIG_FILE.PLOT_DIR,"buys_sells_groups"),
-                            save_plot=0
+                            save_plot=1
                             )
-
-
-    compare_behaviors_performance_quality(
-                                        data_folder=CONFIG_FILE.DATA_DIR,
-                                        experiment="IM_7_1_1_UNBIASED_NODEFAULT_NOMALIZED",
-                                        experiment_part="whole",
-                                        # experiment_part="last.33",
-                                        performance_metric="items",
-                                        pair_plot=True,
-                                        short_x_labels=True,
-                                        quality_index="transactionsS",
-                                        multi_quality=True,
-                                        show_dishonests=True,
-                                        auto_xlabels=False,
-                                        n_honests=[
-                                            24,
-                                            25,
-                                            # 22,
-                                            # 17,
-                                            # 20
-                                            ],
-                                        behaviours=[
-                                            # 'n',
-                                            # 's',
-                                            "b"
-                                            # 'r',
-                                            # 't',
-                                            # 'c',
-                                            # 'Nv',
-                                            # 'h',
-                                            # 'hs',
-                                            ],#to compare w/ n+NP,n+P,s+NP,s+P
-                                        behavior_params_experiments=BEHAV_PARAMS_COMBINATIONS,
-                                        payment_systems=[
-                                            # "NP",
-                                            "P"
-                                            ],
-                                        reputation_stake_list=[
-                                                                False,
-                                                                # True,
-                                                            ],
-                                        saboteur_performance_list=[
-                                                                    "avg",
-                                                                    "perf",
-                                                                ],
-                                        compare_with_reference=True,
-                                        compare_best_of=False,
-                                        compare_best_of_only=False,
-                                        multi_plot=True,
-                                        save_folder=join(CONFIG_FILE.PLOT_DIR,"behav_compar_quality"),
-                                        save_plot=0
-                                    )
 
 
     bimodal_uniform_noise_comparison(data_folder=CONFIG_FILE.DATA_DIR,
