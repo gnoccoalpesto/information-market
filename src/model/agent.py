@@ -53,6 +53,7 @@ class Agent:
         self._radius = radius
         self.items_collected = 0
         self._carries_food = False
+        # self._expiration_timer=0#[x]IEFM
 
         self.communication_radius = communication_radius
         self._communication_cooldown = communication_cooldown
@@ -126,8 +127,6 @@ class Agent:
         self.previous_nav = copy.deepcopy(self.behavior.navigation_table)
         if self.comm_state == CommunicationState.OPEN:
             session = CommunicationSession(self, neighbors)
-            #TODO IS THIS WORTH THE EFFICIENCY GAIN?
-            #agents decides to query only neigh or bchain for info
             if self.behavior.required_information==RequiredInformation.LOCAL:
                 self.behavior.buy_info(None,session)
             elif self.behavior.required_information==RequiredInformation.GLOBAL:    
@@ -146,6 +145,7 @@ class Agent:
                 self.move()
             except InsufficientFundsException:
                 pass
+        # if self.carries_food: self.increase_exipration_timer()#[x]IEFM
         self.update_communication_state()
         self.update_trace()
 
@@ -296,6 +296,7 @@ class Agent:
     def drop_food(self):
         self._carries_food = False
         self.items_collected += 1
+        # self._expiration_timer=0#[x]IEFM
 
 
     def pickup_food(self):
@@ -333,3 +334,11 @@ class Agent:
 
     def communication_happened(self):
         self._time_since_last_comm = 0
+
+    #[x]IEFM
+    # def increase_exipration_timer(self):
+    #     self._expiration_timer += 1
+
+    
+    # def get_expiration_timer(self):
+    #     return self._expiration_timer
