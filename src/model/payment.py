@@ -30,6 +30,7 @@ class PaymentAPI:
         self.reputation_stake_coeff = payment_db.reputation_stake_coeff
         self.increment_stake = payment_db.increment_stake
         self.reset_stake = payment_db.reset_stake
+        self.demand_charity = payment_db.demand_charity
 
 
 class PaymentDB:
@@ -48,8 +49,12 @@ class PaymentDB:
         self.database = {}
         for robot_id in population_ids:
             self.database[robot_id] = {"reward": payment_system_params["initial_reward"],
+                                       #TODO save initial reward for each robot: worth it?
                                        #TODO introduce stake key only for correct payment system w/ staking
                                        "stake": {_: 0 for _ in population_ids},
+                                    #    "charity": {_: 0 for _ in population_ids},
+                                       "charity": 0,#as for now, cumulative charity stake
+                                                    # no tracking of individual donations
                                        "payment_system": eval(payment_system_params['class'])(
                                                                 **payment_system_params['parameters']),
                                         "wallet_age": 0,
@@ -81,6 +86,7 @@ class PaymentDB:
         for robot_id in newcomers_ids:
             self.database[robot_id] = {"reward": payment_system_params["initial_reward"],
                                        "stake": {_: 0 for _ in range(NEW_DB_LEN) },
+                                        "charity": 0,
                                        "payment_system": eval(payment_system_params['class'])(
                                                                 **payment_system_params['parameters']),
                                         "wallet_age": 0,
@@ -115,11 +121,9 @@ class PaymentDB:
             #[ ]BY PARTS STAKING: non rewarding
             if reputation<0:
                 stake_ratio=stake_ratio_min**(2*reputation/self.history_span)
-                #NOTE: history_span is used in all cases to normalize reputation span
             else:
-                '''#[ ] WEALTH TAXATION
-                RICH_THRESHOLD=7
-                if reputation>RICH_THRESHOLD:
+                '''#[ ] RICH PENALIZED REPUTATION STAKING
+                if self.is_rich(robot_id):
                     stake_ratio=0.5*stake_ratio_min**(-reputation/self.history_span)
                 #[ ]NO HIGH REWARD PENALTY
                 '''
@@ -127,6 +131,7 @@ class PaymentDB:
                 #'''
             return stake_ratio
         return 1
+    
     
 
     def increment_stake(self,staker_id,buyer_id,amount):
@@ -179,13 +184,21 @@ class PaymentDB:
 
 
     def get_total_reward(self):
-        #TODO integrate
         return sum([self.database[robot_id]["reward"] for robot_id in self.database])
         
 
     def get_reward(self, robot_id):
-        #TODO integrate
         return self.database[robot_id]["reward"]
+    
+
+    def get_wealth(self, robot_id):
+        return self.database[robot_id]["reward"]+\
+                            sum(self.database[robot_id]["stake"].values())
+    
+
+    def get_total_wealth(self):
+        return sum([self.get_wealth(robot_id) for robot_id in self.database])
+
 
     #TODO PAYMENT SHOULD ONLY RETURN THE FULL LIST,
     #     COMPUTATION, EVEN MAX,MEAN,... SHOULD BE DONE BY THE CALLER
@@ -218,8 +231,7 @@ class PaymentDB:
                 raise ValueError("Robot id not recognized")
             
         elif method=="total" or method=="t" or method=="T":
-            wealth=self.database[robot_id]["reward"]+\
-                            sum(self.database[robot_id]["stake"].values())
+            wealth=self.get_wealth(robot_id)
             return wealth - self.get_lowest_reward()*3
         
         elif method=="history" or method=="h" or method=="H":
@@ -259,9 +271,7 @@ class PaymentDB:
         if method=="reward" or method=="r" or method=="R" or method=="w":
             return self.get_mean_reward()
         elif method=="total" or method=="t" or method=="T":
-            total_wealths=[self.database[robot_id]["reward"]+ 
-                            sum(self.database[robot_id]["stake"].values()) \
-                           for robot_id in self.database]
+            total_wealths=self.get_total_wealth()
             return np.mean(total_wealths)
         elif method=="history" or method=="h" or method=="H":
             method="history"
@@ -314,12 +324,14 @@ class PaymentDB:
         return sorted_database
         
     
-    def get_reward_ranking(self,robot_id,reputation_method):
+    def get_reward_ranking(self,robot_id=None,reputation_method='reward'):
         sorted_database = self.get_sorted_database(reputation_method)
+        if robot_id is None:pass
         return list(sorted_database.keys()).index(robot_id)
 
     
     def get_reputation_ranking(self,robot_id,method="reward"):
+        #TODO new method for giving same ranking for same reputation
         if method=="reward" or method=="r" or method=="R" or method=="w" or \
             method=="total" or method=="t" or method=="T":
             return self.get_reward_ranking(robot_id,method)
@@ -371,9 +383,206 @@ class PaymentDB:
             raise ValueError("Transaction type not recognized")
         return self.database[robot_id][f"n_{type}_transactions"]
     
+
     def get_stake_pot(self,robot_id:int):
         return self.database[robot_id]["payment_system"].pot_amount
+    
 
+    #[ ] WEALTH STATUS CHECKS
+    def is_rich(self,robot_id:int,metric="reward",method:str="threshold"):
+        '''
+        tests if robot is rich, based on metric. Accepted values:
+            -"reward" or "r" or "R": uses robot's reward
+            -"total" or "t" or "T": uses robot's total wealth
+
+        method is determined by method. Accepted values are:
+            -"threshold" or "t" or "T": robot is rich if its wealth is above a threshold,
+                compared to the other robots' wealth
+            -"ranking" or "r" or "R": robot is rich if its wealth is in the top X% of the
+                robots' wealth ranking
+        '''
+        if metric=="reward" or metric=="r" or metric=="R":
+            robot_wealth=self.get_reward(robot_id)
+        else:
+            robot_wealth=self.get_wealth(robot_id)
+            
+        if method=="threshold" or method=="t" or method=="T":
+            threshold_scale=0.5
+            if robot_wealth>threshold_scale*self.get_highest_reputation(method=metric):
+                return True
+        elif method=="ranking" or method=="r" or method=="R":
+            ranking_threshold=0.1
+            if self.get_reputation_ranking(robot_id,method=metric)<ranking_threshold*self.get_number_of_wallets():
+                return True
+        return False
+
+
+    def is_poor(self,robot_id:int,metric="reward",method:str="threshold"):
+        '''
+        TODO definie in a similar manner to is_rich
+        '''
+        if metric=="reward" or metric=="r" or metric=="R":
+            robot_wealth=self.get_reward(robot_id)
+        else:
+            robot_wealth=self.get_wealth(robot_id)
+            
+        if method=="threshold" or method=="t" or method=="T":
+            threshold_scale=2
+            if robot_wealth<threshold_scale*self.get_lowest_reputation(method=metric):
+                return True
+        elif method=="ranking" or method=="r" or method=="R":
+            ranking_threshold=0.9
+            if self.get_reputation_ranking(robot_id,method=metric)>ranking_threshold*self.get_number_of_wallets():
+                return True
+        return False
+    
+
+    #[ ] RICH PENALISATION
+    def rich_penalisation(self,robot_id:int,amount:float=None,metric:str="reward",method:str="stake",):
+        '''
+        the robot considered too rich must pay
+
+        rich status is determined by metric. Accepted values:
+            -"reward" or "r" or "R": uses robot's reward
+            -"total" or "t" or "T": uses robot's total wealth
+
+        payment method is determined by method. Accepted values are:
+            -"tax", "taxes", "t", "T": robot pays taxes
+            -"stake" (charity): robot adds charity to its charity stake, to be used on request
+            -"directX" (chatity): robot redistributes wealth by direct payment to other robots;
+                in this last case, X could be:
+                    -"P": probability based, considering robots' wealth's ranking
+                    -"D": deterministic, amount is based on robots' wealth's ranking.
+                    If no direct method is specified, "D" is used by default
+        '''
+        if method=="tax" or method=="taxes" or method=="t" or method=="T":
+            self.pay_taxes(robot_id,amount,metric)
+        else:
+            self.pay_charity(robot_id,amount,metric,method)
+
+
+    def pay_charity(self,robot_id:int,amount:float=None,metric="reward",method="stake"):
+        '''
+        the robot considered too rich must pay the charity
+
+        payment method could be:
+            - "stake": robot adds charity to its charity stake, to be used on request
+            - "directX": robot redistributes wealth by direct payment to other robots;
+                in this last case, X could be:
+                    -"P": probability based, considering robots' wealth's ranking
+                        TODO probability to give to someone or to give a share to everyone?
+                    -"D": deterministic, amount is based on robots' wealth's ranking.
+                    If no direct method is specified, "D" is used by default
+
+        :param robot_id: id of the robot considered too rich
+        :param amount: amount to be paid.
+            If None, it is calculated based on robots' wealth's ratio with initial wealth
+        :param metric: method to calculate amount to be paid. Accepted values:
+            -"reward" or "r" or "R": uses robot's reward
+            -"total" or "t" or "wealth" or "w": uses robot's total wealth
+
+        1 decide which metric to use
+        2 decide how much to pay
+        3 pay charity
+        4 split charity stake among other robots
+        '''
+        #TODO correct initial wealth
+        initial_wealth=7
+        if metric=="reward" or metric=="r" or metric=="R":
+            robot_wealth=self.get_reward(robot_id)
+        elif metric=="total" or metric=="t" or metric=="wealth" or metric=="w":
+            #TODO method to calculate total wealth
+            robot_wealth=self.get_wealth(robot_id)
+        else:
+            raise ValueError("Method not recognized")
+        weight=0.5
+        if amount is None:
+            amount=weight*robot_wealth/initial_wealth
+        if amount>1:
+            amount=1
+
+        self.apply_cost(robot_id,amount)
+
+        if method=="stake":
+            self.database[robot_id]["charity_stake"]+=amount
+        elif "direct" in method:
+            if "P" in method:
+                pass
+            else: #"D" or default
+                pass
+
+
+    def pay_taxes(self,robot_id:int,amount:float=None,metric:str="reward",method:str=""):
+        '''
+        the robot considered too rich must pay taxes
+
+        the amount payed will be burned and removed from the system
+
+        :param robot_id: id of the robot considered too rich
+        :param amount: amount to be paid.
+            If None, it is calculated based on robots' wealth's ratio with initial wealth
+        :param metric: method to calculate amount to be paid. Accepted values:
+            -"reward" or "r" or "R": uses robot's reward
+            -"total" or "t" or "wealth" or "w": uses robot's total wealth
+
+        '''
+        if metric=="reward" or metric=="r" or metric=="R":
+            robot_wealth=self.get_reward(robot_id)
+        elif metric=="total" or metric=="t" or metric=="wealth" or metric=="w":
+            robot_wealth=self.get_wealth(robot_id)
+        weight=0.5
+        #TODO correct initial wealth
+        initial_wealth=7
+        if amount is None:
+            amount=weight*robot_wealth/initial_wealth
+        if amount>1:
+            amount=1
+        self.apply_cost(robot_id,amount)
+
+    def tax_all_rich(self,metric:str="reward",tax_method:str="",test_method:str="ranking"):
+        '''
+        apply taxation to all richers robots
+
+        tax_method accepted:
+        -"inflation": total value of the system is kept constant, so the total amount of money is burned
+        -"redistribution": wealth is redistributed from rich to !rich. For each rich, amount is the difference
+            between its value and the one of the richest !rich robot
+        '''
+        rich_list=[robot_id for robot_id in self.database if self.is_rich(robot_id,metric,test_method)]
+
+        if tax_method=="inflation":
+            if metric=="reward" or metric=="r" or metric=="R":
+                total_value=self.get_total_reward()
+            elif metric=="total" or metric=="t" or metric=="wealth" or metric=="w":
+                total_value=self.get_total_wealth()
+            initial_wealth=7
+            initial_value=initial_wealth*len(self.database)
+            value_difference=total_value-initial_value
+            [self.apply_cost(robot_id,value_difference/len(rich_list)) for robot_id in rich_list]
+
+        elif tax_method=="redistribution":
+            pass
+
+
+    #[ ] POOR BEFEFITS
+    def demand_charity(self,robot_id:int,amount:float):
+        '''
+        checks if the charitable robot has enough charity to give in its stake
+        if not, raises the InsufficientFundsException to go back to the previous cycle
+
+        :param robot_id: id of the charitable robot charity
+        :param amount: amount to be given
+
+        :ruturn: True if the robot has enough charity. Raises InsufficientFundsException otherwise
+        '''
+        if self.database[robot_id]["charity_stake"]>=amount:
+            self.database[robot_id]["charity_stake"]-=amount
+            return True
+        else:
+            raise InsufficientFundsException
+        
+
+        
 
 ############################################################################################################
 ############################################################################################################
@@ -386,48 +595,6 @@ class PaymentSystem(ABC):
     @abstractmethod
     def new_reward(self, reward: float, payment_api:PaymentAPI, rewarded_id):
         pass
-
-
-class DelayedPaymentPaymentSystem(PaymentSystem):
-    #TODO create params for each payment system
-    def __init__(self, information_share,reputation_stake,reputation_metric):
-        super().__init__()
-        self.information_share = information_share
-        self.transactions = set()
-
-
-    def new_transaction(self, transaction: Transaction, payment_api: PaymentAPI):
-        self.transactions.add(transaction)
-
-
-    def new_reward(self, reward: float, payment_api, rewarded_id):
-        reward_to_distribute = self.information_share * reward
-        shares_mapping = self.calculate_shares_mapping(reward_to_distribute)
-        try:
-            for seller_id, share in shares_mapping.items():
-                payment_api.transfer(rewarded_id, seller_id, share)
-                last_redistribution= share-(self.stake_amount if hasattr(self,"stake_amount") else 0)
-                payment_api.update_history(seller_id, last_redistribution)
-        except InsufficientFundsException:
-            pass
-        finally:
-            self.reset_transactions()
-
-
-    def calculate_shares_mapping(self, reward_share_to_distribute=1):
-        if len(self.transactions) == 0:
-            return {}
-        seller_ids = [t.seller_id for t in self.transactions]
-        final_mapping = Counter(seller_ids)
-        total_shares = sum(final_mapping.values())
-        for seller in final_mapping:
-            final_mapping[seller] = final_mapping[seller] * (
-                reward_share_to_distribute) / total_shares
-        return final_mapping
-
-
-    def reset_transactions(self):
-        self.transactions.clear()
 
 
 class OutlierPenalisationPaymentSystem(PaymentSystem):
@@ -449,7 +616,16 @@ class OutlierPenalisationPaymentSystem(PaymentSystem):
 
     def new_transaction(self, transaction: Transaction, payment_api: PaymentAPI):
         stake_amount=self.get_stake_amount(payment_api,transaction.seller_id)
+        '''#[ ] NO DIRECT CHARITY TRANSACTION 
         payment_api.apply_cost(transaction.seller_id, stake_amount)
+        '''
+        #[ ] DIRECT DEMAND CHARITY TRANSACTION
+        try:
+            payment_api.apply_cost(transaction.seller_id, stake_amount)
+        except InsufficientFundsException:
+            if payment_api.demand_charity(transaction.buyer_id) >= stake_amount:
+                pass
+        #'''
         self.pot_amount += stake_amount
         self.transactions.add(transaction)
         payment_api.increment_stake(transaction.seller_id,transaction.buyer_id,stake_amount)
@@ -474,8 +650,8 @@ class OutlierPenalisationPaymentSystem(PaymentSystem):
                 payment_api.transfer(rewarded_id, seller_id, share*reward_share_to_distribute)
                 '''#[ ]SINGLE TRANSFER
                 payment_api.transfer(rewarded_id, seller_id, share*reward_share_to_distribute)
-                #'''
-                #[ ] POT-BIASED & REWARD BIASED REPUTATION: great performance improvement
+                # '''#[ ] POT+REWARD BIASED HISTORY
+                #  great performance improvement
                 # last_redistribution= share*(self.pot_amount+reward_share_to_distribute)-(self.stake_amount if hasattr(self,"stake_amount") else 0)
                 #[ ]UNBIASED REPUTATION #NOTE if reward<1, *reward will have a penalizing effect
                 #NOTE_ could be reward scaled: w_x [*reward_share_to_distribute]
@@ -533,3 +709,45 @@ class OutlierPenalisationPaymentSystem(PaymentSystem):
     def reset_transactions(self):
         self.transactions.clear()
         self.pot_amount = 0
+
+
+class DelayedPaymentPaymentSystem(PaymentSystem):
+    #TODO create params for each payment system
+    def __init__(self, information_share,reputation_stake,reputation_metric):
+        super().__init__()
+        self.information_share = information_share
+        self.transactions = set()
+
+
+    def new_transaction(self, transaction: Transaction, payment_api: PaymentAPI):
+        self.transactions.add(transaction)
+
+
+    def new_reward(self, reward: float, payment_api, rewarded_id):
+        reward_to_distribute = self.information_share * reward
+        shares_mapping = self.calculate_shares_mapping(reward_to_distribute)
+        try:
+            for seller_id, share in shares_mapping.items():
+                payment_api.transfer(rewarded_id, seller_id, share)
+                last_redistribution= share-(self.stake_amount if hasattr(self,"stake_amount") else 0)
+                payment_api.update_history(seller_id, last_redistribution)
+        except InsufficientFundsException:
+            pass
+        finally:
+            self.reset_transactions()
+
+
+    def calculate_shares_mapping(self, reward_share_to_distribute=1):
+        if len(self.transactions) == 0:
+            return {}
+        seller_ids = [t.seller_id for t in self.transactions]
+        final_mapping = Counter(seller_ids)
+        total_shares = sum(final_mapping.values())
+        for seller in final_mapping:
+            final_mapping[seller] = final_mapping[seller] * (
+                reward_share_to_distribute) / total_shares
+        return final_mapping
+
+
+    def reset_transactions(self):
+        self.transactions.clear()
