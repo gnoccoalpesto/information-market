@@ -138,6 +138,7 @@ class Agent:
     def step(self):
         self.behavior.navigation_table = self.new_nav
         self.sensors = self.environment.get_sensors(self)
+        
         if not self.comm_state == CommunicationState.PROCESSING:
             self.behavior.step(AgentAPI(self))
             try:
@@ -335,8 +336,16 @@ class Agent:
     def communication_happened(self):
         self._time_since_last_comm = 0
 
+
     #[x]IEFM
     # def increase_exipration_timer(self):
+    """
+    
+        if self._carries_food:
+            self._food_expiration_time += 1
+        elif self._food_expiration_time > 0:
+            self._food_expiration_time = 0
+    """
     #     self._expiration_timer += 1
 
     
