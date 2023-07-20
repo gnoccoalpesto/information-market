@@ -25,15 +25,11 @@ AGENT_NOISE_SD_LIST=(0.05)
 # (uniform:) average, perfect:
 AGENT_NOISE_MU_LIST=(0.051)
 AGENT_NOISE_RANGE_LIST=(0.1)
-#combine_strategy
-COMBINE_STRATEGY_LIST=(
-						"waa"
-						# "nfwar" 
-						# "fwar" 
-						# "nrwar" 
-						# "wara"
-						)
+
 #payment system
+PAYMENT_SYSTEM_INITIAL_REWARD=7
+PAYMENT_SYSTEM_INFORMATION_SHARE=1
+
 PAYMENT_SYSTEM_CLASS_LIST=(
 							"OutlierPenalisationPaymentSystem" 
 							"DelayedPaymentPaymentSystem"
@@ -42,9 +38,14 @@ PAYMENT_SYSTEM_REPUTATION_STAKE_LIST=(
 										false
 										true
 )
+#market
+MARKET_CLASS="FixedPriceMarket"
+MARKET_REWARD=1
+
 #data collection
 DATA_PRECISE_RECORDING_INTERVAL=100
 DATA_TRANSACTIONS_LOG=false
+
 #robots
 NUMBER_OF_ROBOTS=25
 HONEST_POPULATION_LIST=(
@@ -60,6 +61,14 @@ DISHONEST_LIE_ANGLE_LIST=(
 						30
 						90
 					)
+#combine_strategy
+COMBINE_STRATEGY_LIST=(
+						"waa"
+						# "nfwar" 
+						# "fwar" 
+						# "nrwar" 
+						# "wara"
+						)
 # behaviors ----------------------------------------------------
 BEHAVIOR_LIST=(
 				"b"
