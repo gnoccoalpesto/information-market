@@ -259,6 +259,70 @@ BAD_PARAM_COMBINATIONS_DICT={
                 }
 
 
+
+def noise_groups_slices(
+                        n_robots,
+                        n_dishonest,
+                        saboteur_performance,
+                        data_to_slice=None
+                        ):
+    """
+    compute the amount of robots in each noise groups.
+    Optionally, can also directly slice the data relative to groups.
+
+    :param saboteur_performance: the noise performance of byzxantines. Accepted values:
+                                    - "avg": average noise performance;
+                                    - "perf": perfect noise performance;
+                                    - "bypass": bypass. equivalent to "avg";
+                                    - None: equivalent to "avg".
+
+    :param data_to_slice: the data to slice (optional)
+
+    :return: the amount of robots in each noise groups;
+             if data_to_slice is not None, the sliced data. 
+    """
+    n_honest=n_robots-n_dishonest
+
+    n_good=(n_honest+1)//2 if saboteur_performance=="avg" or\
+                                    saboteur_performance=="bypass" or\
+                                    saboteur_performance==None or\
+                                    n_dishonest==0 \
+            else (n_robots+1)//2-n_dishonest
+    #NOTE: prevents negative values in case of large amount of saboteurs
+    n_good=max(0,n_good)
+
+    if data_to_slice is None:
+        return n_good,n_honest
+    
+    good_data=data_to_slice[:n_good]
+    bad_data=data_to_slice[n_good:n_honest]
+    sab_data=None if n_dishonest==0 else data_to_slice[n_honest:]
+    return good_data,bad_data,sab_data
+
+
+def noise_groups_ids(
+                    n_robots,
+                    n_dishonest,
+                    saboteur_performance
+                    ):
+    """
+    :param saboteur_performance: the noise performance of byzxantines. Accepted values:
+                                    - "avg": average noise performance;
+                                    - "perf": perfect noise performance;
+                                    - "bypass": bypass. equivalent to "avg";
+                                    - None: equivalent to "avg".
+
+    :return: the ids of robots in each noise groups.
+    """
+    n_good,n_honest=noise_groups_slices(n_robots,n_dishonest,saboteur_performance)
+
+    good_ids=list(range(n_good))
+    bad_ids=list(range(n_good,n_honest))
+    saboteur_ids=list(range(n_honest,n_robots))
+
+    return good_ids,bad_ids,saboteur_ids
+
+
 class State(Enum):
     EXPLORING = 1
     SEEKING_FOOD = 2
@@ -593,7 +657,8 @@ class BenchmarkBehavior(TemplateBehaviour):
                  byzantine_performance="avg",
                  good_acceptance_rate=0.8,
                  bad_acceptance_rate=0.5,
-                 saboteur_acceptance_rate=0.2,):
+                 saboteur_acceptance_rate=0.2
+                 ):
         super().__init__(combine_strategy=combine_strategy)
         self.required_information=RequiredInformation.GLOBAL
         self.information_ordering_metric="age"
@@ -602,21 +667,14 @@ class BenchmarkBehavior(TemplateBehaviour):
         self.bad_acceptance_rate=bad_acceptance_rate
         self.saboteur_acceptance_rate=saboteur_acceptance_rate
 
-        number_of_honest=number_of_robots-number_of_byzantines
-        if byzantine_performance=="avg" or byzantine_performance=="average":
-            good_slice=number_of_honest//2+(1 if number_of_byzantines==0 else 0)
-        elif byzantine_performance=="perf" or byzantine_performance=="perfect":
-            good_slice=number_of_robots//2-number_of_byzantines+1
-        bad_slice=-number_of_byzantines if number_of_byzantines>0 else None
-
-        self.good_ids=list(range(good_slice))
-        if bad_slice is not None:
-            self.bad_ids=list(range(good_slice,bad_slice))
-            self.byzantine_ids=list(range(bad_slice,number_of_robots))
-        else:
-            self.bad_ids=list(range(good_slice,number_of_robots))
-            self.byzantine_ids=list(range(good_slice,number_of_robots))
-
+        #NOTE "real" (wrt swarm noise mean) group division can be bypassed by setting
+        # byzantine_performance = "avg" or "bypass" or None. In this case, good and bad groups
+        # are corrispondent to lower and upper half of honest robots
+        byzantine_performance=None
+        self.good_ids,self.bad_ids,self.saboteur_ids=noise_groups_ids(number_of_robots,
+                                                                      number_of_byzantines,
+                                                                      byzantine_performance)
+        
 
     def test_data_validity(self, location: Location, data,_,__):
         return data["age"] < self.navigation_table.get_age_for_location(location)
@@ -640,7 +698,7 @@ class BenchmarkBehavior(TemplateBehaviour):
             return np.random.random() <= self.good_acceptance_rate
         elif seller_id in self.bad_ids:
             return np.random.random() <= self.bad_acceptance_rate
-        elif seller_id in self.byzantine_ids:
+        elif seller_id in self.saboteur_ids:
             return np.random.random() <= self.saboteur_acceptance_rate
 
 
@@ -849,7 +907,7 @@ class ScepticalBehavior(NaiveBehavior):
                             self.navigation_table.replace_information_entry(location, new_target)
                             self.pending_information[location].clear()
                         else:
-                            # '''#[ ] SCEPTICISM W/ CONFIRMATION OF PENDING INFORMATION
+                            # '''#[ ]SCEPTICISM W/ CONFIRMATION OF PENDING INFORMATION
                             for target in self.pending_information[location].values():
                                 if self.difference_score(target.get_distance(),
                                                          other_target.get_distance()) \
@@ -863,7 +921,7 @@ class ScepticalBehavior(NaiveBehavior):
                                     break
                             else:
                                 self.pending_information[location][bot_id] = other_target
-                            ''' S. W/OUT CONFIRMATION
+                            '''#[ ]SCEPTICISM W/OUT CONFIRMATION
                             pass
                             #'''
                     except InsufficientFundsException:
@@ -1301,7 +1359,6 @@ class SaboteurReputationHistoryBehavior(ReputationHistoryBehavior):
         return t
 
 
-#[ ] ReputationHistoryScepticalBehavior
 class ReputationHistoryScepticalBehavior(ReputationHistoryBehavior):
     def __init__(self, combine_strategy="WeightedAverageAgeStrategy", 
                  verification_method="discrete", 
@@ -1316,7 +1373,7 @@ class ReputationHistoryScepticalBehavior(ReputationHistoryBehavior):
     def behavior_specific_combine(self, location: Location, other_target: Target,# payment_database:PaymentDB,
                                   session: CommunicationSession, seller_id):
         pass
-        # payment_database=None#[ ] could also use variable scepticism
+        # payment_database=None#NOTE could also use variable scepticism
         # if not self.navigation_table.is_information_valid_for_location(location)\
         #         or self.difference_score(
         #             self.navigation_table.get_relative_position_for_location(location),
@@ -1334,7 +1391,7 @@ class ReputationHistoryScepticalBehavior(ReputationHistoryBehavior):
     
 
     def get_scepticism_threshold(self,payment_database:PaymentDB,seller_id):
-        # if payment_database is not None:#[ ] could also use variable scepticism [2]
+        # if payment_database is not None:#NOTE could also use variable scepticism [2]
         #     seller_reputation=payment_database.get_reputation(seller_id,"r")
         #     comparison_reputation=payment_database.get_mean_reputation,("r")
         #     return self.weight_scepticism(seller_reputation,comparison_reputation)
