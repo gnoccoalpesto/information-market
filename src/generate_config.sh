@@ -31,18 +31,19 @@ CONFIG_FILE_TEMPLATE="${ASSETS_DIR}/config_template"
 #GENERAL PARAMETERS ####################################################
 # - DO NOT MODIFY,  UNLESS YOU WANT TO INTRODUCE ENVIRONMENT CHANGES - #
 
-#environment, food, nest, visualisation, random walk, agent, payment system, market
+#environment, food, nest, visualisation, random walk, agent
 
 . ./fixed_params_generate_config.sh
 
-############################################################################################
-############################################################################################
-############################################################################################
-#EXPERIMENT PARAMETERS: MODIFY AS YOU WILL #################################################
-# ----------------- NOTE LISTS MUST BE IN THIS FORMAT: (value1 ... valueN) --------------- #
-# ----------------- NOTE BOOLs = {true, false} ------------------------------------------- #
+########################################################################################
+########################################################################################
+########################################################################################
+#EXPERIMENT PARAMETERS: MODIFY AS YOU WILL #############################################
+# --------------- NOTE LISTS MUST BE IN THIS FORMAT: (value1 ... valueN) ------------- #
+# --------------- NOTE BOOLs = {true, false} ----------------------------------------- #
 
-#simulation, visualisation, noise, combine_strategy, payment system, data collection, robots, behaviors
+#simulation, visualisation, noise, combine_strategy, payment system, data collection,
+# robots, behaviors, payment system, market
 
 . ./params_experiment_generate_config.sh
 

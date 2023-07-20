@@ -64,9 +64,7 @@ class PaymentDB:
                                         "n_completed_transactions": [0]*len(population_ids),
                                         "n_combined_transactions" : [0]*len(population_ids),
                                         "history": [None]*self.history_span, #NOTE history is loaded bottom->top
-                                        # "reward_trend": 0,
-                                        # "n_transactions_trend": 0,
-                                        # LOCATIONS COULD PUT TOO MUCH STRESS <- CONTINUOUS UPDATE
+                                        # location_age (continuos update): too much computational cost
                                         #->TODO COULD USE A DATE INSTEAD
                                         # "locations_acquisition": {Location.FOOD: 0,
                                         #                  Location.NEST: 0
@@ -326,6 +324,7 @@ class PaymentDB:
     
     def get_reward_ranking(self,robot_id=None,reputation_method='reward'):
         sorted_database = self.get_sorted_database(reputation_method)
+        #TODO forgot what was this for
         if robot_id is None:pass
         return list(sorted_database.keys()).index(robot_id)
 
@@ -388,7 +387,7 @@ class PaymentDB:
         return self.database[robot_id]["payment_system"].pot_amount
     
 
-    #[ ] WEALTH STATUS CHECKS
+    #[x] WEALTH STATUS CHECKS
     def is_rich(self,robot_id:int,metric="reward",method:str="threshold"):
         '''
         tests if robot is rich, based on metric. Accepted values:
@@ -418,9 +417,6 @@ class PaymentDB:
 
 
     def is_poor(self,robot_id:int,metric="reward",method:str="threshold"):
-        '''
-        TODO definie in a similar manner to is_rich
-        '''
         if metric=="reward" or metric=="r" or metric=="R":
             robot_wealth=self.get_reward(robot_id)
         else:
@@ -616,7 +612,7 @@ class OutlierPenalisationPaymentSystem(PaymentSystem):
 
     def new_transaction(self, transaction: Transaction, payment_api: PaymentAPI):
         stake_amount=self.get_stake_amount(payment_api,transaction.seller_id)
-        '''#[ ] NO DIRECT CHARITY TRANSACTION 
+        # '''#[ ] NO DIRECT CHARITY TRANSACTION 
         payment_api.apply_cost(transaction.seller_id, stake_amount)
         '''
         #[ ] DIRECT DEMAND CHARITY TRANSACTION
@@ -632,10 +628,10 @@ class OutlierPenalisationPaymentSystem(PaymentSystem):
 
 
     def new_reward(self, reward, payment_api:PaymentAPI, rewarded_id):
-        #'''#[ ]DEFAULT MARKET: robot could cause IFE 
+        #'''#[ ] NO DEFAULT PROTECTION (robot could cause IFE) 
         reward_share_to_distribute = self.information_share * reward
-        '''#[ ]DEFAULT-PROTECTED MARKET: robot cannot cause IFE
-        # reward_share_to_distribute=min(reward_share_to_distribute,payment_api.get_reward(rewarded_id))
+        '''#[ ]DEFAULT PROTECTION ("pay what you can")
+        # reward_share_to_distribute=min(self.information_share * reward,payment_api.get_reward(rewarded_id))
         if reward_share_to_distribute<0: reward_share_to_distribute=0
         # '''
         payment_api.apply_gains(rewarded_id, self.pot_amount)
@@ -643,15 +639,15 @@ class OutlierPenalisationPaymentSystem(PaymentSystem):
         shares_mapping = self.calculate_shares_mapping()
         try:
             for seller_id, share in shares_mapping.items():
-                # ''' #[ ]DOUBLE TRANSFER
+                # ''' #[ ]DOUBLE TRANSFER TRANSACTION (stake, then reward)
                 payment_api.transfer(rewarded_id, seller_id, share*self.pot_amount)
 
             for seller_id, share in shares_mapping.items():
                 payment_api.transfer(rewarded_id, seller_id, share*reward_share_to_distribute)
-                '''#[ ]SINGLE TRANSFER
+                '''#[ ]SINGLE TRANSFER TRANSACTION
                 payment_api.transfer(rewarded_id, seller_id, share*reward_share_to_distribute)
+
                 # '''#[ ] POT+REWARD BIASED HISTORY
-                #  great performance improvement
                 # last_redistribution= share*(self.pot_amount+reward_share_to_distribute)-(self.stake_amount if hasattr(self,"stake_amount") else 0)
                 #[ ]UNBIASED REPUTATION #NOTE if reward<1, *reward will have a penalizing effect
                 #NOTE_ could be reward scaled: w_x [*reward_share_to_distribute]
@@ -660,16 +656,18 @@ class OutlierPenalisationPaymentSystem(PaymentSystem):
                 #[ ]POT-BIASED ONLY
                 # last_redistribution= share*self.pot_amount-(self.stake_amount if hasattr(self,"stake_amount") else 0)
                 #[ ]UNBIASED
-                last_redistribution= share- 1/len(shares_mapping)
+                # last_redistribution= share- 1/len(shares_mapping)
                 #TODO use current stake amount, base stake amount, or stake amount at the time of the transaction?
                 # seller_stake_amount=self.get_stake_amount(payment_api,seller_id)#stake(t)k
                 # seller_stake_amount=self.stake_amount#stake(0)
                 #stake(k) for some past contribution k ???
-                payment_api.update_history(seller_id, last_redistribution)
+                # payment_api.update_history(seller_id, last_redistribution)
+
         except InsufficientFundsException:
             # CONFIG_FILE.IFE_COUNT+=1
             # print('IFE:PAY ', CONFIG_FILE.IFE_COUNT)
             pass
+        
         finally:
             #TODO is it fair to just drop all the debts in case of IFE? ir this can be considered fairness?
             self.reset_transactions()
