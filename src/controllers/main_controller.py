@@ -70,7 +70,7 @@ class MainController:
         self.init_statistics()
         for _ in range(self.config.value_of("simulation_steps")):
             self.step()
-        #[ ] NEWCOMERS PHASE
+        #[ ]NEWCOMERS
         if CONFIG_FILE.NEWCOMER_PHASE:
             # self.init_statistics(newcomers_phase=True)
             self.environment.create_newcomers(CONFIG_FILE.NEWCOMER_TYPE, CONFIG_FILE.NEWCOMER_AMOUNT)
@@ -98,7 +98,7 @@ class MainController:
         res = ""
         for bot in sorted_bots:
             res += str(bot.reward()) + ","
-        res = res[:-1]  # remove last comma
+        res = res[:-1]
         res += "\n"
         return res
 
