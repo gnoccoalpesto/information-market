@@ -42,8 +42,7 @@ if [ $# -lt 1 ]; then
 fi
 
 
-## CREATE OUTPUT FOLDER
-#TODO
+##TODO CREATE OUTPUT FOLDER
 # MY_TEMP_DIR=/tmp/fcerri
 
 
@@ -76,8 +75,7 @@ for file in $CONFIGS; do
 done
 
 
-## TRANSFER DATA
-#TODO
+##TODO TRANSFER DATA
     # mv $MY_TEMP_DIR/* $DATA_DIR
 # compress results first if you have many or very large files
     # should i use rsync?
