@@ -286,7 +286,6 @@ class InformationMarket():
 
                 print(f"LOGGED ERROR: {e}\n")
                 continue
-                #[ ] pass #could resolve the InsufficientFunds bug
 
             
     def run_processes(self,config: Configuration):

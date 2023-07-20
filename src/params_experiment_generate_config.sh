@@ -8,7 +8,7 @@
 # ----------------- NOTE BOOLs = {true, false} ------------------------------------------- #
 
 #simulation
-SIMULATION_STEPS=150000
+SIMULATION_STEPS=115000
 SIMULATION_SEED=5684436
 NUMBER_RUNS=20
 #visualisation
@@ -62,7 +62,7 @@ DISHONEST_LIE_ANGLE_LIST=(
 					)
 # behaviors ----------------------------------------------------
 BEHAVIOR_LIST=(
-				# "b"
+				"b"
 				"n"
 				"s"
 				"r" 
