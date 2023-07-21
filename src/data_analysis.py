@@ -355,7 +355,6 @@ BEHAV_PARAMS_COMBINATIONS={"n":[[]],
                                 }
 
 
-
 ############################################################################################################
 ############################################################################################################
 ################################## UTILITIES ###############################################################
@@ -554,7 +553,7 @@ def dataframe_from_csv(filename,
     return df
 
 
-#TODO rework for finding best, worst run seeds
+#TODO rework best, worst run seeds
 def find_best_worst_seeds(filenames=[],
                         metric="",
                         data_folder="",
@@ -569,7 +568,7 @@ def find_best_worst_seeds(filenames=[],
     in this shape /DATA_DIR/METRIC/FILENAME.csv
     """
     if amount_to_find<1:amount_to_find=1
-    data_folder=f"{data_folder}{metric}/" if data_folder!="" else ""
+    data_folder=join(data_folder,metric) if data_folder!="" else ""
     if not filenames:
         filenames.extend([join(data_folder, f)
             for f in os.listdir(data_folder) if isfile(join(data_folder, f))])
@@ -640,7 +639,7 @@ def myanovatest(
     print(f"F-statistic: {anova_test.statistic},\np-value: {anova_test.pvalue}\n")
 
 
-#TODO TEMPLATE
+#TODO TEMPLATE plotting high level function
 def filenames_list_for_plotting(
                                 data_folder,
                                 experiment="",
@@ -697,14 +696,18 @@ def filenames_list_for_plotting(
 #######################################################################################################################
 ########################################## BASE PLOTTING FUNCTIONS ####################################################
 def noise_level(
-                number_agents=25,
-                number_saboteurs=3,
-                noise_average=0.05,
-                noise_range=0.05,
-                saboteurs_noise="", # bimodal:"", "average", "perfect"
-                random_switch=False,
-                random_seed=None
-            ):
+#TODO noise levels colored for each noise group
+            number_agents=25,
+            number_saboteurs=3,
+            noise_average=0.05,
+            noise_range=0.05,
+            saboteurs_noise="",
+            random_switch=False,
+            random_seed=None
+        ):
+    '''
+    :param saboteurs_noise: noise performance. Accepted: "bimodal", "average", "perfect"
+    '''
     noise_list=generate_uniform_noise_list(number_agents, number_saboteurs, saboteurs_noise,
                                          noise_average, noise_range,random_switch,random_seed)
     fig, ax = plt.subplots()
@@ -728,20 +731,20 @@ def noise_level(
     # plt.pause(0.001)
 
 
-def noise_vs_items(
-                    filenames=[],
-                    # data_folder="../data/reputation/",
-                    # metric="items_evolution",
-                    # saboteurs_noise="",
-                    experiments_labels=[],
-                    title="",
-                    ylabel="",
-                    by=1,
-                    multi_plot=False,
-                    save_plot=False,
-                    save_folder="../plots/",
-                    save_name="noise_vs_items",
-                ):
+def noise_metric_analysis(
+                        filenames=[],
+                        # data_folder="../data/reputation/",
+                        # metric="items_evolution",
+                        # saboteurs_noise="",
+                        experiments_labels=[],
+                        title="",
+                        ylabel="",
+                        by=1,
+                        multi_plot=False,
+                        save_plot=False,
+                        save_folder="../plots/",
+                        save_name="noise_vs_metric",
+                    ):
     '''
     :param filenames: list of filenames to compare,
                     if empty all the files in the folder are fetched
@@ -798,7 +801,7 @@ def performance_with_quality(
                         save_plot=False,
                         save_folder="",
                         save_name="performance_with_quality",
-                        ):
+                    ):
     '''
     This method prints a sequence of given boxplots, each one representing a different behaviour.
     On the left y axis, the value of the performance is represented.
@@ -1097,18 +1100,21 @@ def performance_with_quality(
         plt.close()
 
 
-def market_metric_evolution(filename:str,
-                     data_folder_and_subfolder:str="",
-                     metric:str="reward_evolution",
-                     number_of_robots:int=25,
-                     multi_plot:bool=False,
-                     pair_plot:bool=False,
-                     fill_between:bool=False,
-                     individual_group_sum:bool=True,
-                     save_plot:bool=False,
-                     save_folder:str="",
-                     save_name:str="",
+def market_metric_evolution(
+                        filename:str,
+                        data_folder_and_subfolder:str="",
+                        metric:str="reward_evolution",
+                        number_of_robots:int=25,
+                        multi_plot:bool=False,
+                        pair_plot:bool=False,
+                        fill_between:bool=False,
+                        individual_group_sum:bool=True,
+                        save_plot:bool=False,
+                        save_folder:str="",
+                        save_name:str="",
                     ):
+    '''
+    '''
     line_width=1
     if 'reward' in metric:
         metric="rewards_evolution"
@@ -1430,7 +1436,8 @@ def market_metric_evolution(filename:str,
     if not multi_plot and not save_plot:plt.show()
 
 
-def performance_evolution(filename:str,#[x]performance evolution
+def performance_evolution(#[x]performance evolution
+                        filename:str,
                         data_folder_and_subfolder:str="",
                         number_of_robots:int=25,
                         window_size:int=5000,
@@ -1476,25 +1483,24 @@ def performance_evolution(filename:str,#[x]performance evolution
         df_meanagents_delta['saboteur']=df_meanagents_delta.iloc[:,bad_slice:].mean(axis=1)
 
         
-
-    
-
-def wealth_distribution(filename:str,
-                        data_folder_and_subfolder:str="",
-                        metric:str="reward_evolution",
-                        number_of_robots:int=25,
-                        multi_plot:bool=False,
-                        pair_plot:bool=False,
-                        fill_between:bool=False,
-                        save_plot:bool=False,
-                        save_folder:str="",
-                        save_name:str="",
-                        ):
+def market_wealth_distribution(
+                            filename:str,
+                            data_folder_and_subfolder:str="",
+                            metric:str="wealth_evolution",
+                            number_of_robots:int=25,
+                            weight_by_group_wealth:bool=0,
+                            multi_plot:bool=False,
+                            pair_plot:bool=False,
+                            fill_between:bool=False,
+                            save_plot:bool=False,
+                            save_folder:str="",
+                            save_name:str="",
+                            ):
     """
     devide the robots in groups of chosen percentile level and
     compute the wealth distribution for the percentiles
-
     """
+
     # if 'reward' in metric:
     #     metric="rewards_evolution"
     # elif 'wealth' in metric:
@@ -1585,14 +1591,38 @@ def wealth_distribution(filename:str,
 
     #FREQUENCY PLOTS
     fig,ax=plt.subplots(figsize=(20,10))
+
+    df_group_to_use=df_last_allagents_group
+    y_label='frequency'
+    if weight_by_group_wealth:
+        y_label="group wealth-weighted "+y_label
+        df_group_to_use['frequency'].iloc[:len(df_last_meanagents_classes['ids']['poor'])]=\
+            df_group_to_use['frequency'].iloc[:len(df_last_meanagents_classes['ids']['poor'])]*\
+            df_last_meanagents_classes['relative_wealth'].iloc[0]
+        df_group_to_use['frequency'].iloc[len(df_last_meanagents_classes['ids']['poor']):\
+            len(df_last_meanagents_classes['ids']['poor'])+len(df_last_meanagents_classes['ids']['middle'])]=\
+            df_group_to_use['frequency'].iloc[len(df_last_meanagents_classes['ids']['poor']):\
+            len(df_last_meanagents_classes['ids']['poor'])+len(df_last_meanagents_classes['ids']['middle'])]*\
+            df_last_meanagents_classes['relative_wealth'].iloc[1]
+        df_group_to_use['frequency'].iloc[len(df_last_meanagents_classes['ids']['poor'])+\
+            len(df_last_meanagents_classes['ids']['middle']):]=\
+            df_group_to_use['frequency'].iloc[len(df_last_meanagents_classes['ids']['poor'])+\
+            len(df_last_meanagents_classes['ids']['middle']):]*\
+            df_last_meanagents_classes['relative_wealth'].iloc[2]
+        
     plt.title(f"wealth distribution and quantiles, with poor, mid and rich distinction for\n{filename}")
     plt.xlabel("quantile")
-    plt.ylabel("frequency")
-    sns.lineplot(x=df_last_allagents_group.index,y=df_last_allagents_group['frequency'],color='black')
-    plt.fill_between(df_last_allagents_group.index,df_last_allagents_group['frequency'],
-                     where=(df_last_allagents_group.index>=0)&(df_last_allagents_group.index<=\
-                                                               number_of_saboteurs-1),
-                     color='blue',alpha=0.2)
+    plt.ylabel(y_label)
+    sns.lineplot(x=df_group_to_use.index,y=df_group_to_use['frequency'],color='black')
+    if number_of_saboteurs>1:
+        plt.fill_between(df_group_to_use.index,df_group_to_use['frequency'],
+                        where=(df_group_to_use.index>=0)&(df_group_to_use.index<=\
+                                                                number_of_saboteurs-1),
+                        color='blue',alpha=0.2)
+    elif number_of_saboteurs==1:
+        #NOTE 0 must be counted as a position. eg the interval [0,2] contains 3 poors
+        plt.vlines(0,0,df_group_to_use['frequency'].iloc[0],color='blue',linewidth=10)
+
     if number_of_saboteurs!=len(df_last_meanagents_classes['ids']['poor']):
         if number_of_saboteurs<len(df_last_meanagents_classes['ids']['poor']):
             interval_min=number_of_saboteurs
@@ -1601,31 +1631,32 @@ def wealth_distribution(filename:str,
             interval_min=len(df_last_meanagents_classes['ids']['poor'])
             interval_max=number_of_saboteurs
 
-        plt.fill_between(df_last_allagents_group.index,df_last_allagents_group['frequency'],
-                        where=(df_last_allagents_group.index>=interval_min-1)&(df_last_allagents_group.index<=interval_max-1),
+        plt.fill_between(df_group_to_use.index,df_group_to_use['frequency'],
+                        where=(df_group_to_use.index>=interval_min-1)&(df_group_to_use.index<=interval_max-1),
                         color='red',alpha=0.2)
-    plt.fill_between(df_last_allagents_group.index,df_last_allagents_group['frequency'],
-                        where=(df_last_allagents_group.index>=number_of_saboteurs-1)&\
-                            (df_last_allagents_group.index<=len(df_last_meanagents_classes['ids']['poor'])+\
+    plt.fill_between(df_group_to_use.index,df_group_to_use['frequency'],
+                        where=(df_group_to_use.index>=number_of_saboteurs-1)&\
+                            (df_group_to_use.index<=len(df_last_meanagents_classes['ids']['poor'])+\
                             len(df_last_meanagents_classes['ids']['middle'])-1),
                         color='black',alpha=0.2)
-    plt.fill_between(df_last_allagents_group.index,df_last_allagents_group['frequency'],
-                        where=(df_last_allagents_group.index>=len(df_last_meanagents_classes['ids']['poor'])+\
+    #NOTE point where rich red area starts must NOT be counted for number of rich. eg [22,24] contains 2 rich
+    plt.fill_between(df_group_to_use.index,df_group_to_use['frequency'],
+                        where=(df_group_to_use.index>=len(df_last_meanagents_classes['ids']['poor'])+\
                             len(df_last_meanagents_classes['ids']['middle'])-1)&\
-                            (df_last_allagents_group.index<=len(df_last_meanagents_classes['ids']['poor'])+\
+                            (df_group_to_use.index<=len(df_last_meanagents_classes['ids']['poor'])+\
                             len(df_last_meanagents_classes['ids']['middle'])+\
                             len(df_last_meanagents_classes['ids']['rich'])-1),
                         color='red',alpha=0.2)
     #TODO finish: ideal poor line, considering the number of saboteurs
     # if number_of_saboteurs>0:
-    #     plt.vlines(number_of_saboteurs-1,0,df_last_allagents_group['frequency'].max(),color='blue')
+    #     plt.vlines(number_of_saboteurs-1,0,df_group_to_use['frequency'].max(),color='blue')
     # if len(df_last_meanagents_group['ids']['poor'])>0:
-    #     plt.vlines(len(df_last_meanagents_group['ids']['poor'])-1,0,df_last_allagents_group['frequency'].max(),
+    #     plt.vlines(len(df_last_meanagents_group['ids']['poor'])-1,0,df_group_to_use['frequency'].max(),
     #                color='red',linestyles='dashed')
     # if len(df_last_meanagents_group['ids']['rich'])>0:
     #     plt.vlines(len(df_last_meanagents_group['ids']['poor']+df_last_meanagents_group['ids']['middle'])-1,
-    #                0,df_last_allagents_group['frequency'].max(),color='red',linestyles='dashed')
-    plt.vlines(df_last_allagents_mean['quantile'],0,df_last_allagents_group['frequency'].max(),color='green',linestyles='dashed')
+    #                0,df_group_to_use['frequency'].max(),color='red',linestyles='dashed')
+    plt.vlines(df_last_allagents_mean['quantile'],0,df_group_to_use['frequency'].max(),color='green',linestyles='dashed')
     plt.xticks(range(number_of_robots))
     wealth_class_text=f"mean quantile: {df_last_allagents_mean['quantile']:.2f}\n\nWEALTH CLASSES (relative wealth - numerosity):\n"
     for wealt_class in df_last_meanagents_classes.index:
@@ -1634,7 +1665,7 @@ def wealth_distribution(filename:str,
         if wealt_class=='rich': wealth_class_text+=" (ideally 0)\n"
         elif wealt_class=='poor': wealth_class_text+=f" (ideally {number_of_saboteurs})\n"
         else: wealth_class_text+=f" (ideally {number_of_honest})\n"    
-    plt.text(number_of_robots*.38,df_last_allagents_group['frequency'].max()*0.8,wealth_class_text)
+    plt.text(number_of_robots*.38,df_group_to_use['frequency'].max()*0.8,wealth_class_text)
 
     #ANTICUMULATED FREQUENCY PLOT
     twax=ax.twinx()
@@ -2393,7 +2424,6 @@ def run_outlier(filename:str,WHIS=1.5):
     return outl_agents,total_outliers
 
 
-
 #####################################################################################
 # -----------------------EXPERIMENTS PLOTTING FUNCTIONS---------------------------------- #
 def behaviours_buyers_sellers_groups(
@@ -2519,31 +2549,32 @@ def behaviours_buyers_sellers_groups(
     elif save_plot:print(f"saved {fig_count} figures in {join(save_folder,experiment)}")
 
 
-def behaviours_market_evolution(
-                                data_folder,
-                                experiment="",
-                                performance_metric="",
-                                pair_plot=True,
-                                fill_between=False,
-                                # auto_xlabels=True,
-                                n_robots=25,
-                                n_honests=[25,24,22,20,17],
-                                behaviours=[],
-                                behavior_params_experiments=dict(),
-                                combine_stategies=["waa"],
-                                payment_systems=["P","NP"],
-                                reputation_stake_list=[True,False],
-                                noise_type_list=["uniform"],
-                                noise_mu_list=[0.051],
-                                noise_range_list=[0.1],
-                                saboteur_performance_list=["avg","perf"],
-                                # compare_with_reference=False,
-                                # compare_best_of=False,
-                                # compare_best_of_only=False,
-                                multi_plot=True,
-                                save_plot=False,
-                                save_folder="",
-                                save_name="",
+def behaviors_market_analysis(
+                            data_folder,
+                            experiment="",
+                            performance_metric="",
+                            analysis_type="",
+                            pair_plot=True,
+                            fill_between=False,
+                            # auto_xlabels=True,
+                            n_robots=25,
+                            n_honests=[25,24,22,20,17],
+                            behaviours=[],
+                            behavior_params_experiments=dict(),
+                            combine_stategies=["waa"],
+                            payment_systems=["P","NP"],
+                            reputation_stake_list=[True,False],
+                            noise_type_list=["uniform"],
+                            noise_mu_list=[0.051],
+                            noise_range_list=[0.1],
+                            saboteur_performance_list=["avg","perf"],
+                            # compare_with_reference=False,
+                            # compare_best_of=False,
+                            # compare_best_of_only=False,
+                            multi_plot=True,
+                            save_plot=False,
+                            save_folder="",
+                            save_name="",
                             ):
     '''
     This function plots evolution of wither one or both reward, wealth(includes).
@@ -2562,6 +2593,11 @@ def behaviours_market_evolution(
     :param performance_metric: metric to plot. Permitted values are:
             "wealth", "wealth_evolution";
             "rewards", "rewards_evolution".
+
+    :param analysis_type: type of analysis to perform. Permitted values are:
+        -"evolution", "market_evolution", : plots the evolution of the metric in the market
+        -"gini", "lorenz", "inequality": plots the inequality of the metric in the market
+        -"distribution", "wealth_distribution": plots the distribution of the metric in the market
 
     :param n_robots: number of robots in the experiment; default: 25.
 
@@ -2585,7 +2621,18 @@ def behaviours_market_evolution(
 
     :param save_folder: folder where the plot is saved.
     '''
+    if "evolution" in analysis_type:
+        market_function=market_metric_evolution
+        save_folder=save_folder.replace("ANALYSIS_FOLDER","market_values")
+    elif "gini" in analysis_type or "lorenz" in analysis_type or "inequality" in analysis_type:
+        market_function=market_lorenz_gini
+        save_folder=save_folder.replace("ANALYSIS_FOLDER","gini_index")
+    elif "distribution" in analysis_type:
+        market_function=market_wealth_distribution
+        save_folder=save_folder.replace("ANALYSIS_FOLDER","wealth_distribution")
+
     # if compare_best_of_only:compare_best_of=True
+
     if multi_plot or save_plot:fig_count=0
 
     # if 'reward' in performance_metric:
@@ -2633,23 +2680,22 @@ def behaviours_market_evolution(
                                                 continue
 
                                             if save_plot:
-                                                # save_name=f"{n_honest}_{behavior_initials}_{payment_system}_{repu_stake}_{lie_angle}_{noise_mu}_{noise_range}_{saboteur_performance}"
+                                                # save_name=f"{n_honest}_{behavior_initials}_{payment_system}_{repu_stake}_
+                                                #               {lie_angle}_{noise_mu}_{noise_range}_{saboteur_performance}"
                                                 save_name=f.split("/")[-1].split(".csv")[0]
 
-                                            # market_metric_evolution(
-                                            market_lorenz_gini(
-                                            # wealth_distribution(
-                                                                    filename=f,
-                                                                    data_folder_and_subfolder=join(data_folder,experiment,SUB_FOLDERS_DICT[behavior_initials]),
-                                                                    metric=performance_metric,
-                                                                    number_of_robots=n_robots,
-                                                                    multi_plot=multi_plot,
-                                                                    pair_plot=pair_plot,
-                                                                    fill_between=fill_between,
-                                                                    save_plot=save_plot,
-                                                                    save_folder=behav_save_folder,
-                                                                    save_name=save_name
-                                                                    )
+                                            market_function(
+                                                    filename=f,
+                                                    data_folder_and_subfolder=join(data_folder,experiment,SUB_FOLDERS_DICT[behavior_initials]),
+                                                    metric=performance_metric,
+                                                    number_of_robots=n_robots,
+                                                    multi_plot=multi_plot,
+                                                    pair_plot=pair_plot,
+                                                    fill_between=fill_between,
+                                                    save_plot=save_plot,
+                                                    save_folder=behav_save_folder,
+                                                    save_name=save_name
+                                                    )
 
                                             if multi_plot or save_plot:fig_count+=1
 
@@ -2657,11 +2703,12 @@ def behaviours_market_evolution(
     elif save_plot:print(f"saved {fig_count} figures in {join(save_folder,experiment)}")
 
 
-def compare_behaviors_performance_quality(
+def compare_behaviors_performance(
                                         data_folder,
                                         experiment="",
                                         experiment_part="whole",
                                         performance_metric="",
+                                        compare_evolution=False,
                                         pair_plot=False,
                                         short_x_labels=False,
                                         quality_index="",
@@ -2733,6 +2780,12 @@ def compare_behaviors_performance_quality(
 
     :param save_folder: folder where the plot is saved.
     '''
+    #TODO kwargs for performance function
+    # if compare_evolution:
+    #     performance_function=performance_evolution
+    # else:
+    #     performance_function=performance_with_quality
+
     if compare_best_of_only:compare_best_of=True
     if multi_plot:fig_count=0
 
@@ -2867,32 +2920,34 @@ def compare_behaviors_performance_quality(
                                             filenames=[filenames,secondary_filenames]
                                         if not compare_best_of_only:
 
-                                            # performance_evolution(filename=f,#[x]
-                                            #                         # data_folder_and_subfolder=join(data_folder,experiment,SUB_FOLDERS_DICT[behavior_initials]),
-                                            #                         # metric=performance_metric,
-                                            #                         number_of_robots=n_robots,
-                                            #                         multi_plot=multi_plot,
-                                            #                         pair_plot=pair_plot,
-                                            #                         save_plot=save_plot,
-                                            #                         save_folder=behav_save_folder,
-                                            #                         save_name=save_name
-                                            #                         )
-                                            
-                                            performance_with_quality(
-                                                                    filenames,
-                                                                    experiment_part=experiment_part,
-                                                                    performance_index=performance_metric,
-                                                                    pair_plot=pair_plot,
-                                                                    quality_index=quality_index,
-                                                                    multi_quality=multi_quality,
-                                                                    title=title,
-                                                                    x_labels=x_labels,
-                                                                    show_dishonests=show_dishonests if n_honest<n_robots else False,
-                                                                    multi_plot=multi_plot,
-                                                                    save_plot=save_plot,
-                                                                    save_folder=behav_save_folder if save_plot else "",
-                                                                    save_name=save_name,
-                                                                    )
+                                            if compare_evolution:
+                                                performance_evolution(
+                                                                filename=f,#[x]
+                                                                # data_folder_and_subfolder=join(data_folder,experiment,SUB_FOLDERS_DICT[behavior_initials]),
+                                                                # metric=performance_metric,
+                                                                number_of_robots=n_robots,
+                                                                multi_plot=multi_plot,
+                                                                pair_plot=pair_plot,
+                                                                save_plot=save_plot,
+                                                                save_folder=behav_save_folder,
+                                                                save_name=save_name
+                                                                )
+                                            else:
+                                                performance_with_quality(
+                                                                        filenames,
+                                                                        experiment_part=experiment_part,
+                                                                        performance_index=performance_metric,
+                                                                        pair_plot=pair_plot,
+                                                                        quality_index=quality_index,
+                                                                        multi_quality=multi_quality,
+                                                                        title=title,
+                                                                        x_labels=x_labels,
+                                                                        show_dishonests=show_dishonests if n_honest<n_robots else False,
+                                                                        multi_plot=multi_plot,
+                                                                        save_plot=save_plot,
+                                                                        save_folder=behav_save_folder if save_plot else "",
+                                                                        save_name=save_name,
+                                                                        )
                                             if multi_plot:fig_count+=1
 
                         if compare_best_of and len(best_list)>0:
@@ -2914,21 +2969,35 @@ def compare_behaviors_performance_quality(
                                             # f"{COMBINE_STRATEGY_NAME_DICT[combine_stategy_initials]} combine strategy\n"\
                             # if reputation_stake:title+=",   \nwith Staking based on reputation"
 
-                            performance_with_quality(
+                            if compare_evolution:
+                                performance_evolution(
                                                     best_list,
-                                                    experiment_part=experiment_part,
-                                                    performance_index=performance_metric,
-                                                    pair_plot=pair_plot,
-                                                    quality_index=quality_index,
-                                                    multi_quality=multi_quality,
-                                                    title=title,
-                                                    x_labels=best_labels,
-                                                    show_dishonests=show_dishonests if n_honest<n_robots else False,
+                                                    # data_folder_and_subfolder=join(data_folder,experiment,SUB_FOLDERS_DICT[behavior_initials]),
+                                                    # metric=performance_metric,
+                                                    number_of_robots=n_robots,
                                                     multi_plot=multi_plot,
+                                                    pair_plot=pair_plot,
                                                     save_plot=save_plot,
                                                     save_folder=join(save_folder,experiment,performance_metric) \
                                                         if save_plot else "",
                                                     save_name=best_save_name,
+                                                    )
+                            else:
+                                performance_with_quality(
+                                                        best_list,
+                                                        experiment_part=experiment_part,
+                                                        performance_index=performance_metric,
+                                                        pair_plot=pair_plot,
+                                                        quality_index=quality_index,
+                                                        multi_quality=multi_quality,
+                                                        title=title,
+                                                        x_labels=best_labels,
+                                                        show_dishonests=show_dishonests if n_honest<n_robots else False,
+                                                        multi_plot=multi_plot,
+                                                        save_plot=save_plot,
+                                                        save_folder=join(save_folder,experiment,performance_metric) \
+                                                            if save_plot else "",
+                                                        save_name=best_save_name,
                                                     )
                             if multi_plot:fig_count+=1
 
@@ -2937,7 +3006,7 @@ def compare_behaviors_performance_quality(
         else:print(f"saved {fig_count} figures in {join(save_folder,experiment)}")
 
 
-def bimodal_uniform_noise_comparison(
+def comparison_bimodal_uniform_noise(
                                         data_folder,
                                         experiment="",
                                         metric="",
@@ -3014,7 +3083,7 @@ def bimodal_uniform_noise_comparison(
                                                     payment_system,lie_angle,
                                                     behavior_params_values,
                                                     "uniform",uniform_avg_noise_params_values)
-                            noise_vs_items(filenames,
+                            noise_metric_analysis(filenames,
                                             data_folder=f"",
                                             metric=f"",
                                             experiments_labels=labels,
@@ -3030,239 +3099,186 @@ def bimodal_uniform_noise_comparison(
     fig_count=0
 
 
-#TODO TEMPLATE
-def plot_results(filenames,
-                 data_folder="../data/DATA_SUBFOLDER/",
-                 metric="items",
-                 experiment_part="whole",
-                 type_of_plot="behaviour",
-                 params_to_iterate_on=None,
-                 params_to_generate_labels=[]
-                 ):
-    '''
-    :param filenames: list of filenames to compare.
-        if absolute path is passed, data_folder and metric are ignored
-        shape must be [[filename1, filename2, ...], [filename1, filename2, ...], ...]
-        for type_of_plot="behaviour": [[b11,b12,...],[b21,b22,...],...], will compare bkj for each j,
-            producing k subplots, with j elements each
-        for type_of_plot="noise": [...,[bKref,bKavg,bKperf],...], will compare b1ref with b1avg and b1perf, for each K,
-            producing K different plots, each with 3 subplots, each one with n_robots elements
-    :param data_folder: main data folder.
-        This is devided in SUBFOLDERS (different experiments,...); each one of this contains folders
-        for each tested behaviour (these are automatically retrived by filenames)
-        Each behaviour subfolder contains the data from each tested metric.
-    :param metric: the metric to plot. Accepted values:
-        "items": number of collected items in an experiments
-        "reward": reward in an experiments
-        wrt the experiment_part, this will load data from items_collected and reward or from
-        items_evolution and reward_evolution
-    :param experiment_part: decide if use data from the whole experiment or just a part of it. Accepted values:
-        "whole": use all the data; this will load data from items_collected and reward
-        "lastN", N:int =[50,100] || [0.5,1]: use only the data from the last N% of the experiment;
-         this will load data from intems_evolution and reward_evolution
-    :param type_of_plot: decide the type of plot to use. Accepted values:
-        "behaviour": compares result for same parameters for different behaviours
-        "noise": compares different noise levels (==agents ids) for same behaviour and parameters
-    :param params_to_iterate_on:  list of parameters to iterate on.
-        as for now, this uses the filenames arrays
-    :param params_to_generate_labels: list of params of data to include in the legend.
-        values must be keys of PARAMS_NAME_DICT
-    '''
-    #1 GET METRIC
-    if experiment_part == "whole":
-        if metric=="items": metric="items_collected"
-        elif metric=="reward": metric="reward"
-    else:
-        metric+="_evolution"
-        last_part = float(experiment_part[6:])
-    #2 CONSTRUCT THE COMPLETE FILENAMES
-    #if filenames are absolute paths, ignore data_folder and metric
-    # as for now, construct manually using the lists
-    # if filenames[0][0][0] != "/":
-    #     filenames = [[data_folder + f + "/" + metric + ".csv" \
-    #         for f in filenames[i]] for i in range(len(filenames))]
-
-    #3 ITERATE OVER VECTORS
-
 ##############################################################################################################
 ##############################################################################################################
+#TODO: create this as a summary from config generation / running
 if __name__ == '__main__':
-    #TODO: create this as a summary from config generation / running
+    data_folder=CONFIG_FILE.DATA_DIR
+    save_plot=0
+    multi_plot=0
+    ######################################################
+    number_of_robots=25
+    number_of_honests=[
+                        25,
+                        24,
+                        22,
+                        20,
+                        17
+                        ]
+    
+    experiment="IM_7_1_1_UNBIASED_DEFAULT_NORMALIZED"
+    experiment_part="last.33"
+    # experiment_part="whole"
 
-    compare_behaviors_performance_quality(
-                                        data_folder=CONFIG_FILE.DATA_DIR,
-                                        experiment="IM_7_1_1_UNBIASED_DEFAULT_NORMALIZED",
+    behaviors=[
+                # 'n',
+                # 's',
+                # "b",
+                # 'c',
+                # 't',
+                'r',
+                # 'Nv',
+                # 'h',
+                # 'hs',
+                ]
+    
+    payment_systems=[
+                        "P",
+                        # "NP"
+                    ]
+    
+    reputation_stakes=[
+                        True,
+                        False
+                    ]
+    
+    saboteur_performances=[
+                            "avg",
+                            "perf"
+                        ]
+    ######################################################
+    COMPARE_PERFORMANCES=0
+    performance_metric_compare_performances="items"
+    # performance_metric_compare_performances="rewards"
+    quality_metric_compare_performances="transactionsS"
+    ######################################################
+    MARKET_EVOLUTION=0
+    performance_metric_market_evolution="wealth"
+
+    WEALTH_INEQUALITY_ANALYSIS=0
+    performance_metric_inequality_analysis="wealth"
+
+    WEALTH_DISTRIBUTION_ANALYSIS=1
+    performance_metric_wealth_distribution="wealth"
+
+    DO_MARKET_ANALYSIS=[MARKET_EVOLUTION,WEALTH_INEQUALITY_ANALYSIS,WEALTH_DISTRIBUTION_ANALYSIS]
+    TYPES_OF_ANALYSIS=["evolution","gini","distribution"]
+    MARKET_PERFORMANCE_METRICS=[performance_metric_market_evolution,
+                    performance_metric_inequality_analysis,performance_metric_wealth_distribution]
+    ######################################################
+    BUYERS_SELLERS_GROUPS=0
+    ######################################################
+    #BUG comparison_bimodal_uniform_noise():filename_from_params(), missing argument: 'noise_params_values'
+    NOISE_COMPARISON=0
+    performance_metric_noise_comparison="reward"
+
+    NOISE_LEVELS=0
+    ######################################################
+    FIND_SEEDS=0
+    performance_metric_find_seeds="items_collected"
+
+
+    if COMPARE_PERFORMANCES:
+        compare_behaviors_performance(
+                                        data_folder=data_folder,
+                                        experiment=experiment,
                                         #BUG WEALTH_THRESHOLD not working anymore with LASTn
-                                        experiment_part="last.33",
-                                        # experiment_part="whole",
-                                        performance_metric="items",
+                                        experiment_part=experiment_part,
+                                        performance_metric=performance_metric_compare_performances,
                                         pair_plot=True,
                                         short_x_labels=True,
-                                        quality_index="transactionsS",
+                                        quality_index=quality_metric_compare_performances,
                                         multi_quality=True,
                                         show_dishonests=True,
                                         auto_xlabels=False,
-                                        n_honests=[
-                                            24,
-                                            25,
-                                            22,
-                                            17,
-                                            20
-                                            ],
-                                        behaviours=[
-                                            # 'n',
-                                            # 's',
-                                            # "b",
-                                            # 'c',
-                                            # 't',
-                                            # 'r',
-                                            # 'Nv',
-                                            # 'h',
-                                            # 'hs',
-                                            ],#to compare w/ n+NP,n+P,s+NP,s+P
+                                        n_honests=number_of_honests,
+                                        behaviours=behaviors,#to compare w/ n+NP,n+P,s+NP,s+P
                                         behavior_params_experiments=BEHAV_PARAMS_COMBINATIONS,
-                                        payment_systems=[
-                                            # "NP",
-                                            "P"
-                                            ],
-                                        reputation_stake_list=[
-                                                                False,
-                                                                True,
-                                                            ],
-                                        saboteur_performance_list=[
-                                                                    "avg",
-                                                                    "perf",
-                                                                ],
+                                        payment_systems=payment_systems,
+                                        reputation_stake_list=reputation_stakes,
+                                        saboteur_performance_list=saboteur_performances,
                                         compare_with_reference=True,
-                                        compare_best_of=False,
+                                        compare_best_of=1,
                                         compare_best_of_only=False,
-                                        multi_plot=1,
-                                        save_folder=join(CONFIG_FILE.PLOT_DIR,"behav_compar_quality"),
-                                        save_plot=0
+                                        multi_plot=multi_plot,
+                                        save_folder=join(CONFIG_FILE.PLOT_DIR,"behav_comparison"),
+                                        save_plot=save_plot
                                     )
 
-
-    behaviours_market_evolution(
-                            data_folder=CONFIG_FILE.DATA_DIR,
-                            experiment="IM_7_1_1_UNBIASED_DEFAULT_NORMALIZED",
-                            performance_metric="wealth",    
+    [behaviors_market_analysis(
+                            data_folder=data_folder,
+                            experiment=experiment,
+                            performance_metric=analysis_metric,    
+                            analysis_type=analysis_type,
                             pair_plot=1,
                             fill_between=True,
                             # auto_xlabels=True,
-                            n_honests=[
-                                        22,
-                                        25,
-                                        17,
-                                        24,
-                                        20,
-                                        ],
-                            behaviours=[
-                                    # "b",
-                                    # 't',
-                                    # 'c',
-                                    # 's',
-                                    # 'n',
-                                    'r',
-                                    # 'Nv',
-                                    # 'h',
-                                    # 'hs',
-                                    ],
+                            n_honests=number_of_honests,
+                            behaviours=behaviors,
                             behavior_params_experiments=BEHAV_PARAMS_COMBINATIONS,
-                            payment_systems=[
-                                                "P",
-                                                # "NP"
-                                                ],
-                            reputation_stake_list=[
-                                                    True,
-                                                    False
-                                                    ],
-                            saboteur_performance_list=[
-                                                        "avg",
-                                                        "perf"
-                                                        ],
+                            payment_systems=payment_systems,
+                            reputation_stake_list=reputation_stakes,
+                            saboteur_performance_list=saboteur_performances,
                             # compare_with_reference=False,
                             # compare_best_of=False,
                             # compare_best_of_only=False,
-                            multi_plot=0,
-                            # save_folder=join(CONFIG_FILE.PLOT_DIR,"wealth_distribution"),
-                            # save_folder=join(CONFIG_FILE.PLOT_DIR,"market_values"),
-                            save_folder=join(CONFIG_FILE.PLOT_DIR,"gini_index"),
-                            save_plot=0
+                            multi_plot=multi_plot,
+                            save_folder=join(CONFIG_FILE.PLOT_DIR,"ANALYSIS_FOLDER"),
+                            save_plot=save_plot
                             )
+        for DO_ANALYSIS, analysis_type,analysis_metric in zip(DO_MARKET_ANALYSIS,TYPES_OF_ANALYSIS,MARKET_PERFORMANCE_METRICS)
+        if DO_ANALYSIS
+    ]        
 
-    exit()
-
-    behaviours_buyers_sellers_groups(
-                            data_folder=CONFIG_FILE.DATA_DIR,
-                            experiment="IM_7_1_1_UNBIASED_DEFAULT_NORMALIZED",
-                            n_honests=[
-                                        25,
-                                        24,
-                                        22,
-                                        20,
-                                        17
-                                        ],
-                            behaviours=[
-                                    # 'n',
-                                    # 's',
-                                    # "b",
-                                    'r',
-                                    # 't',
-                                    # 'c',
-                                    # 'Nv',
-                                    # 'h',
-                                    # 'hs',
-                                    ],
+    if BUYERS_SELLERS_GROUPS:
+        behaviours_buyers_sellers_groups(
+                            data_folder=data_folder,
+                            experiment=experiment,
+                            n_honests=number_of_honests,
+                            behaviours=behaviors,
                             behavior_params_experiments=BEHAV_PARAMS_COMBINATIONS,
-                            payment_systems=[
-                                                "P",
-                                                # "NP"
-                                                ],
-                            reputation_stake_list=[
-                                                    True,
-                                                    False
-                                                    ],
-                            saboteur_performance_list=[
-                                                        "avg",
-                                                        "perf"
-                                                        ],
+                            payment_systems=payment_systems,
+                            reputation_stake_list=reputation_stakes,
+                            saboteur_performance_list=saboteur_performances,
                             separate_groups=False,
                             # show_variance=True,
                             # compare_with_reference=False,
                             # compare_best_of=False,
                             # compare_best_of_only=False,
-                            multi_plot=False,
+                            multi_plot=multi_plot,
                             save_folder=join(CONFIG_FILE.PLOT_DIR,"buys_sells_groups"),
-                            save_plot=1
+                            save_plot=save_plot
                             )
 
-
-    bimodal_uniform_noise_comparison(data_folder=CONFIG_FILE.DATA_DIR,
-                                    experiment="",
-                                    metric="rewards",
-                                    n_robots=25,
-                                    n_honests=[25,24],
-                                    behaviors=["n","s","r","Nv","t","w"],
+    if NOISE_COMPARISON:
+        comparison_bimodal_uniform_noise(
+                                    data_folder=data_folder,
+                                    experiment=experiment,
+                                    metric=performance_metric_noise_comparison,
+                                    n_honests=number_of_honests,
+                                    behaviors=behaviors,
                                     behavior_params_experiments=BEHAV_PARAMS_COMBINATIONS,
-                                    multi_plot=True,
-                                    save_plot=False,
-                                    save_folder=""#CONFIG_FILE.PLOT_DIR
+                                    multi_plot=multi_plot,
+                                    save_folder=join(CONFIG_FILE.PLOT_DIR,"noise_comparison"),
+                                    save_plot=save_plot
                                     )
+        
+    if NOISE_LEVELS:
+        [noise_level(
+                        number_agents=number_of_robots,
+                        number_saboteurs=number_of_robots-n_h,
+                        noise_average=0.051,
+                        noise_range=0.1,
+                        saboteurs_noise="perfect" if s_p=="perf" else "average",
+                        )
+            for n_h in number_of_honests
+            for s_p in saboteur_performances
+        ]
 
-
-    find_best_worst_seeds(filenames=[],
-                        data_folder="../data/sceptical/",
-                        metric="items_collected",
+    if FIND_SEEDS:
+        find_best_worst_seeds(filenames=[],
+                        data_folder=data_folder,
+                        metric=performance_metric_find_seeds,
                         base_seed=5684436,
                         amount_to_find=3,
                     )
-
-
-# for n_s in range(0,9):
-#     noise_level(
-#                 number_agents=25,
-#                 number_saboteurs=n_s,
-#                 noise_average=0.051,
-#                 noise_range=0.1,
-#                 saboteurs_noise="perfect",
-#                 )
