@@ -8,14 +8,14 @@
 # ----------------- NOTE BOOLs = {true, false} ------------------------------------------- #
 
 #simulation
-SIMULATION_STEPS=115000
+SIMULATION_STEPS=50000
 SIMULATION_SEED=5684436
 NUMBER_RUNS=20
 #visualisation
 VISUALISATION_ACTIVATE=false
 #noise
 AGENT_NOISE_ASSIGNATION_LIST=(
-							"average" 
+							"average"
 							"perfect"
 							)
 # bimodal:
@@ -31,12 +31,12 @@ PAYMENT_SYSTEM_INITIAL_REWARD=7
 PAYMENT_SYSTEM_INFORMATION_SHARE=1
 
 PAYMENT_SYSTEM_CLASS_LIST=(
-							"OutlierPenalisationPaymentSystem" 
-							"DelayedPaymentPaymentSystem"
+							"OutlierPenalisationPaymentSystem"
+							# "DelayedPaymentPaymentSystem"
 							)
 PAYMENT_SYSTEM_REPUTATION_STAKE_LIST=(
 										false
-										true
+										# true
 )
 #market
 MARKET_CLASS="FixedPriceMarket"
@@ -49,24 +49,23 @@ DATA_TRANSACTIONS_LOG=false
 #robots
 NUMBER_OF_ROBOTS=25
 HONEST_POPULATION_LIST=(
-							20
+							# 20
 							17
-							22
+							# 22
 							25
-							24
+							23
 						)
 DISHONEST_LIE_ANGLE_LIST=(
 						0
-						20
-						30
+						25
 						90
 					)
 #combine_strategy
 COMBINE_STRATEGY_LIST=(
 						"waa"
-						# "nfwar" 
-						# "fwar" 
-						# "nrwar" 
+						# "nfwar"
+						# "fwar"
+						# "nrwar"
 						# "wara"
 						)
 # behaviors ----------------------------------------------------
@@ -74,8 +73,8 @@ BEHAVIOR_LIST=(
 				"b"
 				"n"
 				"s"
-				"r" 
-				"t" 
+				"r"
+				"t"
 				"c"
 				# "Nv"
 				# "h"
@@ -99,8 +98,8 @@ bSABOTEUR_ACCEPTANCE_RATE_LIST=(
 								0.075
 								0
 								)
-			
-# naive: n ; new naive: Nn 
+
+# naive: n ; new naive: Nn
 ################################################ -params:{}
 
 # sceptical: s ; new sceptical: Ns
@@ -117,8 +116,8 @@ cREPUTATION_METHOD_LIST=(
 # ranking: r
 ############ -params:{ranking_threshold}
 rRANKING_THRESHOLD_LIST=(
-						0.3 
-						0.5
+						0.3
+						# 0.5
 						)
 rREPUTATION_METHOD_LIST=(
 						"r"
@@ -128,12 +127,12 @@ rREPUTATION_METHOD_LIST=(
 # wealth threshold: t
 ##################### -params:{comparison_method,scaling}
 tCOMPARISON_METHOD_LIST=(
-							"allavg" 
+							"allavg"
 							# "allmax"
 							)
 tSCALING_LIST=(
-				0.8 	
-				0.5 
+				# 0.8
+				0.5
 				# 0.3
 				)
 tREPUTATION_METHOD_LIST=(
@@ -144,20 +143,20 @@ tREPUTATION_METHOD_LIST=(
 # reputation history: h
 ######################## -params:{verification_method,threshold_method}
 hVERIFICATION_METHOD_LIST=(
-							"discrete" 
-							# "difference" 
-							# "recency" 
-							# "aged" 
+							"discrete"
+							# "difference"
+							# "recency"
+							# "aged"
 							# "aged2"
 						)
 hTHRESHOLD_METHOD_LIST=(
-						# # "positive" 
+						# # "positive"
 						"mean"
 						)
 hSCALING_LIST=(
 				1
-				# 0.8 
-				# 0.5 
+				# 0.8
+				# 0.5
 				# 0.3
 				)
 hKD_LIST=(
@@ -170,24 +169,24 @@ hKD_LIST=(
 hREPUTATION_METHOD_LIST=(
 						"h"
 						)
-						
+
 # reputation history scepticism: hs
 ######################## -params:{verification_method,threshold_method}
 hsVERIFICATION_METHOD_LIST=(
-							"discrete" 
-							# "difference" 
-							# "recency" 
-							# "aged" 
+							"discrete"
+							# "difference"
+							# "recency"
+							# "aged"
 							# "aged2"
 						)
 hsTHRESHOLD_METHOD_LIST=(
-						# # "positive" 
+						# # "positive"
 						"mean"
 						)
 hsSCALING_LIST=(
 				1
-				# 0.8 
-				# 0.5 
+				# 0.8
+				# 0.5
 				# 0.3
 				)
 hsKD_LIST=(
@@ -202,16 +201,16 @@ hsSCEPTICISM_THRESHOLD_LIST=(0.25)
 # variable scepticism: v ; new variable scepticism: Nv
 ###################################################### -params:{comparison_method,scaling,scepticism_threshold,weight_method}
 vCOMPARISON_METHOD_LIST=(
-							"allavg" 
+							"allavg"
 							# "allmax"
 							)
 vSCALING_LIST=(
-				# 0.8 
-				# 0.5 
+				# 0.8
+				# 0.5
 				0.3
 				)
 vSCEPTICISM_THRESHOLD_LIST=(0.25)
 vWEIGHT_METHOD_LIST=(
-						"ratio" 
+						"ratio"
 						# "exponential"
 						)
