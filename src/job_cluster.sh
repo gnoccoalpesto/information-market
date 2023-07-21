@@ -5,10 +5,10 @@
 #SBATCH --output=/home/fcerri/log/out/im_%j.stdout          # output file, %j will be replaced by the Job ID
 #SBATCH --error=/home/fcerri/log/err/im_%j.stderr           # error file
 #SBATCH --partition=Xeon6138                                # the hardware that you want to run on (Xeon6138, Epyc7452  ,...)
-#SBATCH --qos=short                                         # queue (short, long)
+#SBATCH --qos=long                                          # queue (short, long)
 #SBATCH --ntasks=1                                          # launched by the job; set higher for MPI programs
 #SBATCH --mem=3gb                                           # memory per node
-#SBATCH --time=10:00:00                                     # STRICT DEADLINE; time you want to allocate to the job
+#SBATCH --time=20:00:00                                     # STRICT DEADLINE; time you want to allocate to the job
 #SBATCH --cpus-per-task=5                                   # cores per task on the same machine; set higher for OpenMP programs
 
 PROJECT_DIR=$1
