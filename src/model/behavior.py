@@ -290,7 +290,19 @@ def noise_groups_slices(
             else (n_robots+1)//2-n_dishonest
     #NOTE: prevents negative values in case of large amount of saboteurs
     n_good=max(0,n_good)
-
+    """
+    TODO narrower groups: consider only the "more" good/bad
+     (0:narrow_good_slice<good_slice) (larger_good_slice>good_slice:bad_slice)
+    good_slice,bad_slice=n_good,n_honest
+    if narrow_slice!=0:
+        min_narrow_good_slice=0 if saboteur_performance=="perf" else 1
+        narrow_good_slice=max(min_narrow_good_slice,n_good-narrow_slice)
+        narrow_bad_slice=min(n_good+narrow_slice,n_honest-1)
+    NOTE 3 int returned instead of 2 (narrows_good_slice!=larger_good_slice)
+        return (narrow_good_slice,narrow_bad_slice),n_honest
+    else:
+        return (n_good),n_honest
+    """
     if data_to_slice is None:
         return n_good,n_honest
     
@@ -298,6 +310,7 @@ def noise_groups_slices(
     bad_data=data_to_slice[n_good:n_honest]
     sab_data=None if n_dishonest==0 else data_to_slice[n_honest:]
     return good_data,bad_data,sab_data
+
 
 
 def noise_groups_ids(
