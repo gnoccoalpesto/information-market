@@ -92,7 +92,6 @@ def test_not_completed(logfile,trust_completed=True):
     return True
 
 
-
 ##############################################
 '''
 argv[1]: experiment dir; the program will scan all the subdirs and print the ones present
@@ -101,9 +100,16 @@ argv[2:]: behaviors to test; this will be used to prune the present subdirs.
             if the number of behaviors to test is greater than the number of present subdirs,
             the subdirs missing from the experiment dir will be printed and consired as not submitted
             else, all the subdirs present in the experiment dir will be used
-'''
 
-experiment_dir=os.path.join(DATA_DIR,sys.argv[1])
+#TODO add parsing for arg -t: trust config file
+#TODO for not completed exp: search for common params combos,
+#    ie find if [f1,...]=[P11*...P1n, ..., Pm1*...Pmn]
+'''
+try:
+    experiment_dir=os.path.join(DATA_DIR,sys.argv[1])
+except IndexError:
+    print("usage: python3 test_job_completion.py <EXPERIMENT_DIR> [<BEHAVIOR_INITIAL_1> ... <B_I_n>]")
+    exit()
 experiment_behaviors=alphabetical_order([os.path.join(experiment_dir, s) for s in os.listdir(experiment_dir) 
                   if os.path.isdir(os.path.join(experiment_dir, s))])
 
@@ -133,71 +139,3 @@ for eb in experiment_behaviors:
 if result: print("-----\nALL COMPLETED <3")
 else: print("-----\nNOT ALL COMPLETED :(")
     
-
-
-
-
-exit()
-
-if len(submitted_subdirs)!=len(completed_subdirs):
-    submitted_subdirs, not_submitted_subdirs=test_not_submitted(submitted_subdirs,completed_subdirs)
-
-
-[print(f"NOT SUBMITTED -- {n}") for n in not_submitted_subdirs];print()
-
-result=True
-not_completed_subdirs=submitted_subdirs.copy()
-for cs,ss in zip(completed_subdirs,submitted_subdirs):
-    scanfile=f"{cs}/config_log.txt"
-    count_submitted=0
-    #count files in each submitted_subdir
-    for _,_,files in os.walk(ss):
-        count_submitted+=len(files)
-
-    count_completed=0
-    with open(scanfile, 'r') as f:
-        lines = f.readlines()
-        for l in lines:
-            if l.startswith("OUTPUT FILENAME:"):
-                count_completed+=1
-            # else:
-            #     count_submitted+=1
-    if count_submitted!=count_completed:
-        result=False
-    else:
-        completed_subdirs.pop(completed_subdirs.index(cs))
-        not_completed_subdirs.pop(submitted_subdirs.index(ss))
-    print(f"{'NOT ' if count_submitted!=count_completed else ''}OK -- {cs.split('/')[-1]} -- {count_completed}/{count_submitted}")
-
-print(f"\nresult: {'' if result else 'NOT '}all completed")
-# print(completed_subdirs)
-# print(not_completed_subdirs)
-# exit()
-
-if not result:
-    file_subfolder="items_collected"
-    completed_subdirs=[os.path.join(f,file_subfolder) for f in completed_subdirs]
-    #NOTE files in completed dir still have . in name; also different extension
-    not_completed_files=[]
-    for ncs in not_completed_subdirs:
-        for _,_,files in os.walk(ncs):
-            not_completed_files.extend([os.path.join(ncs,f).split('.json')[0].split('/')[-1]
-                                         for f in files])
-    completed_files=[]
-    for cs in completed_subdirs:
-        for _,_,files in os.walk(cs):
-            completed_files.extend([os.path.join(cs,f) for f in files])
-    
-    # to_do_list=[]
-    # for ncf in not_completed_files:
-    #     if ncf not in [cf.split('csv')[0].split('/')[-1].replace('.','') for cf in completed_files]:
-    #         print(ncf, end=" -- ")
-    #         for cf in completed_files:
-    #             print(cf.split('csv')[0].split('/')[-1].replace('.',''))
-    #         exit()
-                # if cf.split('csv')[0].split('/')[-1].replace('.','') == ncf:
-                #     to_do_list.append(cf)
-                #     break
-
-    # print(to_do_list)
-print("++  "*15)

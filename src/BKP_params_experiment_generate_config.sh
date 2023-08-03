@@ -8,7 +8,7 @@
 # ----------------- NOTE BOOLs = {true, false} ------------------------------------------- #
 
 #simulation
-SIMULATION_STEPS=50000
+SIMULATION_STEPS=150000
 SIMULATION_SEED=5684436
 NUMBER_RUNS=20
 #visualisation
@@ -32,10 +32,10 @@ PAYMENT_SYSTEM_INFORMATION_SHARE=1
 
 PAYMENT_SYSTEM_CLASS_LIST=(
 							"OutlierPenalisationPaymentSystem" 
-							# "DelayedPaymentPaymentSystem"
+							"DelayedPaymentPaymentSystem"
 							)
 PAYMENT_SYSTEM_REPUTATION_STAKE_LIST=(
-										# false
+										false
 										true
 )
 #market
@@ -52,13 +52,13 @@ HONEST_POPULATION_LIST=(
 							20
 							17
 							22
-							23
 							25
 							24
 						)
 DISHONEST_LIE_ANGLE_LIST=(
 						0
-						25
+						20
+						30
 						90
 					)
 #combine_strategy
@@ -74,9 +74,9 @@ BEHAVIOR_LIST=(
 				# "b"
 				"n"
 				"s"
-				# "r" 
-				# "t" 
-				# "c"
+				"r" 
+				"t" 
+				"c"
 				# "Nv"
 				# "h"
 				# "hs"
@@ -101,19 +101,11 @@ bSABOTEUR_ACCEPTANCE_RATE_LIST=(
 								)
 			
 # naive: n ; new naive: Nn 
-################################################ -params:{TEST: reputation_method}
-nREPUTATION_METHOD_LIST=(
-						"r"
-						"t"
-						)
+################################################ -params:{}
 
 # sceptical: s ; new sceptical: Ns
-################################## -params:{scepticism_threshold, TEST: reputation_method}
+################################## -params:{threshold} ; {scepticism_threshold}
 sSCEPTICISM_THRESHOLD_LIST=(0.25)
-sREPUTATION_METHOD_LIST=(
-						"r"
-						"t"
-						)
 
 # capitalist: c
 ################# -params:{reputation_method}

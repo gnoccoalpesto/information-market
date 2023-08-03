@@ -88,9 +88,9 @@ BEHAVIOUR_TEMPLATE="${HONEST_TEMPLATE},\n\t\t${DISHONEST_TEMPLATE}"
 
 declare -A HONEST_PARAMETERS
 	HONEST_PARAMETERS[b]="\"number_of_robots\":HONEST_POPULATION,\n\t\t\t\"number_of_byzantines\":DISHONEST_POPULATION,\n\t\t\t\"byzantine_performance\":\"AGENT_NOISE_ASSIGNATION\",\n\t\t\t\"good_acceptance_rate\": GOOD_ACCEPTANCE_RATE,\n\t\t\t\"bad_acceptance_rate\": BAD_ACCEPTANCE_RATE,\n\t\t\t\"saboteur_acceptance_rate\": SABOTEUR_ACCEPTANCE_RATE"
-	HONEST_PARAMETERS[n]="\"reputation_method\": \"REPUTATION_METHOD\""
+	HONEST_PARAMETERS[n]=""
 	HONEST_PARAMETERS[Nn]=""
-	HONEST_PARAMETERS[s]="\"threshold\": SCEPTICISM_THRESHOLD,\n\t\t\t\"reputation_method\": \"REPUTATION_METHOD\""
+	HONEST_PARAMETERS[s]="\"threshold\": SCEPTICISM_THRESHOLD"
 	HONEST_PARAMETERS[Ns]="\"scepticism_threshold\": SCEPTICISM_THRESHOLD"
 	HONEST_PARAMETERS[r]="\"ranking_threshold\": RANKING_THRESHOLD,\n\t\t\t\"reputation_method\": \"REPUTATION_METHOD\""
 	HONEST_PARAMETERS[v]="\"comparison_method\": \"COMPARISON_METHOD\",\n\t\t\t\"scaling\": SCALING,\n\t\t\t\"scepticism_threshold\": SCEPTICISM_THRESHOLD,\n\t\t\t\"weight_method\": \"WEIGHT_METHOD\""
@@ -103,9 +103,9 @@ declare -A HONEST_PARAMETERS
 	
 declare -A DISHONEST_PARAMETERS
 	DISHONEST_PARAMETERS[b]="\"lie_angle\": DISHONEST_LIE_ANGLE,\n\t\t\t\"number_of_robots\":HONEST_POPULATION,\n\t\t\t\"number_of_byzantines\":DISHONEST_POPULATION,\n\t\t\t\"byzantine_performance\":\"AGENT_NOISE_ASSIGNATION\",\n\t\t\t\"good_acceptance_rate\": GOOD_ACCEPTANCE_RATE,\n\t\t\t\"bad_acceptance_rate\": BAD_ACCEPTANCE_RATE,\n\t\t\t\"saboteur_acceptance_rate\": SABOTEUR_ACCEPTANCE_RATE"
-	DISHONEST_PARAMETERS[n]="\"lie_angle\": DISHONEST_LIE_ANGLE,\n\t\t\t\"reputation_method\": \"REPUTATION_METHOD\""
+	DISHONEST_PARAMETERS[n]="\"lie_angle\": DISHONEST_LIE_ANGLE"
 	DISHONEST_PARAMETERS[Nn]="\"lie_angle\": DISHONEST_LIE_ANGLE"
-	DISHONEST_PARAMETERS[s]="\"lie_angle\": DISHONEST_LIE_ANGLE,\n\t\t\t\"threshold\": SCEPTICISM_THRESHOLD,\n\t\t\t\"reputation_method\": \"REPUTATION_METHOD\""
+	DISHONEST_PARAMETERS[s]="\"lie_angle\": DISHONEST_LIE_ANGLE,\n\t\t\t\"threshold\": SCEPTICISM_THRESHOLD"
 	DISHONEST_PARAMETERS[Ns]="\"lie_angle\": DISHONEST_LIE_ANGLE,\n\t\t\t\"scepticism_threshold\": SCEPTICISM_THRESHOLD"
 	DISHONEST_PARAMETERS[r]="\"lie_angle\": DISHONEST_LIE_ANGLE,\n\t\t\t\"ranking_threshold\": RANKING_THRESHOLD,\n\t\t\t\"reputation_method\": \"REPUTATION_METHOD\""
 	DISHONEST_PARAMETERS[v]="\"lie_angle\": DISHONEST_LIE_ANGLE,\n\t\t\t\"comparison_method\": \"COMPARISON_METHOD\",\n\t\t\t\"scaling\": SCALING,\n\t\t\t\"scepticism_threshold\": SCEPTICISM_THRESHOLD,\n\t\t\t\"weight_method\": \"WEIGHT_METHOD\""
@@ -148,10 +148,10 @@ declare -A SUB_DIR_BEHAVIOR
 
 declare -A BEHAVIOUR_FILENAME_ADDITIONAL_INFO
 	BEHAVIOUR_FILENAME_ADDITIONAL_INFO[b]="_GOOD_ACCEPTANCE_RATEGAR_BAD_ACCEPTANCE_RATEBAR_SABOTEUR_ACCEPTANCE_RATESAR"
-	BEHAVIOUR_FILENAME_ADDITIONAL_INFO[n]="_REPUTATION_METHODRM"
+	BEHAVIOUR_FILENAME_ADDITIONAL_INFO[n]=""
 	BEHAVIOUR_FILENAME_ADDITIONAL_INFO[Nn]=""
-	BEHAVIOUR_FILENAME_ADDITIONAL_INFO[s]="_SCEPTICISM_THRESHOLDST_REPUTATION_METHODRM"
-	BEHAVIOUR_FILENAME_ADDITIONAL_INFO[Ns]="_SCEPTICISM_THRESHOLDST"
+	BEHAVIOUR_FILENAME_ADDITIONAL_INFO[s]="_SCEPTICISM_THRESHOLDST"
+	BEHAVIOUR_FILENAME_ADDITIONAL_INFO[Ns]="_SCEPTICISM_THRESHOLDSY"
 	BEHAVIOUR_FILENAME_ADDITIONAL_INFO[r]="_RANKING_THRESHOLDRT_REPUTATION_METHODRM"
 	BEHAVIOUR_FILENAME_ADDITIONAL_INFO[v]="_COMPARISON_METHODCM_SCALINGSC_SCEPTICISM_THRESHOLDST_WEIGHT_METHODWM"
 	BEHAVIOUR_FILENAME_ADDITIONAL_INFO[Nv]="_COMPARISON_METHODCM_SCALINGSC_SCEPTICISM_THRESHOLDST_WEIGHT_METHODWM"
@@ -454,11 +454,11 @@ for AGENT_NOISE_ASSIGNATION in ${AGENT_NOISE_ASSIGNATION_LIST[*]} ; do
 					for PAYMENT_SYSTEM_REPUTATION_STAKE in ${PAYMENT_SYSTEM_REPUTATION_STAKE_LIST[*]} ; do
 					#TODO improve conditions to simulate incompatible behaviors
 					if ! [[ $PAYMENT_SYSTEM_REPUTATION_STAKE == "true" ]] || ! [[ $PAYMENT_SYSTEM_CLASS == "DelayedPaymentPaymentSystem" ]]; then
-					# if ! [[ $PAYMENT_SYSTEM_REPUTATION_STAKE == "true" ]] || ! [[ $BEHAVIOR == "n" ]]; then
-					# if ! [[ $PAYMENT_SYSTEM_REPUTATION_STAKE == "true" ]] || ! [[ $BEHAVIOR == "s" ]]; then
+					if ! [[ $PAYMENT_SYSTEM_REPUTATION_STAKE == "true" ]] || ! [[ $BEHAVIOR == "n" ]]; then
+					if ! [[ $PAYMENT_SYSTEM_REPUTATION_STAKE == "true" ]] || ! [[ $BEHAVIOR == "s" ]]; then
 					if ! [[ $PAYMENT_SYSTEM_REPUTATION_STAKE == "true" ]] || ! [[ $BEHAVIOR == "b" ]]; then
-					# if ! [[ $PAYMENT_SYSTEM_CLASS == "OutlierPenalisationPaymentSystem" ]] || ! [[ $BEHAVIOR == "s" ]]; then
-					# if ! [[ $PAYMENT_SYSTEM_CLASS == "OutlierPenalisationPaymentSystem" ]] || ! [[ $BEHAVIOR == "n" ]]; then
+					if ! [[ $PAYMENT_SYSTEM_CLASS == "OutlierPenalisationPaymentSystem" ]] || ! [[ $BEHAVIOR == "s" ]]; then
+					if ! [[ $PAYMENT_SYSTEM_CLASS == "OutlierPenalisationPaymentSystem" ]] || ! [[ $BEHAVIOR == "n" ]]; then
 					if ! [[ $PAYMENT_SYSTEM_CLASS == "OutlierPenalisationPaymentSystem" ]] || ! [[ $BEHAVIOR == "b" ]]; then
 					if ! [[ $PAYMENT_SYSTEM_CLASS == "DelayedPaymentPaymentSystem" ]] || ! [[ $BEHAVIOR == "r" ]]; then
 					if ! [[ $PAYMENT_SYSTEM_CLASS == "DelayedPaymentPaymentSystem" ]] || ! [[ $BEHAVIOR == "t" ]]; then
@@ -539,32 +539,26 @@ for AGENT_NOISE_ASSIGNATION in ${AGENT_NOISE_ASSIGNATION_LIST[*]} ; do
 								
 								# 	BEHAVIOUR PARAMS_SUBSTITUTION
 								if [[ ${BEHAVIOR} == "n" ]] || [[ ${BEHAVIOR} == "Nn" ]] || [[ ${BEHAVIOR} == "w" ]]; then
-									for REPUTATION_METHOD in ${nREPUTATION_METHOD_LIST[*]} ; do
-										CURRENT_DATA_FILENAME=$( echo ${DATA_FILENAME} | 
-													sed -e "s|REPUTATION_METHOD|${REPUTATION_METHOD}|" \
-													-e "s|[\.]||g" )
-										FINAL_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}/${CURRENT_DATA_FILENAME}.json"
-										# cp ${TEMP_CONFIG_FILENAME} ${FINAL_CONFIG_FILENAME}
-										sed -e "s|REPUTATION_METHOD|${REPUTATION_METHOD}|" \
-											${TEMP_CONFIG_FILENAME} > ${FINAL_CONFIG_FILENAME}
-										GENERATED_FILENAMES+=(${FINAL_CONFIG_FILENAME})
-										COUNT=$((COUNT + 1))
-									done
+									CURRENT_DATA_FILENAME=$( echo ${DATA_FILENAME} | 
+												sed -e "s|[\.]||g" )
+									FINAL_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}/${CURRENT_DATA_FILENAME}.json"
+									# cp ${TEMP_CONFIG_FILENAME} ${FINAL_CONFIG_FILENAME}
+									sed -e "s|REPUTATION_METHOD||" \
+										${TEMP_CONFIG_FILENAME} > ${FINAL_CONFIG_FILENAME}
+									GENERATED_FILENAMES+=(${FINAL_CONFIG_FILENAME})
+									COUNT=$((COUNT + 1))
 								else
 									if [[ ${BEHAVIOR} == "s" ]] || [[ ${BEHAVIOR} == "Ns" ]]; then
 										for SCEPTICISM_THRESHOLD in ${sSCEPTICISM_THRESHOLD_LIST[*]} ; do
-										for REPUTATION_METHOD in ${sREPUTATION_METHOD_LIST[*]} ; do
 											CURRENT_DATA_FILENAME=$( echo ${DATA_FILENAME} | 
 														sed -e "s|SCEPTICISM_THRESHOLD|${SCEPTICISM_THRESHOLD}|"  \
-															-e "s|REPUTATION_METHOD|${REPUTATION_METHOD}|" \
 																	-e "s|[\.]||g")
 											FINAL_CONFIG_FILENAME="${CONFIG_OUTPUT_DIRECTORY}/${CURRENT_DATA_FILENAME}.json"
 											sed -e "s|SCEPTICISM_THRESHOLD|${SCEPTICISM_THRESHOLD}|" \
-												-e "s|REPUTATION_METHOD|${REPUTATION_METHOD}|" \
+												-e "s|REPUTATION_METHOD||" \
 												${TEMP_CONFIG_FILENAME} > ${FINAL_CONFIG_FILENAME}
 											GENERATED_FILENAMES+=(${FINAL_CONFIG_FILENAME})
 											COUNT=$((COUNT + 1))
-										done
 										done
 									else
 										if [[ ${BEHAVIOR} == "r" ]]; then
@@ -736,10 +730,10 @@ for AGENT_NOISE_ASSIGNATION in ${AGENT_NOISE_ASSIGNATION_LIST[*]} ; do
 						fi
 						fi
 						done
-					# fi
-					# fi
-					# fi
-					# fi
+					fi
+					fi
+					fi
+					fi
 					fi
 					fi
 					fi
