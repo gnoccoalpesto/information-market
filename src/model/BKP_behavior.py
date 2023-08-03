@@ -745,10 +745,7 @@ class SaboteurBenchmarkBehavior(BenchmarkBehavior):
 #################################################################################################
 ## NAIVE BEHAVIORS
 class NaiveBehavior(Behavior):
-    def __init__(self,
-                 combine_strategy="WeightedAverageAgeStrategy",
-                 reputation_method="r",
-                 ):
+    def __init__(self,combine_strategy="WeightedAverageAgeStrategy"):
         super().__init__()
         self.state = State.EXPLORING
         self.strategy = WeightedAverageAgeStrategy()
@@ -876,10 +873,7 @@ class NaiveBehavior(Behavior):
 
 
 class SaboteurBehavior(NaiveBehavior):
-    def __init__(self, lie_angle=90,
-                 combine_strategy="WeightedAverageAgeStrategy",
-                 reputation_method="r",
-                 ):
+    def __init__(self, lie_angle=90,combine_strategy="WeightedAverageAgeStrategy"):
         super().__init__()
         self.color = "red"
         self.lie_angle = lie_angle
@@ -893,11 +887,7 @@ class SaboteurBehavior(NaiveBehavior):
 ##################################################################################################
 # # SKEPTICISM
 class ScepticalBehavior(NaiveBehavior):
-    def __init__(self, 
-                 threshold=.25,
-                 combine_strategy="WeightedAverageAgeStrategy",
-                 reputation_method="r",
-                 ):
+    def __init__(self, threshold=.25,combine_strategy="WeightedAverageAgeStrategy"):
         super(ScepticalBehavior, self).__init__()
         self.pending_information = {location: {} for location in Location}
         self.threshold = threshold
@@ -972,12 +962,7 @@ class ScepticalBehavior(NaiveBehavior):
 
 
 class ScaboteurBehavior(ScepticalBehavior):
-    def __init__(self, 
-                 lie_angle=90, 
-                 threshold=.25,
-                 combine_strategy="WeightedAverageAgeStrategy",
-                 reputation_method="r",
-                 ):
+    def __init__(self, lie_angle=90, threshold=.25,combine_strategy="WeightedAverageAgeStrategy"):
         super().__init__()
         self.color = "red"
         self.lie_angle = lie_angle
