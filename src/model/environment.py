@@ -115,7 +115,7 @@ class Environment:
         self.market = market_factory(market_params)
         self.img = None
         self.timestep = 0
-        # self.food_expiration_time=1000#[x]IEFM
+        self.food_expiration_time=1000#[x]IFEM
 
 
     def step(self):
@@ -369,8 +369,8 @@ class Environment:
                 # Check if robot can deposit food
                 if self.is_on_top_of_spawn(robot, Location.NEST):
                     self.deposit_food(robot)
-                    # self.reset_food_counter(robot)#[x]IEFM
-            # else: self.increment_food_expiration_counter(robot)#[x]IEFM
+                    self.reset_food_counter(robot)#[x]IFEM
+            else: self.increment_food_expiration_counter(robot)#[x]IFEM
         else:
             if self.senses(robot, Location.FOOD):
                 # Spawn food if needed
@@ -393,18 +393,17 @@ class Environment:
         robot.drop_food()
         self.foraging_spawns[Location.NEST].pop(robot.id)
 
-        '''#[ ]INFORMATION-FORAGING MARKET (IFM) #############
+        # '''#[ ]INFORMATION-FORAGING MARKET (IFM) #############
         #       reward comes from selling strawberries and information
-        foraging_reward = information_reward
-        information_reward = self.market.sell_strawberry(robot.id)
+        # foraging_reward = information_reward
+        # information_reward = self.market.sell_strawberry(robot.id)
 
-        #[ ]INFORMATION-EXPIRING FORAGING MARKET (IEFM) ####
+        #[ ]INFORMATION-EXPIRING FORAGING MARKET (IFEM) #### [x]IFEM
         #   reward comes from selling strawberries and information
         #   but reward for foraging is obtained only if the item is
         #   sold before it expires
-        # information_reward = self.market.sell_strawberry(robot.id)
-        # foraging_reward = information_reward if self.food_not_expired(robot)
-        #                        else 0
+        information_reward = self.market.sell_strawberry(robot.id)
+        foraging_reward = information_reward if self.food_not_expired(robot) else 0
 
         '''#[ ]INFORMATION MARKET (IM) ###########################
         #       reward comes from selling information only
@@ -421,6 +420,15 @@ class Environment:
         robot.pickup_food()
         self.foraging_spawns[Location.FOOD].pop(robot.id)
 
-    #[x]IEFM
-    # def food_not_expired(self, robot):
-    #     return robot.get_expiration_timer() < self.food_expiration_time
+
+    #[x]IFEM
+    def food_not_expired(self, robot):
+        return robot.get_expiration_timer() < self.food_expiration_time
+    
+    #[x]IFEM
+    def increment_food_expiration_counter(self, robot):
+        robot.increment_expiration_timer()
+
+    #[x]IFEM
+    def reset_food_counter(self, robot):
+        robot.reset_expiration_timer()

@@ -53,7 +53,7 @@ class Agent:
         self._radius = radius
         self.items_collected = 0
         self._carries_food = False
-        # self._expiration_timer=0#[x]IEFM
+        self._expiration_timer=0#[x]IFEM
 
         self.communication_radius = communication_radius
         self._communication_cooldown = communication_cooldown
@@ -146,7 +146,7 @@ class Agent:
                 self.move()
             except InsufficientFundsException:
                 pass
-        # if self.carries_food: self.increase_exipration_timer()#[x]IEFM
+        # if self.carries_food: self.increase_exipration_timer()#[x]IFEM
         self.update_communication_state()
         self.update_trace()
 
@@ -297,7 +297,7 @@ class Agent:
     def drop_food(self):
         self._carries_food = False
         self.items_collected += 1
-        # self._expiration_timer=0#[x]IEFM
+        # self._expiration_timer=0#[x]IFEM
 
 
     def pickup_food(self):
@@ -337,17 +337,16 @@ class Agent:
         self._time_since_last_comm = 0
 
 
-    #[x]IEFM
-    # def increase_exipration_timer(self):
-    """
-    
-        if self._carries_food:
-            self._food_expiration_time += 1
-        elif self._food_expiration_time > 0:
-            self._food_expiration_time = 0
-    """
-    #     self._expiration_timer += 1
+    #[x]IFEM
+    def increment_expiration_timer(self):
+        self._expiration_timer += 1
 
     
-    # def get_expiration_timer(self):
-    #     return self._expiration_timer
+    #[x]IFEM
+    def reset_expiration_timer(self):
+        self._expiration_timer = 0
+
+    
+    #[x]IFEM
+    def get_expiration_timer(self):
+        return self._expiration_timer
