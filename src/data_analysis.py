@@ -12,7 +12,7 @@ from matplotlib.cbook import boxplot_stats
 import seaborn as sns
 import time
 import scipy.stats as stats
-
+from sklearn.cluster import KMeans # type: ignore # pylint: disable=import-error
 
 import config as CONFIG_FILE
 from model.environment import generate_uniform_noise_list
@@ -264,39 +264,39 @@ MARKET_CAP_COLOR="#000000"#black
 BEHAV_PARAMS_COMBINATIONS={"n":[[]],
                                 "s":[[0.25]],
                                 "b":[
-                                    [.75,.4,.15],
-                                    [.75,.4,.075],
-                                    [.75,.4,0],
-                                    [.75,.25,.15],
-                                    [.75,.25,.075],
                                     [.75,.25,0],
-                                    [.75,.55,.15],
-                                    [.75,.55,.075],
+                                    [.75,.25,.075],
+                                    [.75,.25,.15],
+                                    [.75,.4,0],
+                                    [.75,.4,.075],
+                                    [.75,.4,.15],
                                     [.75,.55,0],
-                                    [.85,.4,.15],
-                                    [.85,.4,.075],
-                                    [.85,.4,0],
-                                    [.85,.25,.15],
-                                    [.85,.25,.075],
+                                    [.75,.55,.075],
+                                    [.75,.55,.15],
                                     [.85,.25,0],
-                                    [.85,.55,.15],
-                                    [.85,.55,.075],
+                                    [.85,.25,.075],
+                                    [.85,.25,.15],
+                                    [.85,.4,0],
+                                    [.85,.4,.075],
+                                    [.85,.4,.15],
                                     [.85,.55,0],
-                                    [.95,.4,.15],
-                                    [.95,.4,.075],
-                                    [.95,.4,0],
-                                    [.95,.25,.15],
-                                    [.95,.25,.075],
+                                    [.85,.55,.075],
+                                    [.85,.55,.15],
                                     [.95,.25,0],
-                                    [.95,.55,.15],
-                                    [.95,.55,.075],
+                                    [.95,.25,.075],
+                                    [.95,.25,.15],
+                                    [.95,.4,0],
+                                    [.95,.4,.075],
+                                    [.95,.4,.15],
                                     [.95,.55,0],
+                                    [.95,.55,.075],
+                                    [.95,.55,.15],
                                     ],
                                 "r":[
                                     [0.3,"r"],
-                                    [0.5,"r"],
+                                    # [0.5,"r"],
                                     [0.3,"t"],
-                                    [0.5,"t"],
+                                    # [0.5,"t"],
                                     ],
                                 "Nv":[
                                     ["allavg",0.3,0.25,"ratio"],
@@ -314,9 +314,9 @@ BEHAV_PARAMS_COMBINATIONS={"n":[[]],
                                     ],
                                 "t":[
                                     ["allavg",0.5,"r"],
-                                    ["allavg",0.8,"r"],
-                                    ["allavg",0.5,"t"],
-                                    ["allavg",0.8,"t"],
+                                    # ["allavg",0.8,"r"],
+                                    # ["allavg",0.5,"t"],
+                                    # ["allavg",0.8,"t"],
                                     # ["allavg",0.3],
                                     # ["allmax",0.3],
                                     # ["allmax",0.5],
@@ -390,7 +390,8 @@ def parse_args():
     return metric, mode
 
 
-def dataframe_from_csv(filename,
+def dataframe_from_csv(
+                        filename,
                         data_folder_and_subfolder="",
                         metric="",
                         experiment_part="whole",
@@ -435,13 +436,11 @@ def dataframe_from_csv(filename,
     if not filename.endswith(".csv"): filename+=".csv"
 
     # if data_folder_and_subfolder!="" and metric!="":filename=join(data_folder_and_subfolder,metric,filename)
-    #NOTE as for now, only items are allowed to use lastN, for they monotonic
-    #   non decreasing nature (hence difference future-past always positive)
-
+    #NOTE "lastN": ONLY items allowed (always monotonic non decreasing)
     if experiment_part=="whole" or "transaction" in metric \
-        or (('reward' in filename or 'wealth' in filename) \
-        and 'df' not in experiment_part \
-             and 'steps' not in experiment_part):#NOTE BYPASS NEGATIVE REWARD ISSUE
+            or (('reward' in filename.split('/')[-2] or  'wealth' in filename.split('/')[-2]) \
+            and 'df' not in experiment_part \
+            and 'steps' not in experiment_part):#NOTE BYPASS NEGATIVE REWARD ISSUE
         # if metric=="items": metric_folder="items_collected"
         # elif "transaction" in metric:
         #     metric_folder="transactions"
@@ -639,59 +638,6 @@ def myanovatest(
     print(f"F-statistic: {anova_test.statistic},\np-value: {anova_test.pvalue}\n")
 
 
-#TODO TEMPLATE plotting high level function
-def filenames_list_for_plotting(
-                                data_folder,
-                                experiment="",
-                                metric="",
-                                n_robots=25,
-                                n_honests=[25,24,22,],
-                                behaviors=["n","s","r","Nv","t","w"],
-                                behavior_params_experiments=dict(),
-                                combine_strategies=["waa"],
-                                payment_systems=["P","NP"],
-                                reputation_stake_list=["RS","NRS"],
-                                noise_mu=0.0051,
-                                noise_range=0.1,
-                                # saboteur_performance=["avg","perf"],
-                                noise_sampling_mu=0.05,
-                                noise_sampling_sd=0.05,
-                                noise_sd=0.05,
-                                ):
-    uniform_avg_noise_params_values=[noise_mu,noise_range,"avg"]
-    uniform_perf_noise_params_values=[noise_mu,noise_range,"perf"]
-    bimodal_noise_params_values=[noise_sampling_mu,noise_sampling_sd,noise_sd]
-    RELEVANT_NOISE_TYPE="uniform"
-    RELEVANT_NOISE_PARAMS=uniform_avg_noise_params_values
-    filenames_list=[]
-    #TODO: ADAPTIVE ORDER OF PARAMS TO CYCLE ON
-    for behavior_initials in behaviors:
-        for behavior_params_values in behavior_params_experiments[behavior_initials]:
-            for n_honest in n_honests:
-                for payment_system in payment_systems:
-                    for reputation_stake in reputation_stake_list:
-                        for combine_stategy_initials in combine_strategies:
-                            lie_angle=0 if n_honest==n_robots else 90
-
-                            behavior_params_text=""
-                            for v,p in zip(behavior_params_values,BEHAVIOR_PARAMS_DICT[behavior_initials]):
-                                behavior_params_text+=f"{v} {PARAMS_NAME_DICT[p]},"
-                            #TODO FORMAT OF filenames
-                            filenames=[ filename_from_params(n_honest,
-                                                    behavior_initials,
-                                                    combine_stategy_initials,
-                                                    payment_system,
-                                                    reputation_stake,
-                                                    lie_angle,
-                                                    behavior_params_values,
-                                                    RELEVANT_NOISE_TYPE,
-                                                    RELEVANT_NOISE_PARAMS)
-                                    ]
-                            filenames=[data_folder+experiment+"/"+SUB_FOLDERS_DICT[behavior_initials]+"/"+metric+"/"+filename+".csv" for filename in filenames]
-                            filenames_list.append(filenames)
-    return filenames_list
-
-
 #######################################################################################################################
 #######################################################################################################################
 ########################################## BASE PLOTTING FUNCTIONS ####################################################
@@ -702,11 +648,16 @@ def noise_level(
             noise_average=0.05,
             noise_range=0.05,
             saboteurs_noise="",
+            equally_sized_honest_groups=False,
             random_switch=False,
             random_seed=None
         ):
     '''
-    :param saboteurs_noise: noise performance. Accepted: "bimodal", "average", "perfect"
+    TODO noise_level docstring
+    :param saboteurs_noise: noise performance. Accepted: "bimodal", "average", "perfect".
+
+    :param equally_sized_honest_groups: if True, the honest robots are divided in
+            equally sized groups even for perfect saboteurs (as in the average sab. case).
     '''
     noise_list=generate_uniform_noise_list(number_agents, number_saboteurs, saboteurs_noise,
                                          noise_average, noise_range,random_switch,random_seed)
@@ -791,18 +742,21 @@ def performance_with_quality(
                         filenames,
                         experiment_part="whole",
                         performance_index="items",
-                        pair_plot=False,
                         quality_index="transactionsS",#"reward"
+                        equally_sized_honest_groups=False,
+                        pair_plot=False,
                         multi_quality=True,
                         title="",
                         x_labels=[],
                         show_dishonests=True,
+                        transparent_boxes=False,
                         multi_plot=False,
                         save_plot=False,
                         save_folder="",
                         save_name="performance_with_quality",
                     ):
     '''
+    TODO performance_with_quality docstring
     This method prints a sequence of given boxplots, each one representing a different behaviour.
     On the left y axis, the value of the performance is represented.
     Additionally, on the right y axis, the value of the quality index is represented.
@@ -810,6 +764,9 @@ def performance_with_quality(
     :param filenames: list of filenames to be plotted. Required format: [filename1, filename2, ...]
 
     :param performance_index: the performance index to be plotted. As for now, only "items" is supported.
+
+    :param equally_sized_honest_groups: if True, the honest robots are divided in
+            equally sized groups even for perfect saboteurs (as in the average sab. case).
 
     : pair_plot: if True, second performance index will be plotted in a paired subplot. Default: False.
         As for now, it primary performance metric are items, rewards will be paired, and viceversa.
@@ -867,8 +824,10 @@ def performance_with_quality(
         for i,f in enumerate(current_filenames):
             if not f.endswith(".csv"):f+=".csv"
             splitted_filename=f.split('.csv')[0].split("/")
+
             df=dataframe_from_csv(f,experiment_part=experiment_part)
-            n_honest, honest_behavior, _, payment,reputation_stake, _, behaviour_params, noise_params=params_from_filename(f,compact_format=True)
+            n_honest, honest_behavior, _, payment,reputation_stake, _, \
+                    behaviour_params, noise_params=params_from_filename(f,compact_format=True)
             n_honest=int(n_honest)
             n_robots=len(df.columns)
             n_dishonest=n_robots-n_honest
@@ -922,9 +881,10 @@ def performance_with_quality(
                         df_q_num=dataframe_from_csv(fq_num,post_processing="col-"+quality_function)
                         df_q_den=dataframe_from_csv(fq_den,post_processing="col-"+quality_function)
 
-                        good_slice,bad_slice=noise_groups_slices(n_robots,n_dishonest,saboteur_performance)
+                        good_slice,bad_slice=noise_groups_slices(n_robots,n_dishonest,
+                                            saboteur_performance if not equally_sized_honest_groups else "bypass")
                         #TODO narrower good/bad groups
-                        # narrow_slice=0#BUG  empty color sequence error
+                        #NOTE pandas.Series, hence can slice with iloc[a:b] groupwise
                         df_q_good_num=df_q_num.iloc[:good_slice]#-narrow_slice]
                         df_q_good_den=df_q_den.iloc[:good_slice]#-narrow_slice]
                         df_q_bad_num=df_q_num.iloc[good_slice:bad_slice]#-narrow_slice:bad_slice+narrow_slice]
@@ -980,7 +940,7 @@ def performance_with_quality(
                         df_q_dishonest['behavior']="QD"+BEHAVIORS_NAME_DICT[honest_behavior]
                         df_q_dishonest['plot_order']=i
                         dishonest_quality_list.append(df_q_dishonest)
-                    #TODO NOTE following case: use single boxplot for median+specific quality
+                    #NOTE following case: use single boxplot for median+specific quality
                     # quality_list.append(df_q_good)
                     # quality_list.append(df_q_bad)
                     # quality_list.append(df_q_dishonest)
@@ -999,13 +959,13 @@ def performance_with_quality(
             #big and small paired boxplots
             sns.boxplot(data=pd.melt(data_honest, id_vars=['behavior','plot_order']),
                             x='plot_order',y='value', hue='behavior',palette=BEHAVIOUR_PALETTE,
-                            linewidth=1, dodge=False,width=.5,ax=axs[j])#
+                            linewidth=3 if transparent_boxes else 1, dodge=False,width=.5,ax=axs[j])#
             # sns.boxplot(data=pd.melt(data_small, id_vars=['behavior','plot_order']),
             #                 x='plot_order',y='value', hue='behavior',palette=BEHAVIOUR_PALETTE,
             #                 linewidth=1.65, dodge=True, saturation=0.85, width=0.7, ax=axs[j])
             sns.boxplot(data=pd.melt(data_dishonest, id_vars=['behavior','plot_order']),
                             x='plot_order',y='value', hue='behavior',palette=BEHAVIOUR_PALETTE,
-                            linewidth=1.65, dodge=True, saturation=0.85, width=0.5, ax=axs[j])
+                            linewidth=4.65 if transparent_boxes else 1.65, dodge=True, saturation=0.85, width=0.5, ax=axs[j])
 
             #BUG same size paired boxplots label not aligned
             # data_full=pd.concat([data_honest,data_dishonest])
@@ -1016,7 +976,7 @@ def performance_with_quality(
             data_performance=pd.concat(performance_list)
             sns.boxplot(data=pd.melt(data_performance, id_vars=['behavior','plot_order']),
                             x='plot_order',y='value', hue='behavior',palette=BEHAVIOUR_PALETTE,
-                            linewidth=1, dodge=False,width=.5,ax=axs[j])
+                            linewidth=3 if transparent_boxes else 1, dodge=False,width=.5,ax=axs[j])
             # performance_max=max(data_performance.iloc[:,:24].apply(np.max))
 
         #TODO AX2 YTICKS look like  "-" signs\
@@ -1038,6 +998,29 @@ def performance_with_quality(
                 #TODO if multi_plot:pass
 
             quality_label=f"{quality_function} {quality_label}"
+            
+            if transparent_boxes:
+                
+                box_patches = [patch for patch in axs[j].patches if type(patch) == matplotlib.patches.PathPatch]# type: ignore # pylint: disable=import-error
+                if len(box_patches) == 0:  #matplotlib<3.5: boxes in ax.artists
+                    box_patches = axs[j].artists
+                num_patches = len(box_patches)
+                lines_per_boxplot = len(axs[j].lines) // num_patches
+                for i, patch in enumerate(box_patches):
+                    col = patch.get_facecolor()
+                    patch.set_edgecolor(col)
+                    # patch.set_facecolor('black')
+                    patch.set_facecolor('None')
+                    #whiskers
+                    for line in axs[j].lines[i * lines_per_boxplot: (i + 1) * lines_per_boxplot]:
+                        line.set_color(col)
+                        line.set_mfc(col)
+                        line.set_mec(col)
+                    #legend
+                    # for legpatch in axs[j].legend_.get_patches():
+                    #     col = legpatch.get_facecolor()
+                    #     legpatch.set_edgecolor(col)
+                    #     legpatch.set_facecolor('None')
 
             if j>0 or not pair_plot:
                 ax2=axs[j].twinx()
@@ -1081,15 +1064,16 @@ def performance_with_quality(
             if j==0:performance_label=performance_index
             if j>0: performance_label="items collected"
         plt.ylabel(performance_label)
-        plt.ylim(-1 if 'item' in performance_label else None,
-                        35 if 'item' in performance_label and experiment_part=='whole' else \
-                        14 if 'item' in performance_label and 'last' in experiment_part \
-                            else None)#int(1.25*performance_max))
+        # plt.ylim(-1 if 'item' in performance_label else None,
+        #                 35 if 'item' in performance_label and experiment_part=='whole' else \
+        #                 14 if 'item' in performance_label and 'last' in experiment_part \
+        #                     else None)#int(1.25*performance_max))
         if not pair_plot and quality_index!="":
             ax2.set_ylabel(quality_label)
         elif j>0:ax2.set_ylabel(quality_label)
 
         axs[j].set_xlabel('')
+
     fig.set_size_inches(BASE_BOX_WIDTH*n_subplots,BASE_BOX_HEIGHT+1)
     sns.despine(fig,trim=False, )
     fig.suptitle(title,fontweight="bold")
@@ -1105,6 +1089,7 @@ def market_metric_evolution(
                         data_folder_and_subfolder:str="",
                         metric:str="reward_evolution",
                         number_of_robots:int=25,
+                        equally_sized_honest_groups=False,
                         multi_plot:bool=False,
                         pair_plot:bool=False,
                         fill_between:bool=False,
@@ -1114,6 +1099,9 @@ def market_metric_evolution(
                         save_name:str="",
                     ):
     '''
+    TODO market_metric_evolution docstring
+    :param equally_sized_honest_groups: if True, the honest robots are divided in
+            equally sized groups even for perfect saboteurs (as in the average sab. case).
     '''
     line_width=1
     if 'reward' in metric:
@@ -1131,7 +1119,8 @@ def market_metric_evolution(
     number_of_saboteurs=number_of_robots-number_of_honest
     saboteur_performance=params[7][2]
     
-    good_slice,bad_slice=noise_groups_slices(number_of_robots,number_of_saboteurs,saboteur_performance)
+    good_slice,bad_slice=noise_groups_slices(number_of_robots,number_of_saboteurs,
+                                            saboteur_performance if not equally_sized_honest_groups else "bypass")
     df=dataframe_from_csv(join(data_folder_and_subfolder,metric,filename),
                                 metric=metric,experiment_part="df")
 
@@ -1440,6 +1429,7 @@ def performance_evolution(#[x]performance evolution
                         filename:str,
                         data_folder_and_subfolder:str="",
                         number_of_robots:int=25,
+                        equally_sized_honest_groups=False,
                         window_size:int=5000,
                         metric:str='items_evolution',
                         multi_plot:bool=False,
@@ -1449,9 +1439,12 @@ def performance_evolution(#[x]performance evolution
                         save_folder:str="",
                         save_name:str="",
                         ):
-    """
+    '''
+    TODO performance evolution docstring
     select a width of the sliding window and compute the evolution of performances in this interval
-    """
+    :param equally_sized_honest_groups: if True, the honest robots are divided in
+            equally sized groups even for perfect saboteurs (as in the average sab. case).
+    '''
     print(filename)
     metric='items_evolution'
 
@@ -1460,7 +1453,8 @@ def performance_evolution(#[x]performance evolution
     number_of_saboteurs=number_of_robots-number_of_honest
     saboteur_performance=params[7][2]
 
-    good_slice,bad_slice=noise_groups_slices(number_of_robots,number_of_saboteurs,saboteur_performance)
+    good_slice,bad_slice=noise_groups_slices(number_of_robots,number_of_saboteurs,
+                                    saboteur_performance if not equally_sized_honest_groups else "bypass")
 
     title_params=params_from_filename(filename)
     title=f"{title_params[0]}honest {BEHAVIORS_NAME_DICT[params[1]]},{title_params[5]} lie angle,"\
@@ -1488,6 +1482,7 @@ def market_wealth_distribution(
                             data_folder_and_subfolder:str="",
                             metric:str="wealth_evolution",
                             number_of_robots:int=25,
+                            equally_sized_honest_groups=False,
                             weight_by_group_wealth:bool=0,
                             multi_plot:bool=False,
                             pair_plot:bool=False,
@@ -1496,10 +1491,17 @@ def market_wealth_distribution(
                             save_folder:str="",
                             save_name:str="",
                             ):
-    """
+    '''
+    #TODO instead of making quantiles or using full experiments, print stuff using:
+          sns.distplot(data, bins=n_robots ,...) this will also interpolate 
+
+    TODO market wealth distribution docstring
     devide the robots in groups of chosen percentile level and
     compute the wealth distribution for the percentiles
-    """
+
+    :param equally_sized_honest_groups: if True, the honest robots are divided in
+            equally sized groups even for perfect saboteurs (as in the average sab. case).
+    '''
 
     # if 'reward' in metric:
     #     metric="rewards_evolution"
@@ -1588,7 +1590,14 @@ def market_wealth_distribution(
 
     df_last_meanagents_extended_classes=pd.DataFrame(df_last_meanagents_sorted.groupby('classile',sort=False)[0].sum())
     df_last_meanagents_extended_classes['relative_wealth']=pd.DataFrame(df_last_meanagents_sorted.groupby('classile')['relative_wealth'].sum())
+    
+    #TODO wealth classes division with k-means clustering###########
+    # kmeans=KMeans(3).fit(...)
+    
 
+
+    ################################################################
+    
     #FREQUENCY PLOTS
     fig,ax=plt.subplots(figsize=(20,10))
 
@@ -1647,15 +1656,18 @@ def market_wealth_distribution(
                             len(df_last_meanagents_classes['ids']['middle'])+\
                             len(df_last_meanagents_classes['ids']['rich'])-1),
                         color='red',alpha=0.2)
-    #TODO finish: ideal poor line, considering the number of saboteurs
+    
+    #TODO IDEAL/UNWANTED CLASS EXTENSION: could color distribution loine instead
     # if number_of_saboteurs>0:
     #     plt.vlines(number_of_saboteurs-1,0,df_group_to_use['frequency'].max(),color='blue')
-    # if len(df_last_meanagents_group['ids']['poor'])>0:
-    #     plt.vlines(len(df_last_meanagents_group['ids']['poor'])-1,0,df_group_to_use['frequency'].max(),
+    # if len(df_last_meanagents_classes['ids']['poor'])>0:
+    #     plt.vlines(len(df_last_meanagents_classes['ids']['poor'])-1,0,df_group_to_use['frequency'].max(),
     #                color='red',linestyles='dashed')
-    # if len(df_last_meanagents_group['ids']['rich'])>0:
-    #     plt.vlines(len(df_last_meanagents_group['ids']['poor']+df_last_meanagents_group['ids']['middle'])-1,
+    # if len(df_last_meanagents_classes['ids']['rich'])>0:
+    #     plt.vlines(len(df_last_meanagents_classes['ids']['poor']+df_last_meanagents_classes['ids']['middle'])-1,
     #                0,df_group_to_use['frequency'].max(),color='red',linestyles='dashed')
+
+    #MEAN QUANTILE LINE
     plt.vlines(df_last_allagents_mean['quantile'],0,df_group_to_use['frequency'].max(),color='green',linestyles='dashed')
     plt.xticks(range(number_of_robots))
     wealth_class_text=f"mean quantile: {df_last_allagents_mean['quantile']:.2f}\n\nWEALTH CLASSES (relative wealth - numerosity):\n"
@@ -1673,7 +1685,7 @@ def market_wealth_distribution(
     plt.ylabel("Anticumulated quantile frequency")
     twax.spines['right'].set_color('blue')
 
-    #QUANTILE MEAN WEALTH
+    #MEAN WEALTH PER QUANTILE
     twax2=ax.twinx()
     sns.lineplot(x=df_last_meanagents_sorted.index,y=df_last_meanagents_sorted[0],color='green',alpha=0.2)
     plt.ylabel("quantile mean wealth")
@@ -1695,6 +1707,7 @@ def market_lorenz_gini(filename:str,#
                         data_folder_and_subfolder:str="",
                         metric:str="reward_evolution",
                         number_of_robots:int=25,
+                        equally_sized_honest_groups=False,
                         multi_plot:bool=False,
                         pair_plot:bool=False,
                         fill_between:bool=False,
@@ -2014,6 +2027,7 @@ def buyers_sellers_groups(  filename:str,
                             data_folder_and_subfolder:str="",
                             number_of_robots:int=25,
                             multi_plot:bool=False,
+                            equally_sized_honest_groups=False,
                             separate_groups=True,
                             show_variance:bool=False,
                             # x_labels=[],
@@ -2024,6 +2038,7 @@ def buyers_sellers_groups(  filename:str,
                             ):
     """
     TODO missing data for individual values of buys/sells for each group
+    TODO buyers_sellers_groups docstring
 
     plost mean/median amount of transactions for each group
 
@@ -2031,6 +2046,9 @@ def buyers_sellers_groups(  filename:str,
     subplot2: sells for each group (combined/validated)
     subplot3: ratio buys/sells (combined/validated)
         this last should be low for good, average for bad, high for saboteurs
+    
+    :param equally_sized_honest_groups: if True, the honest robots are divided in
+            equally sized groups even for perfect saboteurs (as in the average sab. case).
     """
     if filename.endswith(".csv"):filename=filename.split(".csv")[0]
 
@@ -2045,7 +2063,8 @@ def buyers_sellers_groups(  filename:str,
     number_of_saboteurs=number_of_robots-number_of_honest
     saboteur_performance=params[7][2]
 
-    good_slice,bad_slice=noise_groups_slices(number_of_robots,number_of_saboteurs,saboteur_performance)
+    good_slice,bad_slice=noise_groups_slices(number_of_robots,number_of_saboteurs,
+                                        saboteur_performance if not equally_sized_honest_groups else "bypass")
 
     # sellers_to_good_list=[]
     # sellers_to_bad_list=[]
@@ -2072,10 +2091,10 @@ def buyers_sellers_groups(  filename:str,
     df_buys_num=dataframe_from_csv(filename=f_buys_num,data_folder_and_subfolder=data_folder_and_subfolder,metric="transaction")
     df_buys_den=dataframe_from_csv(filename=f_buys_den,data_folder_and_subfolder=data_folder_and_subfolder,metric="transaction")
     df_buys=100*df_buys_num/df_buys_den
-    df_buys_good_ratio=100*(df_buys[0:good_slice].sum(axis=0)/df_buys.sum(axis=0)).mean().round(3)
-    df_buys_bad_ratio=100*(df_buys[good_slice:bad_slice].sum(axis=0)/df_buys.sum(axis=0)).mean().round(3)
+    df_buys_good_ratio=100*(df_buys.iloc[:,:good_slice].sum(axis=0)/df_buys.sum(axis=0)).mean().round(3)*good_slice/number_of_robots
+    df_buys_bad_ratio=100*(df_buys.iloc[:,good_slice:bad_slice].sum(axis=0)/df_buys.sum(axis=0)).mean().round(3)*(bad_slice-good_slice)/number_of_robots
     if number_of_saboteurs>0:
-        df_buys_sab_ratio=100*(df_buys[bad_slice:].sum(axis=0)/df_buys.sum(axis=0)).mean().round(3)
+        df_buys_sab_ratio=100*(df_buys.iloc[:,bad_slice:].sum(axis=0)/df_buys.sum(axis=0)).mean().round(3)*(number_of_saboteurs)/number_of_robots
     df_buys_mean=df_buys.mean(axis=0)
     df_buys_median=df_buys.median(axis=0)
     df_buys_var=df_buys.var(axis=0)
@@ -2084,17 +2103,26 @@ def buyers_sellers_groups(  filename:str,
     df_sells_num=dataframe_from_csv(filename=f_sells_num,data_folder_and_subfolder=data_folder_and_subfolder,metric="transaction")
     df_sells_den=dataframe_from_csv(filename=f_sells_den,data_folder_and_subfolder=data_folder_and_subfolder,metric="transaction")
     df_sells=100*df_sells_num/df_sells_den
-    df_sells_good_ratio=100*(df_sells[0:good_slice].sum(axis=0)/df_sells.sum(axis=0)).mean().round(3)
-    df_sells_bad_ratio=100*(df_sells[good_slice:bad_slice].sum(axis=0)/df_sells.sum(axis=0)).mean().round(3)
+    df_sells_good_ratio=100*(df_sells.iloc[:,:good_slice].sum(axis=0)/df_sells.sum(axis=0)).mean().round(3)*good_slice/number_of_robots
+    df_sells_bad_ratio=100*(df_sells.iloc[:,good_slice:bad_slice].sum(axis=0)/df_sells.sum(axis=0)).mean().round(3)*(bad_slice-good_slice)/number_of_robots
     if number_of_saboteurs>0:
-        df_sells_sab_ratio=100*(df_sells[bad_slice:].sum(axis=0)/df_sells.sum(axis=0)).mean().round(3)
+        df_sells_sab_ratio=100*(df_sells.iloc[:,bad_slice:].sum(axis=0)/df_sells.sum(axis=0)).mean().round(3)*(number_of_saboteurs)/number_of_robots
+    
+    #TODO I DONT WANT SELLS AND BUYS RATIO TO BE THE SAME: good: sell more, bad,sab: buy more
+    # print('good',df_buys_good_ratio==df_sells_good_ratio)
+    # print('bad',df_buys_bad_ratio==df_sells_bad_ratio)
+    # if number_of_saboteurs>0:
+    #     print('sab',df_sells_sab_ratio==df_buys_sab_ratio)
+    # print()
+    # return
+
     df_sells_mean=df_sells.mean(axis=0)
     df_sells_median=df_sells.median(axis=0)
     df_sells_var=df_sells.var(axis=0)
     df_sells_max=df_sells.max(axis=0)
     df_sells_min=df_sells.min(axis=0)
-    df_buys_mean_good=df_buys_mean[0:good_slice]
-    df_buys_median_good=df_buys_median[0:good_slice]
+    df_buys_mean_good=df_buys_mean[:good_slice]
+    df_buys_median_good=df_buys_median[:good_slice]
     df_buys_mean_good_mean=pd.DataFrame(pd.Series(df_buys_mean_good.mean()))
     df_buys_median_good_mean=pd.DataFrame(pd.Series(df_buys_median_good.mean()))
     df_buys_mean_good_mean['plot_order']=0
@@ -2147,8 +2175,8 @@ def buyers_sellers_groups(  filename:str,
     df_buys_min_bad_mean['plot_order']=0
     df_buys_min_bad_min['plot_order']=1
     df_buys_min_bad=pd.concat([df_buys_min_bad_mean,df_buys_min_bad_min])
-    df_sells_mean_good=df_sells_mean[0:good_slice]
-    df_sells_median_good=df_sells_median[0:good_slice]
+    df_sells_mean_good=df_sells_mean[:good_slice]
+    df_sells_median_good=df_sells_median[:good_slice]
     df_sells_mean_good_mean=pd.DataFrame(pd.Series(df_sells_mean_good.mean()))
     df_sells_median_good_mean=pd.DataFrame(pd.Series(df_sells_median_good.mean()))
     df_sells_mean_good_mean['plot_order']=0
@@ -2162,7 +2190,7 @@ def buyers_sellers_groups(  filename:str,
     df_sells_var_good_mean['plot_order']=1
     df_sells_var_good_min['plot_order']=2
     df_sells_var_good=pd.concat([df_sells_var_good_max,df_sells_var_good_mean,df_sells_var_good_min])
-    df_sells_max_good=df_sells_max[0:good_slice]
+    df_sells_max_good=df_sells_max[:good_slice]
     df_sells_max_good_mean=pd.DataFrame(pd.Series(df_sells_max_good.mean()))
     df_sells_max_good_max=pd.DataFrame(pd.Series(df_sells_max_good.max()))
     df_sells_max_good_mean['plot_order']=0
@@ -2432,6 +2460,8 @@ def behaviours_buyers_sellers_groups(
                                 # auto_xlabels=True,
                                 n_robots=25,
                                 n_honests=[25,24,22,20,17],
+                                equally_sized_honest_groups=False,
+                                lie_angles=[],
                                 behaviours=[],
                                 behavior_params_experiments=dict(),
                                 combine_stategies=["waa"],
@@ -2460,7 +2490,6 @@ def behaviours_buyers_sellers_groups(
 
     :param experiment: experiment  subfolder to choose the data from.
 
-
     :param performance_metric: metric to plot. Permitted values are:
             "wealth", "wealth_evolution";
             "rewards", "rewards_evolution".
@@ -2468,6 +2497,9 @@ def behaviours_buyers_sellers_groups(
     :param n_robots: number of robots in the experiment; default: 25.
 
     :param n_honests: list of honest robots to retrieve experiments.
+
+    :param equally_sized_honest_groups: if True, the honest robots are divided in
+            equally sized groups even for perfect saboteurs (as in the average sab. case).
 
     :param behaviors: list of behaviours to plot. Required format: initials
 
@@ -2502,48 +2534,59 @@ def behaviours_buyers_sellers_groups(
                             for reputation_stake in reputation_stake_list:
                                 if reputation_stake and payment_system=="NP":continue
                                 for n_honest in n_honests:
-                                    lie_angle=0 if n_honest==n_robots else 90
-                                # for behavior_initials in behaviours:
-                                    if (behavior_initials=="s" or behavior_initials=="n" or behavior_initials=="b") \
-                                        and reputation_stake:continue
-                                    for combine_stategy_initials in combine_stategies:
-                                        behav_save_folder=join(save_folder,experiment,SUB_FOLDERS_DICT[behavior_initials])
-                                        if save_plot and not os.path.exists(behav_save_folder):
-                                            os.makedirs(join(behav_save_folder),exist_ok=True)
-                                        for behavior_params_values in behavior_params_experiments[behavior_initials]:
-                                            f=filename_from_params(n_honest,behavior_initials,
-                                                                    combine_stategy_initials,
-                                                                    payment_system,
-                                                                    reputation_stake,
-                                                                    lie_angle,
-                                                                    behavior_params_values,
-                                                                    "uniform",noise_params_values)
-                                            # f=join(data_folder,experiment,SUB_FOLDERS_DICT[behavior_initials],\
-                                            # performance_folder,f)+(".csv" if not f.endswith(".csv") else "")
-                                            if not f.endswith(".csv"):f+=".csv"
-                                            if not (CONFIG_FILE.PRUNE_FILENAMES  and \
-                                                    ((CONFIG_FILE.PRUNE_NOT_BEST and is_best_param_combination(f)) or \
-                                                    (not CONFIG_FILE.PRUNE_NOT_BEST and not is_bad_param_combination(f))) or \
-                                                not CONFIG_FILE.PRUNE_FILENAMES):
-                                                continue
+                                    for lie_angle in lie_angles:
+                                        if (lie_angle!=0 and n_honest==n_robots) or\
+                                                (lie_angle==0 and n_honest!=n_robots):
+                                            continue
+                                    # for behavior_initials in behaviours:
+                                        if (behavior_initials=="s" or behavior_initials=="n" or behavior_initials=="b") \
+                                                and (reputation_stake or payment_system=='P') or \
+                                                (behavior_initials=="r" or behavior_initials=="t" or behavior_initials=="c") \
+                                                and (not reputation_stake or payment_system=='NP'):   
+                                            continue
+                                        for combine_stategy_initials in combine_stategies:
+                                            behav_save_folder=join(save_folder,experiment,SUB_FOLDERS_DICT[behavior_initials])
+                                            if save_plot and not os.path.exists(behav_save_folder):
+                                                os.makedirs(join(behav_save_folder),exist_ok=True)
+                                            for behavior_params_values in behavior_params_experiments[behavior_initials]:
+                                                f=filename_from_params(n_honest,behavior_initials,
+                                                                        combine_stategy_initials,
+                                                                        payment_system,
+                                                                        reputation_stake,
+                                                                        lie_angle,
+                                                                        behavior_params_values,
+                                                                        "uniform",noise_params_values)
+                                                # f=join(data_folder,experiment,SUB_FOLDERS_DICT[behavior_initials],\
+                                                # performance_folder,f)+(".csv" if not f.endswith(".csv") else "")
+                                                if not f.endswith(".csv"):f+=".csv"
+                                                if not (CONFIG_FILE.PRUNE_FILENAMES  and \
+                                                        ((CONFIG_FILE.PRUNE_NOT_BEST and is_best_param_combination(f)) or \
+                                                        (not CONFIG_FILE.PRUNE_NOT_BEST and not is_bad_param_combination(f))) or \
+                                                    not CONFIG_FILE.PRUNE_FILENAMES):
+                                                    continue
 
-                                            if save_plot:
-                                                # save_name=f"{n_honest}_{behavior_initials}_{payment_system}_{repu_stake}_{lie_angle}_{noise_mu}_{noise_range}_{saboteur_performance}"
-                                                save_name=f.split("/")[-1].split(".csv")[0]
+                                                if save_plot:
+                                                    # save_name=f"{n_honest}_{behavior_initials}_{payment_system}_{repu_stake}_{lie_angle}_{noise_mu}_{noise_range}_{saboteur_performance}"
+                                                    save_name=f.split("/")[-1].split(".csv")[0]
 
-                                            buyers_sellers_groups(
-                                                                filename=f,
-                                                                data_folder_and_subfolder=join(data_folder,experiment,SUB_FOLDERS_DICT[behavior_initials]),
-                                                                number_of_robots=n_robots,
-                                                                multi_plot=multi_plot,
-                                                                separate_groups=False,
-                                                                save_plot=save_plot,
-                                                                save_folder=behav_save_folder,
-                                                                save_name=save_name,
-                                                                show_variance=show_variance,
-                                                                )
+                                                F=join(data_folder,experiment,SUB_FOLDERS_DICT[behavior_initials],'rewards',f)
+                                                if not os.path.exists(F):
+                                                    print(f"file {F} not found")
+                                                    continue
+                                                buyers_sellers_groups(
+                                                                    filename=f,
+                                                                    data_folder_and_subfolder=join(data_folder,experiment,SUB_FOLDERS_DICT[behavior_initials]),
+                                                                    number_of_robots=n_robots,
+                                                                    equally_sized_honest_groups=equally_sized_honest_groups,
+                                                                    multi_plot=multi_plot,
+                                                                    separate_groups=False,
+                                                                    save_plot=save_plot,
+                                                                    save_folder=behav_save_folder,
+                                                                    save_name=save_name,
+                                                                    show_variance=show_variance,
+                                                                    )
 
-                                            if multi_plot or save_plot:fig_count+=1
+                                                if multi_plot or save_plot:fig_count+=1
 
     if multi_plot:plt.show()
     elif save_plot:print(f"saved {fig_count} figures in {join(save_folder,experiment)}")
@@ -2559,12 +2602,14 @@ def behaviors_market_analysis(
                             # auto_xlabels=True,
                             n_robots=25,
                             n_honests=[25,24,22,20,17],
+                            equally_sized_honest_groups=False,
+                            lie_angles=[],
                             behaviours=[],
                             behavior_params_experiments=dict(),
                             combine_stategies=["waa"],
                             payment_systems=["P","NP"],
                             reputation_stake_list=[True,False],
-                            noise_type_list=["uniform"],
+                            noise_types=["uniform"],
                             noise_mu_list=[0.051],
                             noise_range_list=[0.1],
                             saboteur_performance_list=["avg","perf"],
@@ -2603,6 +2648,9 @@ def behaviors_market_analysis(
 
     :param n_honests: list of honest robots to retrieve experiments.
 
+    :param equally_sized_honest_groups: if True, the honest robots are divided in
+            equally sized groups even for perfect saboteurs (as in the average sab. case).
+
     :param behaviors: list of behaviours to plot. Required format: initials
 
     :param behavior_params_experiments: dictionary of behaviour params combinations to use.
@@ -2621,6 +2669,7 @@ def behaviors_market_analysis(
 
     :param save_folder: folder where the plot is saved.
     '''
+    #TODO pass kwargs to market_function
     if "evolution" in analysis_type:
         market_function=market_metric_evolution
         save_folder=save_folder.replace("ANALYSIS_FOLDER","market_values")
@@ -2645,7 +2694,7 @@ def behaviors_market_analysis(
     for behavior_initials in behaviours:
     # for n_honest in n_honests:
         # lie_angle=0 if n_honest==n_robots else 90
-        for noise_type in noise_type_list:
+        for noise_type in noise_types:
             for saboteur_performance in saboteur_performance_list:
                 for noise_mu in noise_mu_list:
                     for noise_range in noise_range_list:
@@ -2654,50 +2703,66 @@ def behaviors_market_analysis(
                             for reputation_stake in reputation_stake_list:
                                 if reputation_stake and payment_system=="NP":continue
                                 for n_honest in n_honests:
-                                    lie_angle=0 if n_honest==n_robots else 90
-                                # for behavior_initials in behaviours:
-                                    if (behavior_initials=="s" or behavior_initials=="n" or behavior_initials=="b") \
-                                        and reputation_stake:continue
-                                    for combine_stategy_initials in combine_stategies:
-                                        behav_save_folder=join(save_folder,experiment,SUB_FOLDERS_DICT[behavior_initials])
-                                        if save_plot and not os.path.exists(behav_save_folder):
-                                            os.makedirs(join(behav_save_folder),exist_ok=True)
-                                        for behavior_params_values in behavior_params_experiments[behavior_initials]:
-                                            f=filename_from_params(n_honest,behavior_initials,
-                                                                    combine_stategy_initials,
-                                                                    payment_system,
-                                                                    reputation_stake,
-                                                                    lie_angle,
-                                                                    behavior_params_values,
-                                                                    "uniform",noise_params_values)
-                                            # f=join(data_folder,experiment,SUB_FOLDERS_DICT[behavior_initials],\
-                                            # performance_folder,f)+(".csv" if not f.endswith(".csv") else "")
-                                            if not f.endswith(".csv"):f+=".csv"
-                                            if not (CONFIG_FILE.PRUNE_FILENAMES  and \
-                                                    ((CONFIG_FILE.PRUNE_NOT_BEST and is_best_param_combination(f)) or \
-                                                    (not CONFIG_FILE.PRUNE_NOT_BEST and not is_bad_param_combination(f))) or \
-                                                not CONFIG_FILE.PRUNE_FILENAMES):
-                                                continue
+                                    for lie_angle in lie_angles:
+                                        if (lie_angle!=0 and n_honest==n_robots) or\
+                                                (lie_angle==0 and n_honest!=n_robots):
+                                            continue
+                                        # for behavior_initials in behaviours:
+                                        if ((behavior_initials=="s" or behavior_initials=="n" or behavior_initials=="b") \
+                                                and (reputation_stake or payment_system=='P')) or \
+                                                ((behavior_initials=='t' or behavior_initials=='r' or behavior_initials=='c') \
+                                                and (payment_system=='NP')):
+                                            continue
+                                        for combine_stategy_initials in combine_stategies:
+                                            behav_save_folder=join(save_folder,experiment,SUB_FOLDERS_DICT[behavior_initials])
+                                            if save_plot and not os.path.exists(behav_save_folder):
+                                                os.makedirs(join(behav_save_folder),exist_ok=True)
+                                            for behavior_params_values in behavior_params_experiments[behavior_initials]:
+                                                f=filename_from_params(n_honest,behavior_initials,
+                                                                        combine_stategy_initials,
+                                                                        payment_system,
+                                                                        reputation_stake,
+                                                                        lie_angle,
+                                                                        behavior_params_values,
+                                                                        "uniform",noise_params_values)
+                                                # f=join(data_folder,experiment,SUB_FOLDERS_DICT[behavior_initials],\
+                                                # performance_folder,f)+(".csv" if not f.endswith(".csv") else "")
+                                                if not f.endswith(".csv"):f+=".csv"
+                                                if not (CONFIG_FILE.PRUNE_FILENAMES  and \
+                                                        ((CONFIG_FILE.PRUNE_NOT_BEST and is_best_param_combination(f)) or \
+                                                        (not CONFIG_FILE.PRUNE_NOT_BEST and not is_bad_param_combination(f))) or \
+                                                    not CONFIG_FILE.PRUNE_FILENAMES):
+                                                    continue
 
-                                            if save_plot:
-                                                # save_name=f"{n_honest}_{behavior_initials}_{payment_system}_{repu_stake}_
-                                                #               {lie_angle}_{noise_mu}_{noise_range}_{saboteur_performance}"
-                                                save_name=f.split("/")[-1].split(".csv")[0]
+                                                if save_plot:
+                                                    # save_name=f"{n_honest}_{behavior_initials}_{payment_system}_{repu_stake}_
+                                                    #               {lie_angle}_{noise_mu}_{noise_range}_{saboteur_performance}"
+                                                    save_name=f.split("/")[-1].split(".csv")[0]
+                                                
+                                                F=join(data_folder,experiment,SUB_FOLDERS_DICT[behavior_initials],'rewards',f)
+                                                if not os.path.exists(F):
+                                                    print(f"file {F} not found")
+                                                    continue
 
-                                            market_function(
-                                                    filename=f,
-                                                    data_folder_and_subfolder=join(data_folder,experiment,SUB_FOLDERS_DICT[behavior_initials]),
-                                                    metric=performance_metric,
-                                                    number_of_robots=n_robots,
-                                                    multi_plot=multi_plot,
-                                                    pair_plot=pair_plot,
-                                                    fill_between=fill_between,
-                                                    save_plot=save_plot,
-                                                    save_folder=behav_save_folder,
-                                                    save_name=save_name
-                                                    )
+                                                if behavior_initials=="s" or behavior_initials=="n" or behavior_initials=="b":
+                                                    performance_metric="reward"
+                                                    pair_plot=False
 
-                                            if multi_plot or save_plot:fig_count+=1
+                                                market_function(
+                                                        filename=f,
+                                                        data_folder_and_subfolder=join(data_folder,experiment,SUB_FOLDERS_DICT[behavior_initials]),
+                                                        metric=performance_metric,
+                                                        number_of_robots=n_robots,
+                                                        equally_sized_honest_groups=equally_sized_honest_groups,
+                                                        multi_plot=multi_plot,
+                                                        pair_plot=pair_plot,
+                                                        fill_between=fill_between,
+                                                        save_plot=save_plot,
+                                                        save_folder=behav_save_folder,
+                                                        save_name=save_name
+                                                        )
+
+                                                if multi_plot or save_plot:fig_count+=1
 
     if multi_plot:plt.show()
     elif save_plot:print(f"saved {fig_count} figures in {join(save_folder,experiment)}")
@@ -2711,17 +2776,20 @@ def compare_behaviors_performance(
                                         compare_evolution=False,
                                         pair_plot=False,
                                         short_x_labels=False,
+                                        transparent_boxes=False,
                                         quality_index="",
                                         multi_quality=False,
                                         show_dishonests=False,
                                         auto_xlabels=True,
                                         n_robots=25,
                                         n_honests=[25,24,22,],
+                                        equally_sized_honest_groups=False,
+                                        lie_angles=[0,90],
                                         behaviours=[],
                                         behavior_params_experiments=dict(),
                                         combine_stategies=["waa"],
                                         payment_systems=["P","NP"],
-                                        reputation_stake_list=[True,False],
+                                        reputation_stakes=[True,False],
                                         noise_type_list=["uniform"],
                                         noise_mu_list=[0.051],
                                         noise_range_list=[0.1],
@@ -2761,6 +2829,9 @@ def compare_behaviors_performance(
     :param n_robots: number of robots in the experiment.
 
     :param n_honests: list of honest robots to retrieve experiments.
+
+    :param equally_sized_honest_groups: if True, the honest robots are divided in
+            equally sized groups even for perfect saboteurs (as in the average sab. case).
 
     :param behaviors: list of behaviours to plot. Required format: initials
 
@@ -2809,197 +2880,218 @@ def compare_behaviors_performance(
             # performance_folder="rewards_evolution"
             if pair_plot:secondary_performance_folder="items_evolution"
 
+    if transparent_boxes:
+        import matplotlib#to find boxes element
+
     for n_honest in n_honests:
-        lie_angle=0 if n_honest==n_robots else 90
-        for noise_type in noise_type_list:
-            for saboteur_performance in saboteur_performance_list:
-                for noise_mu in noise_mu_list:
-                    for noise_range in noise_range_list:
-                        noise_params_values=[noise_mu,noise_range,saboteur_performance]
+        for lie_angle in lie_angles:
+            if (lie_angle!=0 and n_honest==n_robots) or\
+                    (lie_angle==0 and n_honest!=n_robots):
+                continue
+            for noise_type in noise_type_list:
+                for saboteur_performance in saboteur_performance_list:
+                    for noise_mu in noise_mu_list:
+                        for noise_range in noise_range_list:
+                            noise_params_values=[noise_mu,noise_range,saboteur_performance]
 
-                        if compare_best_of: best_list=[];best_labels=[]
-                        for payment_system in payment_systems:
-                            for reputation_stake in reputation_stake_list:
-                                if reputation_stake and payment_system=="NP":continue
-                                for behavior_initials in behaviours:
-                                    for combine_stategy_initials in combine_stategies:
-                                        if save_plot:
-                                            behav_save_folder=join(save_folder,experiment,performance_metric,SUB_FOLDERS_DICT[behavior_initials])
-                                            if not os.path.exists(behav_save_folder):os.makedirs(behav_save_folder,exist_ok=True)
-                                        if compare_with_reference:
-                                            filenames=[
-                                                # filename_from_params(n_honest,"n", "waa",
-                                                #                     "NP","NRS",lie_angle,
-                                                #                     [],
-                                                #                     noise_type,noise_params_values),
-                                                filename_from_params(n_honest,"n", "waa",
-                                                                    "P","NRS",lie_angle,
-                                                                    [],
-                                                                    noise_type,noise_params_values),
-                                                # filename_from_params(n_honest,"s", "waa",
-                                                #                     "NP","NRS",lie_angle,
-                                                #                     [0.25],
-                                                #                     noise_type,noise_params_values),
-                                                filename_from_params(n_honest,"s", "waa",
-                                                                    "P","NRS",lie_angle,
-                                                                    [0.25],
-                                                                    noise_type,noise_params_values),
-                                                ]
-                                            BASIC_BEHAV_LEN=len(filenames)
-                                            filenames=[join(data_folder,experiment,SUB_FOLDERS_DICT[b_i],\
-                                                performance_folder,f)+(".csv" if not f.endswith(".csv") else "")\
-                                                    for f,b_i in zip(filenames,(['n','s'] if BASIC_BEHAV_LEN==2 else ['n','n','s','s']))]
+                            if compare_best_of: best_list=[];best_labels=[]
+                            for payment_system in payment_systems:
+                                for reputation_stake in reputation_stakes:
+                                    if reputation_stake and payment_system=="NP":
+                                        continue
+                                    for behavior_initials in behaviours:
+                                        if (behavior_initials=='b' and reputation_stake) or\
+                                                behavior_initials=='s' or behavior_initials=='n':
+                                            continue
+                                        for combine_stategy_initials in combine_stategies:
+                                            if save_plot:
+                                                behav_save_folder=join(save_folder,experiment,performance_metric,SUB_FOLDERS_DICT[behavior_initials])
+                                                if not os.path.exists(behav_save_folder):os.makedirs(behav_save_folder,exist_ok=True)
+                                            if compare_with_reference:
+                                                filenames=[
+                                                    filename_from_params(n_honest,"n", "waa",
+                                                                        "NP","NRS",lie_angle,
+                                                                        [],
+                                                                        noise_type,noise_params_values),
+                                                    # filename_from_params(n_honest,"n", "waa",
+                                                    #                     "NP","NRS",lie_angle,
+                                                    #                     [],
+                                                    #                     noise_type,noise_params_values),
+                                                    # filename_from_params(n_honest,"s", "waa",
+                                                    #                     "NP","NRS",lie_angle,
+                                                    #                     [0.25],
+                                                    #                     noise_type,noise_params_values),
+                                                    filename_from_params(n_honest,"s", "waa",
+                                                                        "NP","NRS",lie_angle,
+                                                                        [0.25],
+                                                                        noise_type,noise_params_values),
+                                                    ]
+                                                BASIC_BEHAV_LEN=len(filenames)
+                                                filenames=[join(data_folder,experiment,SUB_FOLDERS_DICT[b_i],\
+                                                    performance_folder,f)+(".csv" if not f.endswith(".csv") else "")\
+                                                        for f,b_i in zip(filenames,(['s'] if BASIC_BEHAV_LEN==1 else ['n','s'] if BASIC_BEHAV_LEN==2 else ['n','n','s','s']))]
 
-                                            if not auto_xlabels:
-                                                if BASIC_BEHAV_LEN==4: x_labels=["Naive\nno penalisation","Naive\npenalisation","Sceptical\nno penalisation","Sceptical\npenalisation"]
-                                                elif BASIC_BEHAV_LEN==2: x_labels=["Naive\nno penalisation","Sceptical\npenalisation"]
-                                                if short_x_labels:
-                                                    if BASIC_BEHAV_LEN==4: x_labels=["n\nNP, NRS","n\nP, NRS","s\nNP, NRS","s\nP, NRS"]
-                                                    elif BASIC_BEHAV_LEN==2: x_labels=["n\nNP, NRS","s\nP, NRS"]
-                                            else: x_labels=[]
-                                        else:
-                                            filenames=[]
-                                            x_labels=[]
-                                            BASIC_BEHAV_LEN=0
-                                        for behavior_params_values in behavior_params_experiments[behavior_initials]:
-                                            f=filename_from_params(n_honest,behavior_initials,
-                                                                    combine_stategy_initials,
-                                                                    payment_system,
-                                                                    reputation_stake,
-                                                                    lie_angle,
-                                                                    behavior_params_values,
-                                                                    "uniform",noise_params_values)
-                                            f=join(data_folder,experiment,SUB_FOLDERS_DICT[behavior_initials],\
-                                            performance_folder,f)+(".csv" if not f.endswith(".csv") else "")
-
-                                            if CONFIG_FILE.PRUNE_FILENAMES  and \
-                                                    ((CONFIG_FILE.PRUNE_NOT_BEST and is_best_param_combination(f)) or \
-                                                    (not CONFIG_FILE.PRUNE_NOT_BEST and not is_bad_param_combination(f))) or \
-                                            not CONFIG_FILE.PRUNE_FILENAMES:
-                                                filenames.append(f)
                                                 if not auto_xlabels:
-                                                    behavior_params_text=""
-                                                    if not short_x_labels:
-                                                        behav_label=BEHAVIORS_NAME_DICT[behavior_initials]
-                                                        for v,p in zip(behavior_params_values,BEHAVIOR_PARAMS_DICT[behavior_initials]):
-                                                            behavior_params_text+=f"{v} {p},\n"
-                                                        penalisation_text=f"{'no ' if payment_system=='NP' else ''}penalis."
-                                                    else:
-                                                        behav_label=behavior_initials
-                                                        for v in behavior_params_values:
-                                                            behavior_params_text+=f"{v},\n"
-                                                        penalisation_text=f"{payment_system}"
-                                                        repustake_text=f"{'' if reputation_stake else 'N'}RS"
-                                                    x_label=f"{behav_label}\n"\
-                                                    f"{behavior_params_text}"\
-                                                    f"{penalisation_text}, {repustake_text}"
-                                                    x_labels.append(x_label)
-                                                if compare_best_of and is_best_param_combination(f):
-                                                    best_list.append(f)
-                                                    best_labels.append(x_label)
-
-                                        if 'last' in experiment_part:
-                                            n_last_part=float(re.findall(r"[-+]?(?:\d*\.*\d+)", experiment_part)[0])
-                                            if n_last_part<=1: n_last_part*=100
-                                            part_text=f"last {n_last_part}% of "
-                                        else: part_text="whole "
-                                        stable_part_title=f" for the {part_text}experiment\n"
-                                        title=f"Performance comparison for {BEHAVIORS_NAME_DICT[behavior_initials]} behavior,\n"\
-                                            f"{'with quality index ,' if quality_index else ''}{stable_part_title}"\
-                                            f"for {n_honest} honests, {lie_angle}° lie angle,\n"\
-                                            f"{noise_mu} mean noise, {noise_range} noise range, {'perfect' if saboteur_performance=='perf' else 'average'} saboteur performance"\
-                                            # f"{COMBINE_STRATEGY_NAME_DICT[combine_stategy_initials]} combine strategy\n"\
-                                        # if reputation_stake:title+=",   \nwith Staking based on reputation"
-                                        repu_stake=f"{'' if reputation_stake else 'N'}RS"
-                                        save_name=f"{n_honest}_{behavior_initials}_{payment_system}_{repu_stake}_{lie_angle}_{noise_mu}_{noise_range}_{saboteur_performance}"
-
-                                        if not len(filenames)>BASIC_BEHAV_LEN:continue
-
-                                        if pair_plot:
-                                            secondary_filenames=[f.replace(performance_folder,secondary_performance_folder) for f in filenames]
-                                            filenames=[filenames,secondary_filenames]
-                                        if not compare_best_of_only:
-
-                                            if compare_evolution:
-                                                performance_evolution(
-                                                                filename=f,#[x]
-                                                                # data_folder_and_subfolder=join(data_folder,experiment,SUB_FOLDERS_DICT[behavior_initials]),
-                                                                # metric=performance_metric,
-                                                                number_of_robots=n_robots,
-                                                                multi_plot=multi_plot,
-                                                                pair_plot=pair_plot,
-                                                                save_plot=save_plot,
-                                                                save_folder=behav_save_folder,
-                                                                save_name=save_name
-                                                                )
+                                                    if BASIC_BEHAV_LEN==4: x_labels=["Naive\nno penalisation","Naive\npenalisation","Sceptical\nno penalisation","Sceptical\npenalisation"]
+                                                    elif BASIC_BEHAV_LEN==2: x_labels=["Naive\nno penalisation","Sceptical\nno penalisation"]
+                                                    elif BASIC_BEHAV_LEN==1: x_labels=["Sceptical\nno penalisation"]
+                                                    if short_x_labels:
+                                                        if BASIC_BEHAV_LEN==4: x_labels=["n\nNP, NRS","n\nP, NRS","s\nNP, NRS","s\nP, NRS"]
+                                                        elif BASIC_BEHAV_LEN==2: x_labels=["n\nNP, NRS","s\nNP, NRS"]
+                                                        elif BASIC_BEHAV_LEN==1: x_labels=["s\nNP, NRS"]
+                                                else: x_labels=[]
                                             else:
-                                                performance_with_quality(
-                                                                        filenames,
-                                                                        experiment_part=experiment_part,
-                                                                        performance_index=performance_metric,
-                                                                        pair_plot=pair_plot,
-                                                                        quality_index=quality_index,
-                                                                        multi_quality=multi_quality,
-                                                                        title=title,
-                                                                        x_labels=x_labels,
-                                                                        show_dishonests=show_dishonests if n_honest<n_robots else False,
-                                                                        multi_plot=multi_plot,
-                                                                        save_plot=save_plot,
-                                                                        save_folder=behav_save_folder if save_plot else "",
-                                                                        save_name=save_name,
-                                                                        )
-                                            if multi_plot:fig_count+=1
+                                                filenames=[]
+                                                x_labels=[]
+                                                BASIC_BEHAV_LEN=0
+                                            for behavior_params_values in behavior_params_experiments[behavior_initials]:
+                                                f=filename_from_params(n_honest,behavior_initials,
+                                                                        combine_stategy_initials,
+                                                                        payment_system,
+                                                                        reputation_stake,
+                                                                        lie_angle,
+                                                                        behavior_params_values,
+                                                                        "uniform",noise_params_values)
+                                                f=join(data_folder,experiment,SUB_FOLDERS_DICT[behavior_initials],\
+                                                performance_folder,f)+(".csv" if not f.endswith(".csv") else "")
 
-                        if compare_best_of and len(best_list)>0:
-                            best_save_name=f"best_{n_honest}_{lie_angle}_{noise_mu}_{noise_range}_{saboteur_performance}"
-                            #NOTE no need to order, for how the loop is built
-                            # best_list=(filenames[:4] if not pair_plot else filenames[0][:4])\
-                            #             +[fb for b_i in behaviours for fb in best_list \
-                            #                 if params_from_filename(fb,compact_format=True)[1]==b_i]
-                            best_list=(filenames[:BASIC_BEHAV_LEN] if not pair_plot else filenames[0][:BASIC_BEHAV_LEN])+best_list
-                            # if not len(best_list)>BASIC_BEHAV_LEN:continue
-                            #TODO order labels alongside the list
-                            best_labels=x_labels[:BASIC_BEHAV_LEN]+best_labels
-                            if pair_plot:
-                                best_list=[best_list,[f.replace(performance_folder,secondary_performance_folder) for f in best_list]]
-                            title=f"Performance comparison for best combination of all behaviors,\n"\
-                                            f"{'with quality index ,' if quality_index else ''}{stable_part_title}"\
-                                            f"for {n_honest} honests, {lie_angle}° lie angle,\n"\
-                                            f"{noise_mu} mean noise, {noise_range} noise range, {'perfect' if saboteur_performance=='perf' else 'average'} saboteur performance"\
-                                            # f"{COMBINE_STRATEGY_NAME_DICT[combine_stategy_initials]} combine strategy\n"\
-                            # if reputation_stake:title+=",   \nwith Staking based on reputation"
+                                                if CONFIG_FILE.PRUNE_FILENAMES  and \
+                                                        ((CONFIG_FILE.PRUNE_NOT_BEST and is_best_param_combination(f)) or \
+                                                        (not CONFIG_FILE.PRUNE_NOT_BEST and not is_bad_param_combination(f))) or \
+                                                not CONFIG_FILE.PRUNE_FILENAMES:
+                                                    filenames.append(f)
+                                                    if not auto_xlabels:
+                                                        behavior_params_text=""
+                                                        if not short_x_labels:
+                                                            behav_label=BEHAVIORS_NAME_DICT[behavior_initials]
+                                                            for v,p in zip(behavior_params_values,BEHAVIOR_PARAMS_DICT[behavior_initials]):
+                                                                behavior_params_text+=f"{v} {p},\n"
+                                                            penalisation_text=f"{'no ' if payment_system=='NP' else ''}penalis."
+                                                        else:
+                                                            behav_label=behavior_initials
+                                                            for v in behavior_params_values:
+                                                                behavior_params_text+=f"{v},\n"
+                                                            penalisation_text=f"{payment_system}"
+                                                            repustake_text=f"{'' if reputation_stake else 'N'}RS"
+                                                        x_label=f"{behav_label}\n"\
+                                                        f"{behavior_params_text}"\
+                                                        f"{penalisation_text}, {repustake_text}"
+                                                        x_labels.append(x_label)
+                                                    if compare_best_of and is_best_param_combination(f):
+                                                        best_list.append(f)
+                                                        best_labels.append(x_label)
 
-                            if compare_evolution:
-                                performance_evolution(
-                                                    best_list,
-                                                    # data_folder_and_subfolder=join(data_folder,experiment,SUB_FOLDERS_DICT[behavior_initials]),
-                                                    # metric=performance_metric,
-                                                    number_of_robots=n_robots,
-                                                    multi_plot=multi_plot,
-                                                    pair_plot=pair_plot,
-                                                    save_plot=save_plot,
-                                                    save_folder=join(save_folder,experiment,performance_metric) \
-                                                        if save_plot else "",
-                                                    save_name=best_save_name,
-                                                    )
-                            else:
-                                performance_with_quality(
+                                            if 'last' in experiment_part:
+                                                n_last_part=float(re.findall(r"[-+]?(?:\d*\.*\d+)", experiment_part)[0])
+                                                if n_last_part<=1: n_last_part*=100
+                                                part_text=f"last {n_last_part}% of "
+                                            else: part_text="whole "
+                                            stable_part_title=f" for the {part_text}experiment\n"
+                                            title=f"Performance comparison for {BEHAVIORS_NAME_DICT[behavior_initials]} behavior,\n"\
+                                                f"{'with quality index ,' if quality_index else ''}{stable_part_title}"\
+                                                f"for {n_honest} honests, {lie_angle}° lie angle,\n"\
+                                                f"{noise_mu} mean noise, {noise_range} noise range, {'perfect' if saboteur_performance=='perf' else 'average'} saboteur performance"\
+                                                # f"{COMBINE_STRATEGY_NAME_DICT[combine_stategy_initials]} combine strategy\n"\
+                                            # if reputation_stake:title+=",   \nwith Staking based on reputation"
+                                            repu_stake=f"{'' if reputation_stake else 'N'}RS"
+                                            save_name=f"{n_honest}_{behavior_initials}_{payment_system}_{repu_stake}_{lie_angle}_{noise_mu}_{noise_range}_{saboteur_performance}"
+
+                                            if not len(filenames)>BASIC_BEHAV_LEN:continue
+
+                                            if pair_plot:
+                                                secondary_filenames=[f.replace(performance_folder,secondary_performance_folder) for f in filenames]
+                                                filenames=[filenames,secondary_filenames]
+                                            if not compare_best_of_only:
+                                                if compare_evolution:
+                                                    performance_evolution(
+                                                                    filename=f,#[x]
+                                                                    # data_folder_and_subfolder=join(data_folder,experiment,SUB_FOLDERS_DICT[behavior_initials]),
+                                                                    # metric=performance_metric,
+                                                                    number_of_robots=n_robots,
+                                                                    equally_sized_honest_groups=equally_sized_honest_groups,
+                                                                    multi_plot=multi_plot,
+                                                                    pair_plot=pair_plot,
+                                                                    save_plot=save_plot,
+                                                                    save_folder=behav_save_folder,
+                                                                    save_name=save_name
+                                                                    )
+                                                else:
+                                                    try:
+                                                        performance_with_quality(
+                                                                            filenames,
+                                                                            experiment_part=experiment_part,
+                                                                            performance_index=performance_metric,
+                                                                            equally_sized_honest_groups=equally_sized_honest_groups,
+                                                                            pair_plot=pair_plot,
+                                                                            quality_index=quality_index,
+                                                                            multi_quality=multi_quality,
+                                                                            title=title,
+                                                                            x_labels=x_labels,
+                                                                            transparent_boxes=transparent_boxes,
+                                                                            show_dishonests=show_dishonests if n_honest<n_robots else False,
+                                                                            multi_plot=multi_plot,
+                                                                            save_plot=save_plot,
+                                                                            save_folder=behav_save_folder if save_plot else "",
+                                                                            save_name=save_name,
+                                                                            )
+                                                    except Exception as e:
+                                                        filenames_not_existant=[f for f in filenames if os.path.isfile(f)]
+                                                        print(f"Error {e}\n in non existant files:\n{filenames_not_existant}")
+                                                if multi_plot:fig_count+=1
+
+                            if compare_best_of and len(best_list)>0:
+                                best_save_name=f"best_{n_honest}_{lie_angle}_{noise_mu}_{noise_range}_{saboteur_performance}"
+                                #NOTE no need to order, for how the loop is built
+                                # best_list=(filenames[:4] if not pair_plot else filenames[0][:4])\
+                                #             +[fb for b_i in behaviours for fb in best_list \
+                                #                 if params_from_filename(fb,compact_format=True)[1]==b_i]
+                                best_list=(filenames[:BASIC_BEHAV_LEN] if not pair_plot else filenames[0][:BASIC_BEHAV_LEN])+best_list
+                                # if not len(best_list)>BASIC_BEHAV_LEN:continue
+                                #TODO order labels alongside the list
+                                best_labels=x_labels[:BASIC_BEHAV_LEN]+best_labels
+                                if pair_plot:
+                                    best_list=[best_list,[f.replace(performance_folder,secondary_performance_folder) for f in best_list]]
+                                title=f"Performance comparison for best combination of all behaviors,\n"\
+                                                f"{'with quality index ,' if quality_index else ''}{stable_part_title}"\
+                                                f"for {n_honest} honests, {lie_angle}° lie angle,\n"\
+                                                f"{noise_mu} mean noise, {noise_range} noise range, {'perfect' if saboteur_performance=='perf' else 'average'} saboteur performance"\
+                                                # f"{COMBINE_STRATEGY_NAME_DICT[combine_stategy_initials]} combine strategy\n"\
+                                # if reputation_stake:title+=",   \nwith Staking based on reputation"
+
+                                if compare_evolution:
+                                    performance_evolution(
                                                         best_list,
-                                                        experiment_part=experiment_part,
-                                                        performance_index=performance_metric,
-                                                        pair_plot=pair_plot,
-                                                        quality_index=quality_index,
-                                                        multi_quality=multi_quality,
-                                                        title=title,
-                                                        x_labels=best_labels,
-                                                        show_dishonests=show_dishonests if n_honest<n_robots else False,
+                                                        # data_folder_and_subfolder=join(data_folder,experiment,SUB_FOLDERS_DICT[behavior_initials]),
+                                                        # metric=performance_metric,
+                                                        number_of_robots=n_robots,
+                                                        equally_sized_honest_groups=equally_sized_honest_groups,
                                                         multi_plot=multi_plot,
+                                                        pair_plot=pair_plot,
                                                         save_plot=save_plot,
                                                         save_folder=join(save_folder,experiment,performance_metric) \
                                                             if save_plot else "",
                                                         save_name=best_save_name,
-                                                    )
-                            if multi_plot:fig_count+=1
+                                                        )
+                                else:
+                                    performance_with_quality(
+                                                            best_list,
+                                                            experiment_part=experiment_part,
+                                                            performance_index=performance_metric,
+                                                            equally_sized_honest_groups=equally_sized_honest_groups,
+                                                            pair_plot=pair_plot,
+                                                            quality_index=quality_index,
+                                                            multi_quality=multi_quality,
+                                                            title=title,
+                                                            x_labels=best_labels,
+                                                            transparent_boxes=transparent_boxes,
+                                                            show_dishonests=show_dishonests if n_honest<n_robots else False,
+                                                            multi_plot=multi_plot,
+                                                            save_plot=save_plot,
+                                                            save_folder=join(save_folder,experiment,performance_metric) \
+                                                                if save_plot else "",
+                                                            save_name=best_save_name,
+                                                        )
+                                if multi_plot:fig_count+=1
 
     if multi_plot:
         if not save_plot:plt.show()
@@ -3012,11 +3104,13 @@ def comparison_bimodal_uniform_noise(
                                         metric="",
                                         n_robots=25,
                                         n_honests=[25,24,22,],
+                                        equally_sized_honest_groups=False,
+                                        lie_angles=[],
                                         behaviors=["n","s","r","Nv","t","w"],
                                         behavior_params_experiments=dict(),
                                         combine_strategies=["waa"],
                                         payment_systems=["P","NP"],
-                                        reputation_stake_list=["RS","NRS"],
+                                        reputation_stakes=["RS","NRS"],
                                         noise_mu=0.051,
                                         noise_range=0.1,
                                         saboteur_performance=["avg","perf"],
@@ -3027,6 +3121,11 @@ def comparison_bimodal_uniform_noise(
                                         save_plot=False,
                                         save_folder=""
                                 ):
+    '''
+    TODO comparison_bimodal_uniform_noise docstring
+    :param equally_sized_honest_groups: if True, the honest robots are divided in
+            equally sized groups even for perfect saboteurs (as in the average sab. case).
+    '''
     uniform_avg_noise_params_values=[noise_mu,noise_range,"avg"]
     uniform_perf_noise_params_values=[noise_mu,noise_range,"perf"]
     bimodal_noise_params_values=[noise_sampling_mu,noise_sampling_sd,noise_sd]
@@ -3041,60 +3140,62 @@ def comparison_bimodal_uniform_noise(
             for n_honest in n_honests:
                 for combine_strategy_initials in combine_strategies:
                     for payment_system in payment_systems:
-                        for reputation_stake in reputation_stake_list:
-                            lie_angle=0 if n_honest==n_robots else 90
+                        for reputation_stake in reputation_stakes:
+                            for lie_angle in lie_angles:
+                                if (lie_angle!=0 and n_honest==n_robots) or\
+                                        (lie_angle==0 and n_honest!=n_robots):
+                                    continue
+                                behavior_params_text=""
+                                for v,p in zip(behavior_params_values,BEHAVIOR_PARAMS_DICT[behavior_initials]):
+                                    behavior_params_text+=f"{v} {PARAMS_NAME_DICT[p]},"
 
-                            behavior_params_text=""
-                            for v,p in zip(behavior_params_values,BEHAVIOR_PARAMS_DICT[behavior_initials]):
-                                behavior_params_text+=f"{v} {PARAMS_NAME_DICT[p]},"
+                                penalisation=" no" if payment_system=="NP" else ""
+                                labels=[f"{lie_angle}° lie angle\nbimodal noise",
+                                        f"{lie_angle}° lie angle\nnon b. noise\naverage saboteurs",
+                                        f"{lie_angle}° lie angle\nnon b. noise\nperfect saboteurs"]
 
-                            penalisation=" no" if payment_system=="NP" else ""
-                            labels=[f"{lie_angle}° lie angle\nbimodal noise",
-                                    f"{lie_angle}° lie angle\nnon b. noise\naverage saboteurs",
-                                    f"{lie_angle}° lie angle\nnon b. noise\nperfect saboteurs"]
+                                title=f"{BEHAVIORS_NAME_DICT[behavior_initials]} behaviour\n"\
+                                f"parameters: {behavior_params_text}\n"\
+                                f"{n_honest} honests,{penalisation} penalisation\n"\
+                                "different noise models"
 
-                            title=f"{BEHAVIORS_NAME_DICT[behavior_initials]} behaviour\n"\
-                            f"parameters: {behavior_params_text}\n"\
-                            f"{n_honest} honests,{penalisation} penalisation\n"\
-                            "different noise models"
+                                filenames=[ filename_from_params(n_honest,behavior_initials,
+                                                        combine_strategy_initials,
+                                                        payment_system,reputation_stake,
+                                                        lie_angle,
+                                                        behavior_params_values,
+                                                        "bimodal",bimodal_noise_params_values,),
+                                            filename_from_params(n_honest,behavior_initials,
+                                                        combine_strategy_initials,
+                                                        payment_system,lie_angle,
+                                                        behavior_params_values,
+                                                        "uniform",uniform_avg_noise_params_values),
+                                            filename_from_params(n_honest,behavior_initials,
+                                                        combine_strategy_initials,
+                                                        payment_system,lie_angle,
+                                                        behavior_params_values,
+                                                        "uniform",uniform_perf_noise_params_values)
+                                        ]
+                                #TODO: test filenames, else remove from list filenames
+                                filenames=[join(data_folder,experiment,SUB_FOLDERS_DICT[behavior_initials],metric,filename,".csv") for filename in filenames]
 
-                            filenames=[ filename_from_params(n_honest,behavior_initials,
-                                                    combine_strategy_initials,
-                                                    payment_system,reputation_stake,
-                                                    lie_angle,
-                                                    behavior_params_values,
-                                                    "bimodal",bimodal_noise_params_values,),
-                                        filename_from_params(n_honest,behavior_initials,
-                                                    combine_strategy_initials,
-                                                    payment_system,lie_angle,
-                                                    behavior_params_values,
-                                                    "uniform",uniform_avg_noise_params_values),
-                                        filename_from_params(n_honest,behavior_initials,
-                                                    combine_strategy_initials,
-                                                    payment_system,lie_angle,
-                                                    behavior_params_values,
-                                                    "uniform",uniform_perf_noise_params_values)
-                                    ]
-                            #TODO: test filenames, else remove from list filenames
-                            filenames=[join(data_folder,experiment,SUB_FOLDERS_DICT[behavior_initials],metric,filename,".csv") for filename in filenames]
-
-                            save_name=filename_from_params(n_honest,behavior_initials,
-                                                    combine_strategy_initials,
-                                                    payment_system,lie_angle,
-                                                    behavior_params_values,
-                                                    "uniform",uniform_avg_noise_params_values)
-                            noise_metric_analysis(filenames,
-                                            data_folder=f"",
-                                            metric=f"",
-                                            experiments_labels=labels,
-                                            title=title,
-                                            ylabel=metric.replace("_"," "),
-                                            multi_plot=multi_plot,
-                                            save_plot=save_plot,
-                                            save_folder=behav_save_folder,
-                                            save_name=save_name
-                            )
-                            fig_count+=1
+                                save_name=filename_from_params(n_honest,behavior_initials,
+                                                        combine_strategy_initials,
+                                                        payment_system,lie_angle,
+                                                        behavior_params_values,
+                                                        "uniform",uniform_avg_noise_params_values)
+                                noise_metric_analysis(filenames,
+                                                data_folder=f"",
+                                                metric=f"",
+                                                experiments_labels=labels,
+                                                title=title,
+                                                ylabel=metric.replace("_"," "),
+                                                multi_plot=multi_plot,
+                                                save_plot=save_plot,
+                                                save_folder=behav_save_folder,
+                                                save_name=save_name
+                                )
+                                fig_count+=1
     if multi_plot and not save_plot:plt.show()
     fig_count=0
 
@@ -3102,10 +3203,26 @@ def comparison_bimodal_uniform_noise(
 ##############################################################################################################
 ##############################################################################################################
 #TODO: create this as a summary from config generation / running
+#TODO add lie_angle selection instead of only 0, 90
+#TODO autofetch from given folder BUT CAN CHOOSE WHAT TO INLCUDE IF SPECIFIED
+#       cycle to create a vector of specified
+#       fetch all filenames from folder
+#       if specified!=[]: filter filenames if fetch[i] in specified
+#       NOTE MUST SPECIFY HOW BO BUILD THE COMPARISON VECTOR (INTRA/EXTRA BEHAV)
+
 if __name__ == '__main__':
     data_folder=CONFIG_FILE.DATA_DIR
-    save_plot=0
-    multi_plot=0
+    save_plot:bool=1
+    multi_plot:bool=1
+
+    # experiment="a_IM_HEU/IM_7_1_1_UNBIASED_DEFAULT_HEURISTIC"
+    experiment="IM_7_1_1_NODEF_NORM_50K"
+    experiments=[
+                "IM_7_1_1_DEF_NORM_50K",
+                "IM_7_1_1_NODEF_NORM_50K",
+                ]   
+    experiment_part="last.33"
+    # experiment_part="whole"
     ######################################################
     number_of_robots=25
     number_of_honests=[
@@ -3113,52 +3230,52 @@ if __name__ == '__main__':
                         24,
                         22,
                         20,
+                        23,
                         17
                         ]
-    
-    experiment="IM_7_1_1_UNBIASED_DEFAULT_NORMALIZED"
-    experiment_part="last.33"
-    # experiment_part="whole"
-
-    behaviors=[
-                # 'n',
-                # 's',
-                # "b",
-                # 'c',
-                # 't',
-                'r',
-                # 'Nv',
-                # 'h',
-                # 'hs',
+    lie_angles=[
+                0,
+                25,
+                90
                 ]
-    
-    payment_systems=[
-                        "P",
-                        # "NP"
-                    ]
-    
-    reputation_stakes=[
-                        True,
-                        False
-                    ]
-    
     saboteur_performances=[
                             "avg",
                             "perf"
                         ]
+    equally_sized_honest_groups=True
+    behaviors=[
+                # 'n',
+                # 's',
+                # 'b',
+                'c',
+                'r',
+                't',
+                # 'Nv',
+                # 'h',
+                # 'hs',
+                ]
     ######################################################
-    COMPARE_PERFORMANCES=0
+    payment_systems=[
+                        "P",
+                        "NP"
+                    ]
+    reputation_stakes=[
+                        True,
+                        False
+                    ]
+    ######################################################
+    COMPARE_PERFORMANCES:bool=0
     performance_metric_compare_performances="items"
     # performance_metric_compare_performances="rewards"
     quality_metric_compare_performances="transactionsS"
     ######################################################
-    MARKET_EVOLUTION=0
+    MARKET_EVOLUTION:bool=0
     performance_metric_market_evolution="wealth"
 
-    WEALTH_INEQUALITY_ANALYSIS=0
+    WEALTH_INEQUALITY_ANALYSIS:bool=1
     performance_metric_inequality_analysis="wealth"
 
-    WEALTH_DISTRIBUTION_ANALYSIS=1
+    WEALTH_DISTRIBUTION_ANALYSIS:bool=1
     performance_metric_wealth_distribution="wealth"
 
     DO_MARKET_ANALYSIS=[MARKET_EVOLUTION,WEALTH_INEQUALITY_ANALYSIS,WEALTH_DISTRIBUTION_ANALYSIS]
@@ -3166,119 +3283,126 @@ if __name__ == '__main__':
     MARKET_PERFORMANCE_METRICS=[performance_metric_market_evolution,
                     performance_metric_inequality_analysis,performance_metric_wealth_distribution]
     ######################################################
-    BUYERS_SELLERS_GROUPS=0
+    BUYERS_SELLERS_GROUPS:bool=1
     ######################################################
     #BUG comparison_bimodal_uniform_noise():filename_from_params(), missing argument: 'noise_params_values'
-    NOISE_COMPARISON=0
+    NOISE_COMPARISON:bool=0
     performance_metric_noise_comparison="reward"
 
-    NOISE_LEVELS=0
+    NOISE_LEVELS:bool=0
     ######################################################
-    FIND_SEEDS=0
+    FIND_SEEDS:bool=0
     performance_metric_find_seeds="items_collected"
+    ######################################################
 
+    for experiment in experiments:
+        if COMPARE_PERFORMANCES:
+            compare_behaviors_performance(
+                                            data_folder=data_folder,
+                                            experiment=experiment,
+                                            experiment_part=experiment_part,
+                                            performance_metric=performance_metric_compare_performances,
+                                            pair_plot=0,
+                                            short_x_labels=True,
+                                            transparent_boxes=False,
+                                            quality_index=quality_metric_compare_performances,
+                                            multi_quality=True,
+                                            show_dishonests=True,
+                                            auto_xlabels=False,
+                                            n_honests=number_of_honests,
+                                            lie_angles=lie_angles,
+                                            behaviours=behaviors,#to compare w/ n+NP,n+P,s+NP,s+P
+                                            behavior_params_experiments=BEHAV_PARAMS_COMBINATIONS,
+                                            payment_systems=payment_systems,
+                                            reputation_stakes=reputation_stakes,
+                                            saboteur_performance_list=saboteur_performances,
+                                            compare_with_reference=1,
+                                            compare_best_of=0,
+                                            compare_best_of_only=0,
+                                            multi_plot=multi_plot,
+                                            save_folder=join(CONFIG_FILE.PLOT_DIR,"behav_comparison"),
+                                            save_plot=save_plot
+                                        )
 
-    if COMPARE_PERFORMANCES:
-        compare_behaviors_performance(
+        [behaviors_market_analysis(
+                                data_folder=data_folder,
+                                experiment=experiment,
+                                performance_metric=analysis_metric,    
+                                analysis_type=analysis_type,
+                                pair_plot=1,
+                                fill_between=True,
+                                # auto_xlabels=True,
+                                n_honests=number_of_honests,
+                                equally_sized_honest_groups=equally_sized_honest_groups,
+                                lie_angles=lie_angles,
+                                behaviours=behaviors,
+                                behavior_params_experiments=BEHAV_PARAMS_COMBINATIONS,
+                                payment_systems=payment_systems,
+                                reputation_stake_list=reputation_stakes,
+                                saboteur_performance_list=saboteur_performances,
+                                # compare_with_reference=False,
+                                # compare_best_of=False,
+                                # compare_best_of_only=False,
+                                multi_plot=multi_plot,
+                                save_folder=join(CONFIG_FILE.PLOT_DIR,"ANALYSIS_FOLDER"),
+                                save_plot=save_plot
+                                )
+            for DO_ANALYSIS, analysis_type,analysis_metric in zip(DO_MARKET_ANALYSIS,TYPES_OF_ANALYSIS,MARKET_PERFORMANCE_METRICS)
+            if DO_ANALYSIS
+        ]        
+
+        if BUYERS_SELLERS_GROUPS:
+            behaviours_buyers_sellers_groups(
+                                data_folder=data_folder,
+                                experiment=experiment,
+                                n_honests=number_of_honests,
+                                equally_sized_honest_groups=equally_sized_honest_groups,
+                                lie_angles=lie_angles,
+                                behaviours=behaviors,
+                                behavior_params_experiments=BEHAV_PARAMS_COMBINATIONS,
+                                payment_systems=payment_systems,
+                                reputation_stake_list=reputation_stakes,
+                                saboteur_performance_list=saboteur_performances,
+                                separate_groups=False,
+                                # show_variance=True,
+                                # compare_with_reference=False,
+                                # compare_best_of=False,
+                                # compare_best_of_only=False,
+                                multi_plot=multi_plot,
+                                save_folder=join(CONFIG_FILE.PLOT_DIR,"buys_sells_groups"),
+                                save_plot=save_plot
+                                    )
+
+        if NOISE_COMPARISON:
+            comparison_bimodal_uniform_noise(
                                         data_folder=data_folder,
                                         experiment=experiment,
-                                        #BUG WEALTH_THRESHOLD not working anymore with LASTn
-                                        experiment_part=experiment_part,
-                                        performance_metric=performance_metric_compare_performances,
-                                        pair_plot=True,
-                                        short_x_labels=True,
-                                        quality_index=quality_metric_compare_performances,
-                                        multi_quality=True,
-                                        show_dishonests=True,
-                                        auto_xlabels=False,
+                                        metric=performance_metric_noise_comparison,
                                         n_honests=number_of_honests,
-                                        behaviours=behaviors,#to compare w/ n+NP,n+P,s+NP,s+P
+                                        lie_angles=lie_angles,
+                                        behaviors=behaviors,
                                         behavior_params_experiments=BEHAV_PARAMS_COMBINATIONS,
-                                        payment_systems=payment_systems,
-                                        reputation_stake_list=reputation_stakes,
-                                        saboteur_performance_list=saboteur_performances,
-                                        compare_with_reference=True,
-                                        compare_best_of=1,
-                                        compare_best_of_only=False,
                                         multi_plot=multi_plot,
-                                        save_folder=join(CONFIG_FILE.PLOT_DIR,"behav_comparison"),
+                                        save_folder=join(CONFIG_FILE.PLOT_DIR,"noise_comparison"),
                                         save_plot=save_plot
-                                    )
-
-    [behaviors_market_analysis(
-                            data_folder=data_folder,
-                            experiment=experiment,
-                            performance_metric=analysis_metric,    
-                            analysis_type=analysis_type,
-                            pair_plot=1,
-                            fill_between=True,
-                            # auto_xlabels=True,
-                            n_honests=number_of_honests,
-                            behaviours=behaviors,
-                            behavior_params_experiments=BEHAV_PARAMS_COMBINATIONS,
-                            payment_systems=payment_systems,
-                            reputation_stake_list=reputation_stakes,
-                            saboteur_performance_list=saboteur_performances,
-                            # compare_with_reference=False,
-                            # compare_best_of=False,
-                            # compare_best_of_only=False,
-                            multi_plot=multi_plot,
-                            save_folder=join(CONFIG_FILE.PLOT_DIR,"ANALYSIS_FOLDER"),
-                            save_plot=save_plot
+                                        )
+            
+        if NOISE_LEVELS:
+            [noise_level(
+                            number_agents=number_of_robots,
+                            number_saboteurs=number_of_robots-n_h,
+                            noise_average=0.051,
+                            noise_range=0.1,
+                            saboteurs_noise="perfect" if s_p=="perf" else "average",
                             )
-        for DO_ANALYSIS, analysis_type,analysis_metric in zip(DO_MARKET_ANALYSIS,TYPES_OF_ANALYSIS,MARKET_PERFORMANCE_METRICS)
-        if DO_ANALYSIS
-    ]        
+                for n_h in number_of_honests
+                for s_p in saboteur_performances
+            ]
 
-    if BUYERS_SELLERS_GROUPS:
-        behaviours_buyers_sellers_groups(
+        if FIND_SEEDS:
+            find_best_worst_seeds(filenames=[],
                             data_folder=data_folder,
-                            experiment=experiment,
-                            n_honests=number_of_honests,
-                            behaviours=behaviors,
-                            behavior_params_experiments=BEHAV_PARAMS_COMBINATIONS,
-                            payment_systems=payment_systems,
-                            reputation_stake_list=reputation_stakes,
-                            saboteur_performance_list=saboteur_performances,
-                            separate_groups=False,
-                            # show_variance=True,
-                            # compare_with_reference=False,
-                            # compare_best_of=False,
-                            # compare_best_of_only=False,
-                            multi_plot=multi_plot,
-                            save_folder=join(CONFIG_FILE.PLOT_DIR,"buys_sells_groups"),
-                            save_plot=save_plot
-                            )
-
-    if NOISE_COMPARISON:
-        comparison_bimodal_uniform_noise(
-                                    data_folder=data_folder,
-                                    experiment=experiment,
-                                    metric=performance_metric_noise_comparison,
-                                    n_honests=number_of_honests,
-                                    behaviors=behaviors,
-                                    behavior_params_experiments=BEHAV_PARAMS_COMBINATIONS,
-                                    multi_plot=multi_plot,
-                                    save_folder=join(CONFIG_FILE.PLOT_DIR,"noise_comparison"),
-                                    save_plot=save_plot
-                                    )
-        
-    if NOISE_LEVELS:
-        [noise_level(
-                        number_agents=number_of_robots,
-                        number_saboteurs=number_of_robots-n_h,
-                        noise_average=0.051,
-                        noise_range=0.1,
-                        saboteurs_noise="perfect" if s_p=="perf" else "average",
+                            metric=performance_metric_find_seeds,
+                            base_seed=5684436,
+                            amount_to_find=3,
                         )
-            for n_h in number_of_honests
-            for s_p in saboteur_performances
-        ]
-
-    if FIND_SEEDS:
-        find_best_worst_seeds(filenames=[],
-                        data_folder=data_folder,
-                        metric=performance_metric_find_seeds,
-                        base_seed=5684436,
-                        amount_to_find=3,
-                    )

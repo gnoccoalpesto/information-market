@@ -47,44 +47,6 @@ name_conversion = {
 ############################################################################################################
 ############################################################################################################
 ################################### STATISTICAL TESTS ######################################################
-def myttest(
-            filenames=[],
-            data_folder="../data/",\
-            compare="scaboteur_rotation",\
-            # metric="rewards",
-            metric="items_collected",
-            ):
-    '''
-    :param filenames: list of filenames to compare,
-                    NOTE: ONLY FIRST TWO FILES ARE COMPARED
-    '''
-    filenames = [
-            "24sceptical_025th_1scaboteur_0rotation_nopenalisation.txt",
-            "24sceptical_025th_1scaboteur_0rotation_nopenalisation.txt"
-            ]
-    data1=pd.read_csv(f"{data_folder}{compare+'/' if compare!='' else ''}{metric}/{filenames[0]}").apply(np.sum, axis=1)
-    data2=pd.read_csv(f"{data_folder}{compare+'/' if compare!='' else ''}{metric}/{filenames[1]}").apply(np.sum, axis=1)
-    print(type(pd.read_csv(f"{data_folder}{compare+'/' if compare!='' else ''}{metric}/{filenames[1]}")))
-    t_test=stats.ttest_ind(data1, data2, equal_var=False)
-    print(f"t-test: {t_test.statistic},\n p-value: {t_test.pvalue}")
-
-
-def myanovatest(
-                filenames=[],
-                data_folder="../data/",\
-                compare="scaboteur_rotation",\
-                metric="items_collected",
-                ):
-    filenames = [
-            ]
-    data1=pd.read_csv(f"{data_folder}{compare}/{metric}/{filenames[0]}").apply(np.sum, axis=1)
-    data2=pd.read_csv(f"{data_folder}{compare}/{metric}/{filenames[1]}").apply(np.sum, axis=1)
-    anova_test=stats.f_oneway(data1, data2)
-    print(f"F-statistic: {anova_test.statistic},\np-value: {anova_test.pvalue}\n")
-
-
-
-
 def main():
     dec_const = pd.read_csv("../data/old_data/results_decaying_constant.txt", header=None).values.flatten()
     w_dec_const = pd.read_csv("../data/old_data/results_weighteddecaying_constant.txt", header=None).values.flatten()
