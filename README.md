@@ -1,5 +1,4 @@
-# Master's Thesis: Task allocation in open robot swarms: 
-perspectives for blockchain-based algorithms in hostile environments
+# Reputation management in open swarm robotics through crypto-economy
 
 ## Requirements
 
