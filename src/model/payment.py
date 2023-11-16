@@ -161,10 +161,10 @@ class PaymentDB:
     def record_transaction(self,type:str,buyer_id:int,seller_id:int,transaction:Transaction=None):
         #TODO make this more similar to self.get_transactions()
         if type=="completed" or type=="C" or type=="c":
-            self.database[transaction.buyer_id]["n_completed_transactions"][seller_id] += 1
             self.database[transaction.buyer_id]["payment_system"].new_transaction(transaction, PaymentAPI(self),
                                                                     # variable_stake=variable_stake,reputation_method=reputation_method
                                                                                   )
+            self.database[transaction.buyer_id]["n_completed_transactions"][seller_id] += 1
             if CONFIG_FILE.LOG_COMPLETED_TRANSATIONS: self.log_completed_transaction(transaction)
         elif type=="attempted" or type=="A" or type=="a":
             self.database[buyer_id]["n_attempted_transactions"][seller_id] += 1
