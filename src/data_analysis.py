@@ -12,7 +12,7 @@ from matplotlib.cbook import boxplot_stats
 import seaborn as sns
 import time
 import scipy.stats as stats
-from sklearn.cluster import KMeans # type: ignore # pylint: disable=import-error
+# from sklearn.cluster import KMeans # type: ignore # pylint: disable=import-error
 
 import config as CONFIG_FILE
 from model.environment import generate_uniform_noise_list
@@ -663,7 +663,7 @@ def noise_level(
                                          noise_average, noise_range,random_switch,random_seed)
     fig, ax = plt.subplots()
     fig.set_size_inches(8,8)
-    plt.bar(range(len(noise_list)), noise_list)
+    barlist=plt.bar(range(len(noise_list)), noise_list)
     plt.xticks(range(len(noise_list)))
     plt.xlabel("agent id")
     plt.ylabel("noise level")
@@ -678,8 +678,48 @@ def noise_level(
     f"values in [0,0.05]: {values_below005}, [0.05,0.1]: {values_between005and01}, [0.1,0.15]: {values_between01and015}, [0.15,0.2]: {values_between015and02}\n"
     "(original distribution N(0.05,0.05): [0,0.05]: 12, [0.05,0.1]: 9, [0.1,0.15]: 3, [0.15,0.2]: 1)")
     # plt.ion()
+    [bar.set_color(NOISE_GROUPS_PALETTE['S']) for bar in barlist[number_agents-number_saboteurs:number_agents]]
     plt.show()
     # plt.pause(0.001)
+
+
+def plot_variable_stake():
+    def reputation_stake(saturate=True):
+        def reputation_stake_coeff(reputation,saturate=True):
+            stake_ratio_min=0.5
+            history_span=10
+            if reputation<0 or not saturate:
+                stake_ratio=stake_ratio_min**(2*reputation/history_span)
+            else:
+                stake_ratio=1
+            return stake_ratio
+        base_stake_amount=0.04
+        reputation_vector=np.linspace(-10,10,21)
+        stake_vector=[base_stake_amount*reputation_stake_coeff(reputation,saturate) for reputation in reputation_vector]
+        return reputation_vector,stake_vector
+    #plot reputation_vector vs stake_vector for both saturate=True and False, in a single plot
+    reputation_vector,saturated_stake_vector=reputation_stake()
+    _,unsaturated_stake_vector=reputation_stake(saturate=False)
+    fig, ax = plt.subplots()
+    fig.set_size_inches(8,8)
+    #plot dotted line at constant base_stake_amount
+    plt.plot(reputation_vector,[0.04 for _ in reputation_vector],linestyle='dashed',label="base stake amount")
+    plt.plot(reputation_vector,saturated_stake_vector,label="punishing negative reputation",linewidth=3)
+    plt.plot(reputation_vector,unsaturated_stake_vector,label="rewarding positive reputation")
+    plt.xlabel("reputation")
+    plt.ylabel("stake amount")
+    plt.yticks(np.arange(0.01, 0.17,0.03))
+    plt.xticks(np.arange(-10, 11, 1))
+    #rotate x ticks
+    plt.xticks(rotation=45)
+    #change colors
+    plt.gca().lines[0].set_color('grey')
+    plt.gca().lines[2].set_color('orange')
+    plt.gca().lines[1].set_color('blue')
+
+    plt.legend()
+    plt.show()
+
 
 
 def noise_metric_analysis(
@@ -3226,16 +3266,16 @@ if __name__ == '__main__':
     ######################################################
     number_of_robots=25
     number_of_honests=[
-                        25,
-                        24,
-                        22,
+                        # 25,
+                        # 24,
+                        # 22,
                         20,
-                        23,
-                        17
+                        # 23,
+                        # 17
                         ]
     lie_angles=[
-                0,
-                25,
+                # 0,
+                # 25,
                 90
                 ]
     saboteur_performances=[
