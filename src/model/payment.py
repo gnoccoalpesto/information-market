@@ -81,6 +81,7 @@ class PaymentDB:
             self.database[robot_id]["n_validated_transactions"].extend([0]*len(newcomers_ids))
             self.database[robot_id]["n_completed_transactions"].extend([0]*len(newcomers_ids))
             self.database[robot_id]["n_combined_transactions" ].extend([0]*len(newcomers_ids))
+            self.database[robot_id]["stake"].update({_: 0 for _ in newcomers_ids})
         for robot_id in newcomers_ids:
             self.database[robot_id] = {"reward": payment_system_params["initial_reward"],
                                        "stake": {_: 0 for _ in range(NEW_DB_LEN) },
@@ -133,7 +134,18 @@ class PaymentDB:
     
 
     def increment_stake(self,staker_id,buyer_id,amount):
+            
+        # try:
         self.database[staker_id]["stake"][buyer_id]+=amount
+        # except KeyError:
+        #     print("db staker id ----------------------------------------------------")
+        #     print(self.database[staker_id])
+        #     print("db staker id stake ---------------------------------------------")
+        #     print(self.database[staker_id]["stake"])
+        #     print("buyer id -------------------------------------------------------")
+        #     print(buyer_id)
+        #     print("db stakeer id stake buyer id-------------------------------------")
+            # print(self.database[staker_id]["stake"][buyer_id])
 
 
     def reset_stake(self,staker_id,buyer_id):
