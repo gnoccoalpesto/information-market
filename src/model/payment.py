@@ -81,6 +81,7 @@ class PaymentDB:
             self.database[robot_id]["n_validated_transactions"].extend([0]*len(newcomers_ids))
             self.database[robot_id]["n_completed_transactions"].extend([0]*len(newcomers_ids))
             self.database[robot_id]["n_combined_transactions" ].extend([0]*len(newcomers_ids))
+            self.database[robot_id]["stake"].update({_: 0 for _ in newcomers_ids})
         for robot_id in newcomers_ids:
             self.database[robot_id] = {"reward": payment_system_params["initial_reward"],
                                        "stake": {_: 0 for _ in range(NEW_DB_LEN) },

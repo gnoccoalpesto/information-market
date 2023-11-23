@@ -8,14 +8,14 @@
 # ----------------- NOTE BOOLs = {true, false} ------------------------------------------- #
 
 #simulation
-SIMULATION_STEPS=50000
+SIMULATION_STEPS=20000
 SIMULATION_SEED=5684436
 NUMBER_RUNS=20
 #visualisation
 VISUALISATION_ACTIVATE=false
 #noise
 AGENT_NOISE_ASSIGNATION_LIST=(
-							"average"
+							# "average"
 							"perfect"
 							)
 # bimodal:
@@ -35,7 +35,7 @@ PAYMENT_SYSTEM_CLASS_LIST=(
 							# "DelayedPaymentPaymentSystem"
 							)
 PAYMENT_SYSTEM_REPUTATION_STAKE_LIST=(
-										# false
+										false
 										true
 )
 #market
@@ -49,16 +49,16 @@ DATA_TRANSACTIONS_LOG=false
 #robots
 NUMBER_OF_ROBOTS=25
 HONEST_POPULATION_LIST=(
-							# 20
-							17
-							22
-							23
-							25
-							23
+							20
+							# 17
+							# 22
+							# 23
+							# 25
+							# 23
 						)
 DISHONEST_LIE_ANGLE_LIST=(
-						0
-						25
+						# 0
+						# 25
 						90
 					)
 #combine_strategy
@@ -71,10 +71,10 @@ COMBINE_STRATEGY_LIST=(
 						)
 # behaviors ----------------------------------------------------
 BEHAVIOR_LIST=(
-				"b"
-				"n"
-				"s"
-				# "r" 
+				# "b"
+				# "n"
+				# "s"
+				"r" 
 				# "t" 
 				# "c"
 				# "Nv"
@@ -130,7 +130,7 @@ rRANKING_THRESHOLD_LIST=(
 						)
 rREPUTATION_METHOD_LIST=(
 						"r"
-						"t"
+						# "t"
 						)
 
 # wealth threshold: t
