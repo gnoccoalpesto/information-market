@@ -295,7 +295,7 @@ BEHAV_PARAMS_COMBINATIONS={"n":[[]],
                                 "r":[
                                     [0.3,"r"],
                                     # [0.5,"r"],
-                                    [0.3,"t"],
+                                    # [0.3,"t"],
                                     # [0.5,"t"],
                                     ],
                                 "Nv":[
@@ -315,7 +315,7 @@ BEHAV_PARAMS_COMBINATIONS={"n":[[]],
                                 "t":[
                                     ["allavg",0.5,"r"],
                                     # ["allavg",0.8,"r"],
-                                    ["allavg",0.5,"t"],
+                                    # ["allavg",0.5,"t"],
                                     # ["allavg",0.8,"t"],
                                     # ["allavg",0.3],
                                     # ["allmax",0.3],
@@ -350,7 +350,7 @@ BEHAV_PARAMS_COMBINATIONS={"n":[[]],
                                     ],
                                     "c":[
                                         ["r"],
-                                        ["t"],
+                                        # ["t"],
                                         ],
                                 }
 
@@ -3262,16 +3262,62 @@ def comparison_bimodal_uniform_noise(
 #       NOTE MUST SPECIFY HOW BO BUILD THE COMPARISON VECTOR (INTRA/EXTRA BEHAV)
 
 if __name__ == '__main__':
+    # experiment_part='last.33'
+    # base_folder=f'/home/uga/ing/tesi/information-market/data/TODO/SCEPTICISM_REMOVING_CONFIRMATION_90_25_LIE/SCEPT_'
+    # performance_metric='items'
+    # equally_sized_honest_groups=False
+    # pair_plot=0
+    # quality_index='transactionsS'
+    # multi_quality=True
+    # title="SCEPTICALS CONFIRMATION or not"
+    # transparent_boxes=0
+    # show_dishonests=0
+    # multi_plot=0
+    # save_plot=1
+    # save_folder='/home/uga/ing/tesi/information-market/plots/behav_comparison'
+    
+    # LIAS=[0,25,90]
+    # N_HONS=[22,17]
+    # N_HONS=[25]
+    # SABS=["avg","perf"]
+    # for LIA in LIAS:
+    #     for N_HON in N_HONS:
+    #         for SAB in SABS:
+    #             if LIA==0 and N_HON!=25:continue
+    #             if N_HON==25 and LIA!=0:continue
+    #             filename=f'CONF_{LIA}/sceptical/items_evolution/{N_HON}s_waaCS_P_NRS_{LIA}LIA_0.25ST_0.051NMU_0.1NRANG_{SAB}SAB.csv'
+    #             filenames=[base_folder+filename, base_folder+'NO_'+filename]
+    #             X_LABEL=f"S, P(stake), {LIA}LIA \n"
+    #             x_labels=[X_LABEL+'with confirmation', X_LABEL+'without confirmation']
+    #             performance_with_quality(
+    #                                     filenames,
+    #                                     experiment_part=experiment_part,
+    #                                     performance_index=performance_metric,
+    #                                     equally_sized_honest_groups=equally_sized_honest_groups,
+    #                                     pair_plot=pair_plot,
+    #                                     quality_index=quality_index,
+    #                                     multi_quality=multi_quality,
+    #                                     title=title+f"\n{N_HON} honests, {LIA}° lie angle, {SAB} saboteur performance",
+    #                                     x_labels=x_labels,
+    #                                     transparent_boxes=transparent_boxes,
+    #                                     show_dishonests=show_dishonests,
+    #                                     multi_plot=multi_plot,
+    #                                     save_plot=save_plot,
+    #                                     save_folder=save_folder,
+    #                                     save_name=f'{N_HON}s_{LIA}_{SAB}',
+    #                                 )
+    # exit()
+
     data_folder=CONFIG_FILE.DATA_DIR
-    save_plot:bool=1
+    save_plot:bool=0
     multi_plot:bool=1
 
     # experiment="a_IM_HEU/IM_7_1_1_UNBIASED_DEFAULT_HEURISTIC"
     experiment="IM_7_1_1_NODEF_NORM_50K"
     experiments=[
                 # "IM_7_1_1_DEF_NORM_50K",
-                "IM/IM_7_1_1_NODEF_NORM_50K",
-                "IM/IM_7_1_1_DEF_NORM_50K",
+                "a_IM/IM_7_1_1_NODEF_NORM_50K",
+                "a_IM/IM_7_1_1_DEF_NORM_50K",
                 # "a_IM/IM_7_1_1_DEF_NORM",
                 # "a_IFM/IFM_1_05_1_UNBIASED_DEFAULT_TWOTRANS",
                 ]   
@@ -3289,7 +3335,7 @@ if __name__ == '__main__':
                         ]
     lie_angles=[
                 0,
-                # 25,
+                25,
                 90
                 ]
     saboteur_performances=[
@@ -3314,16 +3360,16 @@ if __name__ == '__main__':
                         # "NP"
                     ]
     reputation_stakes=[
-                        # True,
-                        False
+                        False,
+                        True,
                     ]
     ######################################################
-    COMPARE_PERFORMANCES:bool=1
+    COMPARE_PERFORMANCES:bool=0
     performance_metric_compare_performances="items"
     # performance_metric_compare_performances="rewards"
     quality_metric_compare_performances="transactionsS"
     ######################################################
-    MARKET_EVOLUTION:bool=0
+    MARKET_EVOLUTION:bool=1
     performance_metric_market_evolution="wealth"
 
     WEALTH_INEQUALITY_ANALYSIS:bool=0
