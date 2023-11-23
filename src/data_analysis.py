@@ -1038,9 +1038,9 @@ def performance_with_quality(
                 #TODO if multi_plot:pass
 
             quality_label=f"{quality_function} {quality_label}"
-            
+
             if transparent_boxes:
-                
+
                 box_patches = [patch for patch in axs[j].patches if type(patch) == matplotlib.patches.PathPatch]# type: ignore # pylint: disable=import-error
                 if len(box_patches) == 0:  #matplotlib<3.5: boxes in ax.artists
                     box_patches = axs[j].artists
@@ -1159,11 +1159,20 @@ def market_metric_evolution(
     number_of_honest=int(params[0])
     number_of_saboteurs=number_of_robots-number_of_honest
     saboteur_performance=params[7][2]
-    
+    if CONFIG_FILE.NEWCOMER_PHASE:
+        if CONFIG_FILE.NEWCOMER_TYPE=='honest':
+            new_number_of_honest=number_of_honest+CONFIG_FILE.NEWCOMER_AMOUNT
+            new_number_of_saboteurs=number_of_saboteurs
+        else:
+            new_number_of_honest=number_of_honest
+            new_number_of_saboteurs=number_of_saboteurs+CONFIG_FILE.NEWCOMER_AMOUNT
+
+
     good_slice,bad_slice=noise_groups_slices(number_of_robots,number_of_saboteurs,
                                             saboteur_performance if not equally_sized_honest_groups else "bypass")
     df=dataframe_from_csv(join(data_folder_and_subfolder,metric,filename),
                                 metric=metric,experiment_part="df")
+
     sim_col=df.columns.to_list()[0]
     tick_col=df.columns.to_list()[1]
     agent_col=df.columns.to_list()[2:]
@@ -1516,7 +1525,7 @@ def performance_evolution(#[x]performance evolution
     if number_of_saboteurs>0:
         df_meanagents_delta['saboteur']=df_meanagents_delta.iloc[:,bad_slice:].mean(axis=1)
 
-        
+
 def market_wealth_distribution(
                             filename:str,
                             data_folder_and_subfolder:str="",
@@ -1533,7 +1542,7 @@ def market_wealth_distribution(
                             ):
     '''
     #TODO instead of making quantiles or using full experiments, print stuff using:
-          sns.distplot(data, bins=n_robots ,...) this will also interpolate 
+          sns.distplot(data, bins=n_robots ,...) this will also interpolate
 
     TODO market wealth distribution docstring
     devide the robots in groups of chosen percentile level and
@@ -1630,14 +1639,14 @@ def market_wealth_distribution(
 
     df_last_meanagents_extended_classes=pd.DataFrame(df_last_meanagents_sorted.groupby('classile',sort=False)[0].sum())
     df_last_meanagents_extended_classes['relative_wealth']=pd.DataFrame(df_last_meanagents_sorted.groupby('classile')['relative_wealth'].sum())
-    
+
     #TODO wealth classes division with k-means clustering###########
     # kmeans=KMeans(3).fit(...)
-    
+
 
 
     ################################################################
-    
+
     #FREQUENCY PLOTS
     fig,ax=plt.subplots(figsize=(20,10))
 
@@ -1658,7 +1667,7 @@ def market_wealth_distribution(
             df_group_to_use['frequency'].iloc[len(df_last_meanagents_classes['ids']['poor'])+\
             len(df_last_meanagents_classes['ids']['middle']):]*\
             df_last_meanagents_classes['relative_wealth'].iloc[2]
-        
+
     plt.title(f"wealth distribution and quantiles, with poor, mid and rich distinction for\n{filename}")
     plt.xlabel("quantile")
     plt.ylabel(y_label)
@@ -1696,7 +1705,7 @@ def market_wealth_distribution(
                             len(df_last_meanagents_classes['ids']['middle'])+\
                             len(df_last_meanagents_classes['ids']['rich'])-1),
                         color='red',alpha=0.2)
-    
+
     #TODO IDEAL/UNWANTED CLASS EXTENSION: could color distribution loine instead
     # if number_of_saboteurs>0:
     #     plt.vlines(number_of_saboteurs-1,0,df_group_to_use['frequency'].max(),color='blue')
@@ -1716,7 +1725,7 @@ def market_wealth_distribution(
         wealth_class_text+=f" - {len(df_last_meanagents_classes.loc[wealt_class]['ids'])}"
         if wealt_class=='rich': wealth_class_text+=" (ideally 0)\n"
         elif wealt_class=='poor': wealth_class_text+=f" (ideally {number_of_saboteurs})\n"
-        else: wealth_class_text+=f" (ideally {number_of_honest})\n"    
+        else: wealth_class_text+=f" (ideally {number_of_honest})\n"
     plt.text(number_of_robots*.38,df_group_to_use['frequency'].max()*0.8,wealth_class_text)
 
     #ANTICUMULATED FREQUENCY PLOT
@@ -1740,7 +1749,7 @@ def market_wealth_distribution(
         plt.close()
     elif not multi_plot:
         plt.show()
-    
+
 
 #TODO inequality lorenz/gini also without agent aggregation
 def market_lorenz_gini(filename:str,#
@@ -2086,7 +2095,7 @@ def buyers_sellers_groups(  filename:str,
     subplot2: sells for each group (combined/validated)
     subplot3: ratio buys/sells (combined/validated)
         this last should be low for good, average for bad, high for saboteurs
-    
+
     :param equally_sized_honest_groups: if True, the honest robots are divided in
             equally sized groups even for perfect saboteurs (as in the average sab. case).
     """
@@ -2147,7 +2156,7 @@ def buyers_sellers_groups(  filename:str,
     df_sells_bad_ratio=100*(df_sells.iloc[:,good_slice:bad_slice].sum(axis=0)/df_sells.sum(axis=0)).mean().round(3)*(bad_slice-good_slice)/number_of_robots
     if number_of_saboteurs>0:
         df_sells_sab_ratio=100*(df_sells.iloc[:,bad_slice:].sum(axis=0)/df_sells.sum(axis=0)).mean().round(3)*(number_of_saboteurs)/number_of_robots
-    
+
     #TODO I DONT WANT SELLS AND BUYS RATIO TO BE THE SAME: good: sell more, bad,sab: buy more
     # print('good',df_buys_good_ratio==df_sells_good_ratio)
     # print('bad',df_buys_bad_ratio==df_sells_bad_ratio)
@@ -2581,8 +2590,8 @@ def behaviours_buyers_sellers_groups(
                                         if (behavior_initials=="s" or behavior_initials=="n" or behavior_initials=="b") \
                                                 and (reputation_stake or payment_system=='P') or \
                                                 (behavior_initials=="r" or behavior_initials=="t" or behavior_initials=="c") \
-                                                and ( payment_system=='NP'):   
-                                                # and (not reputation_stake or payment_system=='NP'):   
+                                                and ( payment_system=='NP'):
+                                                # and (not reputation_stake or payment_system=='NP'):
                                             continue
                                         for combine_stategy_initials in combine_stategies:
                                             behav_save_folder=join(save_folder,experiment,SUB_FOLDERS_DICT[behavior_initials])
@@ -2783,7 +2792,7 @@ def behaviors_market_analysis(
                                                     # save_name=f"{n_honest}_{behavior_initials}_{payment_system}_{repu_stake}_
                                                     #               {lie_angle}_{noise_mu}_{noise_range}_{saboteur_performance}"
                                                     save_name=f.split("/")[-1].split(".csv")[0]
-                                                
+
                                                 F=join(data_folder,experiment,SUB_FOLDERS_DICT[behavior_initials],'rewards',f)
                                                 if not os.path.exists(F):
                                                     print(f"file {F} not found")
@@ -2792,7 +2801,7 @@ def behaviors_market_analysis(
                                                 # if behavior_initials=="s" or behavior_initials=="n" or behavior_initials=="b":
                                                 #     performance_metric="reward"
                                                 #     pair_plot=False
-                                                
+
 
                                                 market_function(
                                                         filename=f,
@@ -3275,7 +3284,7 @@ if __name__ == '__main__':
     # multi_plot=0
     # save_plot=1
     # save_folder='/home/uga/ing/tesi/information-market/plots/behav_comparison'
-    
+
     # LIAS=[0,25,90]
     # N_HONS=[22,17]
     # N_HONS=[25]
@@ -3316,12 +3325,15 @@ if __name__ == '__main__':
     experiment="IM_7_1_1_NODEF_NORM_50K"
     experiments=[
                 # "IM_7_1_1_DEF_NORM_50K",
-                "a_IM/IM_7_1_1_NODEF_NORM_50K",
-                "a_IM/IM_7_1_1_DEF_NORM_50K",
+                # "a_IM/IM_7_1_1_NODEF_NORM_50K",
+                # "a_IM/IM_7_1_1_DEF_NORM_50K",
                 # "a_IM/IM_7_1_1_DEF_NORM",
                 # "a_IFM/IFM_1_05_1_UNBIASED_DEFAULT_TWOTRANS",
-                ]   
-    experiment_part="last.1"
+                # "IFM_1_05_1_POTBIAS_DEFAULT_r_NEWCOMERS",
+                "IM_DEF_NORM_20K_NEWC_5K",
+                "IM_NODEF_NORM_20K_NEWC_5K"
+                ]
+    experiment_part="last.33"
     # experiment_part="whole"
     ######################################################
     number_of_robots=25
@@ -3335,7 +3347,7 @@ if __name__ == '__main__':
                         ]
     lie_angles=[
                 0,
-                25,
+                # 25,
                 90
                 ]
     saboteur_performances=[
@@ -3417,8 +3429,8 @@ if __name__ == '__main__':
                                             reputation_stakes=reputation_stakes,
                                             saboteur_performance_list=saboteur_performances,
                                             compare_with_reference=1,
-                                            compare_best_of=0,
-                                            compare_best_of_only=1,
+                                            compare_best_of=1,
+                                            compare_best_of_only=0,
                                             multi_plot=multi_plot,
                                             save_folder=join(CONFIG_FILE.PLOT_DIR,"behav_comparison"),
                                             save_plot=save_plot
@@ -3427,7 +3439,7 @@ if __name__ == '__main__':
         [behaviors_market_analysis(
                                 data_folder=data_folder,
                                 experiment=experiment,
-                                performance_metric=analysis_metric,    
+                                performance_metric=analysis_metric,
                                 analysis_type=analysis_type,
                                 pair_plot=1,
                                 fill_between=True,
@@ -3449,7 +3461,7 @@ if __name__ == '__main__':
                                 )
             for DO_ANALYSIS, analysis_type,analysis_metric in zip(DO_MARKET_ANALYSIS,TYPES_OF_ANALYSIS,MARKET_PERFORMANCE_METRICS)
             if DO_ANALYSIS
-        ]        
+        ]
 
         if BUYERS_SELLERS_GROUPS:
             behaviours_buyers_sellers_groups(
@@ -3486,7 +3498,7 @@ if __name__ == '__main__':
                                         save_folder=join(CONFIG_FILE.PLOT_DIR,"noise_comparison"),
                                         save_plot=save_plot
                                         )
-            
+
         if NOISE_LEVELS:
             [noise_level(
                             number_agents=number_of_robots,
