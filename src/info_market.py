@@ -3,9 +3,10 @@ import re
 import datetime
 import pandas as pd
 from multiprocessing import Pool
+import psutil
 from pathlib import Path
 from os.path import join, exists, isfile, isdir
-from os import listdir, system
+from os import listdir, system, getpid
 from sys import argv
 import logging
 # import argparse
@@ -289,11 +290,19 @@ class InformationMarket():
 
             
     def run_processes(self,config: Configuration):
+        def limit_process_priority():
+            """
+            to be called at the beginning of each process
+            to set priority to lowest
+            """
+            p=psutil.Process(getpid())
+            p.nice(19)
+
         nb_runs = config.value_of("number_runs")
         simulation_seed = config.value_of("simulation_seed")
         print(f"### {datetime.datetime.now()} # running {nb_runs} runs with {'programmed'if simulation_seed!='' and simulation_seed!='random' else 'random'} simulation seed ")
         start = time.time()
-        with Pool() as pool:
+        with Pool(None,limit_process_priority) as pool:
             controllers = pool.starmap(self.run, [(config, i) for i in range(nb_runs)])
             
             if CONFIG_FILE.RECORD_DATA: 
